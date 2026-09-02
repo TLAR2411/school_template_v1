@@ -1,0 +1,148 @@
+/* ============================================================
+   1. @FONT-FACE DEFINITIONS (Corrected Weights & Rendering)
+   ============================================================ */
+
+/* --- Kantumruy Pro --- */
+/* @font-face {
+  font-family: "kantumruy";
+  src: url("./kantumruy-pro.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+} */
+
+@font-face {
+  font-family: "kantumruy";
+  src: url("./kantumruy-pro-medium.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "kantumruy";
+  src: url("./kantumruy-pro-bold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* --- Suwannaphum --- */
+@font-face {
+  font-family: "suwannaphum";
+  src: url("./suwannaphum.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "suwannaphum";
+  src: url("./suwannaphum-bold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* --- Noto Sans Khmer --- */
+@font-face {
+  font-family: "notosans";
+  src: url("./notosans.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "notosans";
+  src: url("./notosans-bold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* --- Calibri --- */
+@font-face {
+  font-family: "calibri";
+  src: url("./calibri-regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "calibri";
+  src: url("./calibri-bold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* --- GoogleSans --- */
+@font-face {
+  font-family: "googlesans";
+  src: url("./googlesans-regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "googlesans";
+  src: url("./googlesans-medium.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "googlesans";
+  src: url("./googlesans-bold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* --- Single Weight Fonts --- */
+@font-face {
+  font-family: "battambang";
+  src: url("./battambang.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "moul";
+  src: url("./moul.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "siemreap";
+  src: url("./siemreap.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "freehand";
+  src: url("./freehand.ttf") format("truetype");
+  font-display: swap;
+}
+
+/* Utility Helper Classes */
+.battambang {
+  font-family: "battambang", sans-serif !important;
+}
+.suwannaphum {
+  font-family: "suwannaphum", sans-serif !important;
+}
+.kantumruy {
+  font-family: "kantumruy", sans-serif !important;
+}
+.moul {
+  font-family: "moul", sans-serif !important;
+}
+.siemreap {
+  font-family: "siemreap", sans-serif !important;
+}
+.freehand {
+  font-family: "freehand", sans-serif !important;
+}
