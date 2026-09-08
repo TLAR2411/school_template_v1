@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from "vue";
+import { nextTick, ref, watch } from "vue";
 import { debounce } from "lodash";
 import { requiredValidator } from "@/@core/utils/validators";
 import AppTextarea from "@/@core/components/app-form-elements/AppTextarea.vue";
@@ -54,6 +54,8 @@ const props = defineProps({
 const grades = ref([]);
 const years = ref([]);
 const rooms = ref([]);
+// Skip auto name sync while loading form (keeps customised names on edit open)
+const isHydrating = ref(false);
 
 const emit = defineEmits(["onCreate", "onUpdate", "update:isDialogVisible"]);
 
@@ -81,51 +83,65 @@ const gradeLabel = (item) => {
 const selectedGrade = () =>
   grades.value.find((g) => g.id == itemData.value.grade_id) || null;
 
-const syncClassNames = () => {
-  const grade = selectedGrade();
-  const symbol = itemData.value.symbol;
-
-  if (!grade || !symbol) return;
+const buildClassNames = (grade, symbol) => {
+  if (!grade || !symbol) {
+    return { name_kh: "", name_en: null };
+  }
 
   // Grade level (1, 2, 3...) → only name_kh: "1 ក"
   if (grade.grade_level != null) {
-    itemData.value.name_kh = `${grade.grade_level} ${symbol}`;
-    itemData.value.name_en = null;
-    return;
+    return {
+      name_kh: `${grade.grade_level} ${symbol}`,
+      name_en: null,
+    };
   }
 
   // Named grade → "Nursery A"
-  itemData.value.name_en = grade.name_en
-    ? `${grade.name_en} ${symbol}`
-    : null;
-  itemData.value.name_kh = grade.name_kh
-    ? `${grade.name_kh} ${symbol}`
-    : "";
+  return {
+    name_en: grade.name_en ? `${grade.name_en} ${symbol}` : null,
+    name_kh: grade.name_kh ? `${grade.name_kh} ${symbol}` : "",
+  };
+};
+
+const syncClassNames = () => {
+  const names = buildClassNames(selectedGrade(), itemData.value.symbol);
+  itemData.value.name_kh = names.name_kh;
+  itemData.value.name_en = names.name_en;
+};
+
+const applyFormData = async (raw = {}) => {
+  isHydrating.value = true;
+  itemData.value = {
+    ...emptyForm(),
+    name_kh: raw.name_kh ?? "",
+    name_en: raw.name_en ?? null,
+    name_cn: raw.name_cn ?? null,
+    description: raw.description ?? null,
+    symbol: raw.symbol ?? null,
+    id: raw.id ?? null,
+    grade_id: raw.grade_id != null ? Number(raw.grade_id) : null,
+    year_id: raw.year_id != null ? Number(raw.year_id) : getCurrentYearId(),
+    room_id: raw.room_id != null ? Number(raw.room_id) : null,
+  };
+  await nextTick();
+  isHydrating.value = false;
 };
 
 watch(
   () => props.itemData,
   (newData) => {
-    itemData.value = {
-      ...emptyForm(),
-      name_kh: newData?.name_kh ?? "",
-      name_en: newData?.name_en ?? null,
-      name_cn: newData?.name_cn ?? null,
-      grade_id: newData?.grade_id ?? null,
-      description: newData?.description ?? null,
-      year_id: newData?.year_id ?? getCurrentYearId(),
-      symbol: newData?.symbol ?? null,
-      room_id: newData?.room_id ?? null,
-      id: newData?.id ?? null,
-    };
+    if (!props.isDialogVisible) return;
+    applyFormData(newData);
   },
   { deep: true },
 );
 
+// Auto-fill names when grade/symbol change; user can still edit name fields after
 watch(
   () => [itemData.value.grade_id, itemData.value.symbol],
   () => {
-    if (itemData.value.id) return;
+    if (isHydrating.value) return;
+    if (!itemData.value.grade_id || !itemData.value.symbol) return;
     syncClassNames();
   },
 );
@@ -160,14 +176,17 @@ watch(
   async (open) => {
     if (!open) return;
 
-    grades.value = (await getGrades()) || [];
-    years.value = (await getYears()) || [];
-    rooms.value = (await getRooms()) || [];
+    const [gradesData, yearsData, roomsData] = await Promise.all([
+      getGrades(),
+      getYears(),
+      getRooms(),
+    ]);
 
-    // Create mode: default year from navbar
-    if (!props.itemData?.id && !itemData.value.year_id) {
-      itemData.value.year_id = getCurrentYearId();
-    }
+    grades.value = gradesData || [];
+    years.value = yearsData || [];
+    rooms.value = roomsData || [];
+
+    await applyFormData(props.itemData || {});
   },
 );
 </script>

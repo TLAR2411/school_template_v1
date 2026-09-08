@@ -1,10 +1,14 @@
 <script setup>
 import { useI18n } from "vue-i18n";
 import { api } from "@/utils/api";
-import { useDisplay } from "vuetify";
-import { ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
+import { getGrades, getEducationLevels } from "@/services/dataService";
 import AddEditClassDialog from "@/views/school/Class/AddEditClassDialog.vue";
+import AppStatusChip from "@/components/AppStatusChip.vue";
+import { useSettingStore } from "@/stores/settingStore";
+
+const settingStore = useSettingStore();
 const router = useRouter();
 
 definePage({
@@ -18,7 +22,7 @@ definePage({
   },
 });
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const formData = ref({});
 const formDataStudentClass = ref({});
 const isDialogVisible = ref(false);
@@ -28,18 +32,42 @@ const dataTableRef = ref(null);
 
 const classData = ref(null);
 
+const educationLevels = ref([]);
+const grades = ref([]);
+
 const filter = ref({
   search: null,
+  edu_id: null,
+  grade_id: null,
+});
+
+const filteredGrades = computed(() => {
+  if (!filter.value.edu_id) return grades.value;
+  return grades.value.filter((g) => g.edu_id == filter.value.edu_id);
 });
 
 watch(isDialogVisible, (open) => {
   if (!open) formData.value = {};
 });
 
+watch(
+  () => filter.value.edu_id,
+  () => {
+    if (!filter.value.grade_id) return;
+    const stillValid = filteredGrades.value.some(
+      (g) => g.id == filter.value.grade_id,
+    );
+    if (!stillValid) filter.value.grade_id = null;
+  },
+);
+
 const headers = [
-  { title: t("Name Khmer"), key: "name_kh", visible: true },
-  { title: t("Name English"), key: "name_en", visible: true },
-  { title: t("Name Chinese"), key: "name_cn", visible: true },
+  { title: t("Class Name"), key: "className", visible: true },
+  { title: t("Grade"), key: "gradeName", visible: true },
+  { title: t("Room Number"), key: "room_number", visible: true },
+  { title: t("Education Level"), key: "educationLevel", visible: true },
+  { title: t("Status"), key: "is_active", visible: true },
+
   { title: t("Description"), key: "description", visible: true },
 
   {
@@ -204,10 +232,32 @@ const onDisable = async (item) => {
   }
 };
 
+const gradeLabel = (item) => {
+  const name = locale.value === "km" ? item.name_kh : item.name_en;
+  return [item.grade_level, name]
+    .filter((v) => v != null && v !== "")
+    .join(" ");
+};
+
 // const onAtt = (item) => {
 //   console.log(item);
 //   router.push({ name: "global-attendance-id", params: { id: item.id } });
 // };
+
+watch(
+  () => settingStore.curriculum_id,
+  async (newVal) => {
+    if (newVal) {
+      educationLevels.value = await getEducationLevels();
+      grades.value = await getGrades();
+    }
+  },
+);
+
+onMounted(async () => {
+  educationLevels.value = await getEducationLevels();
+  grades.value = await getGrades();
+});
 </script>
 
 <template>
@@ -270,7 +320,68 @@ const onDisable = async (item) => {
             clear-icon="tabler-x"
           />
         </VCol>
+
+        <VCol cols="12" sm="6" md="4" lg="2">
+          <AppAutocomplete
+            :items="educationLevels"
+            :item-title="locale === 'km' ? 'name_kh' : 'name_en'"
+            item-value="id"
+            v-model="filter.edu_id"
+            :placeholder="t('Select Education')"
+            prepend-inner-icon="tabler-search"
+            clearable
+            hide-details
+            autocomlete="off"
+            clear-icon="tabler-x"
+          />
+        </VCol>
+
+        <VCol cols="12" sm="6" md="4" lg="2">
+          <AppAutocomplete
+            :items="filteredGrades"
+            :item-title="gradeLabel"
+            item-value="id"
+            v-model="filter.grade_id"
+            :placeholder="t('Select Grade')"
+            clearable
+            hide-details
+            autocomlete="off"
+            prepend-inner-icon="tabler-search"
+            clear-icon="tabler-x"
+          />
+        </VCol>
       </VRow>
+    </template>
+
+    <template #item.className="{ item }">
+      <span v-if="locale === 'km'">
+        {{ item.name_kh }}
+      </span>
+      <span v-else>
+        <span v-if="item.grade_level">
+          {{ item.name_kh }}
+        </span>
+        {{ item.name_en }}
+      </span>
+    </template>
+
+    <template #item.gradeName="{ item }">
+      <span v-if="item.grade_level != null">{{ item.grade_level }}</span>
+      {{ locale === "km" ? item.grade_name_kh : item.grade_name_en }}
+    </template>
+
+    <template #item.educationLevel="{ item }">
+      <span v-if="item.grade_level != null">
+        {{ locale === "km" ? item.edu_name_kh : item.edu_name_en }}
+      </span>
+      <span v-else>N/A</span>
+    </template>
+
+    <template v-slot:item.is_active="{ item }">
+      <AppStatusChip
+        :color="item.is_active == true ? 'success' : 'error'"
+        :label="item.is_active == true ? t('Active') : t('Inactive')"
+      />
     </template>
   </AppCardTable>
 </template>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\School;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\DataTableResource;
+use App\Http\Resources\School\ClassResource;
 use App\Models\School\Classes;
 use Illuminate\Http\Request;
 
@@ -37,7 +38,9 @@ class ClassController extends Controller
                 "name_kh" => $data['name_kh'],
                 "grade_id" => $data['grade_id'],
                 "room_id" => $data['room_id'] ?? null,
-                'year_id' => $this->getYear(),
+                'symbol' => $data['symbol'] ?? null,
+                'description' => $data['description'] ?? null,
+                'year_id' => $request->year_id,
                 'branch_id' => $this->getBranch(),
                 'is_active' => true,
                 'created_by' => auth('api')->id(),
@@ -67,8 +70,16 @@ class ClassController extends Controller
         ]);
 
         try {
-            Classes::findOrFail($data['id'])->update([
-                ...collect($data)->except('id')->all(),
+            $class = Classes::findOrFail($data['id']);
+            $class->update([
+                "name_en" => $data['name_en'],
+                "name_kh" => $data['name_kh'],
+                "grade_id" => $data['grade_id'],
+                "room_id" => $data['room_id'] ?? null,
+                'symbol' => $data['symbol'] ?? null,
+                'description' => $data['description'] ?? null,
+                'year_id' => $request->year_id,
+                'branch_id' => $this->getBranch(),
                 'updated_by' => auth('api')->id(),
             ]);
 
@@ -87,16 +98,22 @@ class ClassController extends Controller
         try {
             $yearId = $this->getYear();
             $branchId = $this->getBranch();
+            $curriculumId = $this->getCur();
 
             $data = Classes::query()
-                ->when($yearId && $yearId !== '*', fn($q) => $q->where('year_id', $yearId))
-                ->when($branchId && $branchId !== '*', fn($q) => $q->where('branch_id', $branchId))
-                ->with(['grade:id,name_en,name_kh,grade_level', 'room:id,room_number'])
+                ->whereYear($yearId)
+                // ->whereBranch($branchId)
+                ->whereCurriculum($curriculumId)
+                ->with([
+                    'grade:id,name_en,name_kh,grade_level,edu_id',
+                    'grade.educationLevel:id,name_en,name_kh',
+                    'room:id,room_number',
+                ])
                 ->filter($request->filter)
                 ->latest('id')
                 ->paginate($request->limit);
 
-            $data = DataTableResource::collection($data)->response()->getData(true);
+            $data = ClassResource::collection($data)->response()->getData(true);
 
             return response()->json(['status' => true, 'data' => $data]);
         } catch (\Throwable $th) {
@@ -124,8 +141,7 @@ class ClassController extends Controller
 
             $data = Classes::query()
                 ->where('is_active', true)
-                ->when($yearId && $yearId !== '*', fn($q) => $q->where('year_id', $yearId))
-                ->when($branchId && $branchId !== '*', fn($q) => $q->where('branch_id', $branchId))
+                ->whereYear($yearId)
                 ->orderBy('name_kh')
                 ->get();
 
@@ -143,7 +159,6 @@ class ClassController extends Controller
                 'is_active' => !$item->is_active,
                 'updated_by' => auth('api')->id(),
             ]);
-
             return response()->json(['status' => true, 'message' => 'Class disabled successfully']);
         } catch (\Throwable $th) {
             return response()->json(['status' => false, 'message' => $th->getMessage()], 500);
@@ -153,8 +168,8 @@ class ClassController extends Controller
     public function delete(Request $request)
     {
         try {
-            Classes::findOrFail($request->id)->delete();
 
+            Classes::findOrFail($request->id)->delete();
             return response()->json(['status' => true, 'message' => 'Class deleted successfully']);
         } catch (\Throwable $th) {
             return response()->json(['status' => false, 'message' => $th->getMessage()], 500);
