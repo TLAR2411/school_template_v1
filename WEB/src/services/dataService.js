@@ -1,4 +1,14 @@
 import { api } from "@/utils/api";
+import { useSettingStore } from "@/stores/settingStore";
+
+
+
+
+export const getCurrentYearId = () => {
+    const settingStore = useSettingStore();
+    return settingStore.year_id;
+};
+
 export const getUnderUsers = async () => {
     try {
         const response = await api.post("users-all-under-users");
@@ -266,6 +276,51 @@ export const getRestructureSettings = async () => {
 export const getReceiveDays = async () => {
     try {
         const response = await api.post("receive-days-all");
+        return response.data.data;
+    } catch (error) {
+        console.error("Server error: ", error);
+    }
+};
+
+export const getEducationLevels = async () => {
+    try {
+        const response = await api.post("education-levels-all");
+        return response.data.data;
+    } catch (error) {
+        console.error("Server error: ", error);
+    }
+};
+
+export const getCurriculums = async () => {
+    try {
+        const response = await api.post("curriculums-all");
+        return response.data.data;
+    } catch (error) {
+        console.error("Server error: ", error);
+    }
+};
+
+export const getYears = async () => {
+    try {
+        const response = await api.post("years-all");
+        return response.data.data;
+    } catch (error) {
+        console.error("Server error: ", error);
+    }
+};
+
+export const getGrades = async () => {
+    try {
+        const response = await api.post("grades-all");
+        return response.data.data;
+    } catch (error) {
+        console.error("Server error: ", error);
+    }
+};
+
+export const getRooms = async () => {
+    try {
+        const response = await api.post("rooms-all");
         return response.data.data;
     } catch (error) {
         console.error("Server error: ", error);

@@ -25,5 +25,6 @@ Route::group(['prefix' => '/web'], function () {
         include 'modules/admin.route.php';
         include 'modules/loan.route.php';
         include 'modules/hr.route.php';
+        include 'modules/school.route.php';
     });
 });

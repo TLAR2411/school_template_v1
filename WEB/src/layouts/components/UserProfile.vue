@@ -1,16 +1,20 @@
 <script setup>
 import { auth } from "@/utils/auth.js";
 import { useAuthStore } from "@/stores/authStore.js";
-// import { IconRosetteDiscountCheckFilled } from "@tabler/icons-vue";
-import { useRoute, useRouter } from "vue-router";
-import hasPermission from "@/utils/hasPermission.js";
+import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { usePartStore } from "@/stores/partStore.js";
 import AppAvatar from "@/components/AppAvatar.vue";
+import {
+  getDashboardRoute,
+  getProfileRoute,
+  getSystemPartsForMenu,
+} from "@/config/systemParts";
 
 const router = useRouter();
 
 const authStore = useAuthStore();
+const setting = usePartStore();
 
 const logout = () => {
   useAuthStore().logout();
@@ -20,18 +24,21 @@ const snackbarVisibilityText = ref(null);
 const isLoading = ref(false);
 const { t } = useI18n();
 
+const systemParts = computed(() => getSystemPartsForMenu(setting.system_part));
+
 const profile = () => {
-  router.push({ name: "user-profile-tab", params: { tab: "account" } });
+  router.push({
+    name: getProfileRoute(setting.system_part),
+    params: { tab: "account" },
+  });
 };
+
 const convertName = (inputString) => {
   const parts = inputString.split("-");
 
-  // 2. Capitalize the first letter of each part and join them with a space
-  const result = parts
+  return parts
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
-
-  return result;
 };
 
 const changeProfile = async (item) => {
@@ -48,100 +55,21 @@ const changeProfile = async (item) => {
 };
 
 const checkSystemPart = (part) => {
-  usePartStore().setSystemPart(part);
+  setting.setSystemPart(part);
   snackbarVisibilityText.value = t(
     `Success Switch Part to ${convertName(part)}`,
   );
   isSnackbarVisibility.value = true;
-  if (part == "loan") {
-    router.push({ name: "index" });
-  } else {
-    router.push({ name: `${part}-app` });
-  }
+  router.push({ name: getDashboardRoute(part) });
 };
-const route = useRoute();
-
-const firstSegment = ref(route.path.split("/")[1]);
-const setting = usePartStore();
-
-const systemParts = ref([
-  {
-    title: "Loan System",
-    icon: "tabler-cash",
-    part: "loan",
-    active: setting.system_part == "loan",
-    permission: "loan-allow-part",
-  },
-  {
-    title: "Accounting System",
-    icon: "tabler-calculator",
-    part: "accounting",
-    active: setting.system_part == "accounting",
-    permission: "accounting-allow-part",
-  },
-  {
-    title: "HR System",
-    icon: "tabler-users",
-    part: "hr",
-    active: setting.system_part == "hr",
-    permission: "hr-allow-part",
-  },
-  {
-    title: "Admin System",
-    icon: "tabler-settings",
-    part: "admin",
-    active: setting.system_part == "admin",
-    permission: "admin-allow-part",
-  },
-]);
-
-watch(
-  () => setting.system_part,
-  (newVal) => {
-    systemParts.value = [
-      {
-        title: "Loan System",
-        icon: "tabler-cash",
-        part: "loan",
-        active: newVal == "loan",
-        permission: "loan-allow-part",
-      },
-      {
-        title: "Accounting System",
-        icon: "tabler-calculator",
-        part: "accounting",
-        active: newVal == "accounting",
-        permission: "accounting-allow-part",
-      },
-      {
-        title: "HR System",
-        icon: "tabler-users",
-        part: "hr",
-        active: newVal == "hr",
-        permission: "hr-allow-part",
-      },
-      {
-        title: "Admin System",
-        icon: "tabler-settings",
-        part: "admin",
-        active: newVal == "admin",
-        permission: "admin-allow-part",
-      },
-    ];
-  },
-);
 
 const allUsers = computed(() => {
   const user = auth()?.user;
   if (!user) return [];
 
-  // Place the main_user (if it exists) into an array
   const main = user.main_user ? [user.main_user] : [];
-
-  // Get the sub_users (default to an empty array)
   const subs = user.sub_users || [];
 
-  // Return the combined list
   return [...main, ...subs];
 });
 </script>

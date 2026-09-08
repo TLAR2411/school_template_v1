@@ -1,0 +1,366 @@
+<script setup>
+import { ref, watch } from "vue";
+import { debounce } from "lodash";
+import { requiredValidator } from "@/@core/utils/validators";
+import AppTextarea from "@/@core/components/app-form-elements/AppTextarea.vue";
+import { useI18n } from "vue-i18n";
+import { useSettingStore } from "@/stores/settingStore";
+import {
+  getGrades,
+  getYears,
+  getRooms,
+  getCurrentYearId,
+} from "@/services/dataService";
+import AppAddEditDrawer from "@/components/AppAddEditDrawer.vue";
+import { useDisplay } from "vuetify";
+
+const { xs } = useDisplay();
+const { t, locale } = useI18n();
+const settingStore = useSettingStore();
+const curId = ref(settingStore.curriculum_id);
+
+const symbols = ref([
+  { name: "ក", value: "ក" },
+  { name: "ខ", value: "ខ" },
+  { name: "គ", value: "គ" },
+  { name: "ឃ", value: "ឃ" },
+  { name: "ង", value: "ង" },
+  { name: "ច", value: "ច" },
+  { name: "A", value: "A" },
+  { name: "B", value: "B" },
+  { name: "C", value: "C" },
+  { name: "D", value: "D" },
+  { name: "E", value: "E" },
+]);
+
+const props = defineProps({
+  itemData: {
+    type: Object,
+    required: false,
+    default: () => ({}),
+  },
+  isDialogVisible: {
+    type: Boolean,
+    required: true,
+  },
+  loading: {
+    type: Boolean,
+    required: false,
+    skipCheck: true,
+    default: undefined,
+  },
+});
+
+const grades = ref([]);
+const years = ref([]);
+const rooms = ref([]);
+
+const emit = defineEmits(["onCreate", "onUpdate", "update:isDialogVisible"]);
+
+const emptyForm = () => ({
+  name_kh: "",
+  name_en: null,
+  name_cn: null,
+  description: null,
+  grade_id: null,
+  year_id: getCurrentYearId(),
+  symbol: null,
+  room_id: null,
+});
+
+const itemData = ref({
+  ...emptyForm(),
+  ...props.itemData,
+});
+
+const gradeLabel = (item) => {
+  if (item?.grade_level != null) return String(item.grade_level);
+  return locale.value === "km" ? item.name_kh : item.name_en;
+};
+
+const selectedGrade = () =>
+  grades.value.find((g) => g.id == itemData.value.grade_id) || null;
+
+const syncClassNames = () => {
+  const grade = selectedGrade();
+  const symbol = itemData.value.symbol;
+
+  if (!grade || !symbol) return;
+
+  // Grade level (1, 2, 3...) → only name_kh: "1 ក"
+  if (grade.grade_level != null) {
+    itemData.value.name_kh = `${grade.grade_level} ${symbol}`;
+    itemData.value.name_en = null;
+    return;
+  }
+
+  // Named grade → "Nursery A"
+  itemData.value.name_en = grade.name_en
+    ? `${grade.name_en} ${symbol}`
+    : null;
+  itemData.value.name_kh = grade.name_kh
+    ? `${grade.name_kh} ${symbol}`
+    : "";
+};
+
+watch(
+  () => props.itemData,
+  (newData) => {
+    itemData.value = {
+      ...emptyForm(),
+      name_kh: newData?.name_kh ?? "",
+      name_en: newData?.name_en ?? null,
+      name_cn: newData?.name_cn ?? null,
+      grade_id: newData?.grade_id ?? null,
+      description: newData?.description ?? null,
+      year_id: newData?.year_id ?? getCurrentYearId(),
+      symbol: newData?.symbol ?? null,
+      room_id: newData?.room_id ?? null,
+      id: newData?.id ?? null,
+    };
+  },
+  { deep: true },
+);
+
+watch(
+  () => [itemData.value.grade_id, itemData.value.symbol],
+  () => {
+    if (itemData.value.id) return;
+    syncClassNames();
+  },
+);
+
+const resetData = () => {
+  itemData.value = emptyForm();
+};
+
+const onFormSubmit = debounce(async (refForm) => {
+  const { valid } = await refForm;
+  if (!valid) return;
+
+  const itemId = itemData.value.id || null;
+  if (itemId) {
+    emit("onUpdate", itemData.value, (res) => {
+      if (res) resetData();
+    });
+  } else {
+    emit("onCreate", itemData.value, (res) => {
+      if (res) resetData();
+    });
+  }
+}, 500);
+
+const onCloseDialog = () => {
+  resetData();
+  emit("update:isDialogVisible", false);
+};
+
+watch(
+  () => props.isDialogVisible,
+  async (open) => {
+    if (!open) return;
+
+    grades.value = (await getGrades()) || [];
+    years.value = (await getYears()) || [];
+    rooms.value = (await getRooms()) || [];
+
+    // Create mode: default year from navbar
+    if (!props.itemData?.id && !itemData.value.year_id) {
+      itemData.value.year_id = getCurrentYearId();
+    }
+  },
+);
+</script>
+
+<template>
+  <AppAddEditDialog
+    v-if="!xs"
+    max-width="700"
+    :title="itemData.id == null ? t('Create Classes') : t('Update Classes')"
+    :is-dialog-visible="isDialogVisible"
+    :is-update="itemData.id != null"
+    :loading="loading"
+    @on-close-dialog="onCloseDialog"
+    @on-submit="onFormSubmit"
+  >
+    <VRow>
+      <VCol cols="12">
+        <VRow>
+          <VCol cols="8" sm="8" md="8">
+            <AppAutocomplete
+              v-model="itemData.grade_id"
+              :items="grades"
+              :item-title="gradeLabel"
+              item-value="id"
+              :label="t('Grade')"
+              autocomplete="off"
+              :rules="[requiredValidator]"
+              persistent-hint
+            />
+          </VCol>
+
+          <VCol cols="4" sm="4" md="4">
+            <AppAutocomplete
+              v-model="itemData.symbol"
+              :items="symbols"
+              item-title="name"
+              item-value="value"
+              :label="t('Symbol')"
+              autocomplete="off"
+              persistent-hint
+              :rules="[requiredValidator]"
+            />
+          </VCol>
+
+          <VCol cols="4" sm="4" md="4">
+            <AppAutocomplete
+              v-model="itemData.room_id"
+              :items="rooms"
+              item-title="room_number"
+              item-value="id"
+              :label="t('Room')"
+              autocomplete="off"
+              persistent-hint
+            />
+          </VCol>
+
+          <VCol cols="8" sm="8" md="8">
+            <AppAutocomplete
+              v-model="itemData.year_id"
+              :items="years"
+              item-title="name"
+              item-value="id"
+              :label="t('Year')"
+              autocomplete="off"
+              persistent-hint
+              :rules="[requiredValidator]"
+            />
+          </VCol>
+        </VRow>
+      </VCol>
+
+      <VCol cols="12">
+        <VRow>
+          <VCol cols="12" sm="4" md="4">
+            <AppTextField v-model="itemData.name_kh" :label="t('Name Kh')" />
+          </VCol>
+          <VCol cols="12" sm="4" md="4">
+            <AppTextField v-model="itemData.name_en" :label="t('Name En')" />
+          </VCol>
+          <VCol cols="12" sm="4" md="4">
+            <AppTextField
+              v-model="itemData.name_cn"
+              :label="t('Name Cn')"
+              :disabled="Number(curId) !== 3"
+            />
+          </VCol>
+        </VRow>
+      </VCol>
+
+      <VCol cols="12">
+        <AppTextarea
+          v-model="itemData.description"
+          :label="t('Description')"
+          rows="2"
+        />
+      </VCol>
+    </VRow>
+  </AppAddEditDialog>
+
+  <AppAddEditDrawer
+    v-else
+    :title="itemData.id == null ? t('Create Classes') : t('Update Classes')"
+    :is-dialog-visible="isDialogVisible"
+    :is-update="itemData.id != null"
+    :loading="loading"
+    @on-close-dialog="onCloseDialog"
+    @on-submit="onFormSubmit"
+  >
+    <VRow>
+      <VCol cols="12">
+        <VRow>
+          <VCol cols="8" sm="8" md="8">
+            <AppAutocomplete
+              v-model="itemData.grade_id"
+              :items="grades"
+              :item-title="gradeLabel"
+              item-value="id"
+              :label="t('Grade')"
+              autocomplete="off"
+              persistent-hint
+              :rules="[requiredValidator]"
+            />
+          </VCol>
+
+          <VCol cols="4" sm="4" md="4">
+            <AppAutocomplete
+              v-model="itemData.symbol"
+              :items="symbols"
+              item-title="name"
+              item-value="value"
+              :label="t('Symbol')"
+              autocomplete="off"
+              persistent-hint
+              :rules="[requiredValidator]"
+            />
+          </VCol>
+
+          <VCol cols="4" sm="4" md="4">
+            <AppAutocomplete
+              v-model="itemData.room_id"
+              :items="rooms"
+              item-title="room_number"
+              item-value="id"
+              :label="t('Room')"
+              autocomplete="off"
+              persistent-hint
+            />
+          </VCol>
+
+          <VCol cols="8" sm="8" md="8">
+            <AppAutocomplete
+              v-model="itemData.year_id"
+              :items="years"
+              item-title="name"
+              item-value="id"
+              :label="t('Year')"
+              autocomplete="off"
+              persistent-hint
+              :rules="[requiredValidator]"
+            />
+          </VCol>
+        </VRow>
+      </VCol>
+
+      <VCol cols="12">
+        <VRow>
+          <VCol cols="12" sm="4" md="4">
+            <AppTextField v-model="itemData.name_kh" :label="t('Name Kh')" />
+          </VCol>
+          <VCol cols="12" sm="4" md="4">
+            <AppTextField
+              v-model="itemData.name_en"
+              :label="t('Name En')"
+              :rules="[requiredValidator]"
+            />
+          </VCol>
+          <VCol cols="12" sm="4" md="4">
+            <AppTextField
+              v-model="itemData.name_cn"
+              :label="t('Name Cn')"
+              :disabled="Number(curId) !== 3"
+            />
+          </VCol>
+        </VRow>
+      </VCol>
+
+      <VCol cols="12">
+        <AppTextarea
+          v-model="itemData.description"
+          :label="t('Description')"
+          rows="2"
+        />
+      </VCol>
+    </VRow>
+  </AppAddEditDrawer>
+</template>

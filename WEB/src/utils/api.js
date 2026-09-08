@@ -1,6 +1,7 @@
 import axios from "axios";
 import { useAuthStore } from "@/stores/authStore";
 import { useSettingStore } from "@/stores/settingStore";
+import { usePartStore } from "@/stores/partStore";
 import { useDialog } from '@/composables/useDialog';
 import { getAccessToken } from "./accessToken";
 
@@ -85,6 +86,9 @@ api.interceptors.request.use((config) => {
 
   config.headers['X-CLIENT-ID'] = import.meta.env.VITE_CLIENT_ID;
   config.headers['X-Branch-Id'] = settingStore.branch_id || "*";
+  config.headers['X-Year-Id'] = settingStore.year_id || "*";
+  config.headers['X-Curriculum-Id'] = settingStore.curriculum_id || "*";
+  config.headers['X-Part-Id'] = usePartStore().part_id || "*";
   config.headers['X-Branch-Abbr'] = settingStore.branch_abbr || "";
 
   // --- DATA FORMATTING ---

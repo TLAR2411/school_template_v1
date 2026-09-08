@@ -25,6 +25,14 @@ abstract class Controller
         return request()->header('X-Branch-Id', '*');
     }
 
+    public function getYear(){
+        return request()->header('X-Year-Id');
+    }
+
+    public function getCur(){
+        return request()->header('X-Curriculum-id');
+    }
+
     public function getBranchAbbr()
     {
         // Use header() as a method and pass the default as the second argument

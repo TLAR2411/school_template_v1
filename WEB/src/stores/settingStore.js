@@ -5,6 +5,10 @@ export const useSettingStore = defineStore("setting", {
     branch_id: null,
     branch_abbr: null,
     branch_province_code: null,
+    curriculum_id: null,
+    curriculum_symbol: null,
+    year_id: null,
+    year_name: null,
   }),
 
   getters: {
@@ -17,6 +21,18 @@ export const useSettingStore = defineStore("setting", {
     getBranchProvinceCode() {
       return this.branch_province_code;
     },
+    getCurriculumId() {
+      return this.curriculum_id;
+    },
+    getCurriculumSymbol() {
+      return this.curriculum_symbol;
+    },
+    getYearId() {
+      return this.year_id;
+    },
+    getYearName() {
+      return this.year_name;
+    },
   },
 
   actions: {
@@ -28,6 +44,18 @@ export const useSettingStore = defineStore("setting", {
     },
     setBranchProvinceCode(code) {
       this.branch_province_code = code;
+    },
+    setCurriculumId(id) {
+      this.curriculum_id = id;
+    },
+    setCurriculumSymbol(symbol) {
+      this.curriculum_symbol = symbol;
+    },
+    setYearId(id) {
+      this.year_id = id;
+    },
+    setYearName(name) {
+      this.year_name = name;
     },
   },
 

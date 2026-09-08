@@ -6,6 +6,7 @@ import { useSettingStore } from "./settingStore";
 import { usePartStore } from "./partStore";
 import { decrypt } from "@/utils/encrypteData";
 import { getAccessToken, removeAccessToken, setAccessToken } from "@/utils/accessToken";
+import { getPartPath } from "@/config/systemParts";
 
 export const useAuthStore = defineStore("auth", {
   state: () => {
@@ -19,6 +20,7 @@ export const useAuthStore = defineStore("auth", {
       isTokenRefreshing: false,
       permissions: [],
       branches: [],
+      curriculums: [],
       isBootstrapped: false,
     }
   },
@@ -57,20 +59,7 @@ export const useAuthStore = defineStore("auth", {
           usePartStore().setSystemPart(defaultPart);
           useSettingStore().setBranchId(defaultBranch);
 
-          let redirectTo = null;
-          if (defaultPart === 'loan') {
-            redirectTo = "/loan";
-          } else if (defaultPart === 'hr') {
-            redirectTo = "/hr";
-          } else if (defaultPart === 'admin') {
-            redirectTo = "/admin";
-          } else if (defaultPart === 'accounting') {
-            redirectTo = "/accounting";
-          } else {
-            redirectTo = "/";
-          }
-
-          router.push(redirectTo);
+          router.push(getPartPath(defaultPart));
         } else {
           console.error("Login failed with status:", response.data.status);
         }
@@ -109,20 +98,7 @@ export const useAuthStore = defineStore("auth", {
 
           useAppStore().getAllAppStore();
 
-          let redirectTo = null;
-          if (defaultPart === 'loan') {
-            redirectTo = "/loan";
-          } else if (defaultPart === 'hr') {
-            redirectTo = "/hr";
-          } else if (defaultPart === 'admin') {
-            redirectTo = "/admin";
-          } else if (defaultPart === 'accounting') {
-            redirectTo = "/accounting";
-          } else {
-            redirectTo = "/";
-          }
-
-          router.push(redirectTo);
+          router.push(getPartPath(defaultPart));
         } else {
           console.error("Change user failed with status:", response.data.status);
         }
@@ -152,6 +128,8 @@ export const useAuthStore = defineStore("auth", {
             isAuthenticated: true,
             accessToken: token, // Sync token just in case
           });
+
+          await this.fetchCurriculums();
         }
       } catch (error) {
         if (error.code === 'ERR_CANCELED' || error.message === 'canceled') {
@@ -164,6 +142,17 @@ export const useAuthStore = defineStore("auth", {
         this.isBootstrapped = true;
       }
     },
+    async fetchCurriculums() {
+      try {
+        const response = await api.post("curriculums-all");
+        if (response.data.status) {
+          this.curriculums = response.data.data || [];
+        }
+      } catch (error) {
+        console.error("Failed to fetch curriculums:", error);
+        this.curriculums = [];
+      }
+    },
     async logout() {
       try {
         const response = await api.post("logout");
@@ -171,6 +160,9 @@ export const useAuthStore = defineStore("auth", {
         if (response.data.status) {
 
           useSettingStore().branch_id = null;
+          useSettingStore().curriculum_id = null;
+          useSettingStore().year_id = null;
+          useSettingStore().year_name = null;
           useAppStore().clearAllAppStore();
 
           this.unAuthenticated();
@@ -189,6 +181,7 @@ export const useAuthStore = defineStore("auth", {
         isTokenRefreshing: false,
         permissions: [],
         branches: [],
+        curriculums: [],
         isBootstrapped: false,
       });
 

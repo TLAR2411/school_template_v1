@@ -7,6 +7,7 @@ export const auth = () => {
     accessToken: authStore.accessToken,
     permissions: authStore.permissions,
     branches: authStore.branches,
+    curriculums: authStore.curriculums,
     isAuthenticated: authStore.isAuthenticated,
   }
 }

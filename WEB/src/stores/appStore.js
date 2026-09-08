@@ -7,6 +7,7 @@ export const useAppStore = defineStore("app", {
     communes: [],
     districts: [],
     provinces: [],
+    years:[],
     isHaveData: false,
   }),
   actions: {
@@ -51,6 +52,16 @@ export const useAppStore = defineStore("app", {
         console.error("Server error: ", error);
       }
     },
+    async getYears() {
+      try {
+        const response = await api.post("years-all");
+        this.$patch({
+          years: response.data.data,
+        });
+      } catch (error) {
+        console.error("Server error: ", error);
+      }
+    },
     // Get All App Store
     async getAllAppStore(forceUpdate = false) {
       if (this.isHaveData === false || forceUpdate) {
@@ -63,6 +74,7 @@ export const useAppStore = defineStore("app", {
       this.getCommunes();
       this.getDistricts();
       this.getProvinces();
+      this.getYears();
     },
     async clearAllAppStore() {
       this.$patch({
@@ -70,6 +82,7 @@ export const useAppStore = defineStore("app", {
         communes: [],
         districts: [],
         provinces: [],
+        years: [],
         isHaveData: false,
       });
     },

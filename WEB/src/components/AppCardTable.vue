@@ -301,14 +301,17 @@ watch(
   }, DEBOUNCE_DELAY),
   { deep: true },
 );
+
 watch(
   () => ({
     page: options.value.page,
     branchId: settingStore.branch_id,
+    curriculumId: settingStore.curriculum_id,
+
     limit: options.value.limit,
   }),
   (n, o) => {
-    if (n.page !== o.page || n.limit !== o.limit || n.branchId !== o.branchId) {
+    if (n.page !== o.page || n.limit !== o.limit || n.branchId !== o.branchId || n.curriculumId !== o.curriculumId) {
       saveState();
       initData();
     }

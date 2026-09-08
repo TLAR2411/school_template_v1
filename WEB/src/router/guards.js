@@ -5,6 +5,7 @@ import { useSettingStore } from "@/stores/settingStore";
 import { getI18n } from '@/plugins/i18n';
 import { usePartStore } from "@/stores/partStore";
 import { getAccessToken, removeAccessToken } from "@/utils/accessToken";
+import { DEFAULT_PART, segmentMap } from "@/config/systemParts";
 // import { useCookie } from "#imports";
 const { t } = getI18n().global;
 export const setupGuards = (router) => {
@@ -15,15 +16,8 @@ export const setupGuards = (router) => {
     const loan = useLoanStore()
 
     // 1. Determine the module (Admin, HR, etc.)
-    const firstSegment = to.path.split("/")[1] || 'loan';
-    const segmentMap = {
-      'loan': 'loan',
-      'admin': 'admin',
-      'hr': 'hr',
-      'accounting': 'accounting',
-      'stock': 'stock'
-    };
-    part.setSystemPart(segmentMap[firstSegment] || 'loan');
+    const firstSegment = to.path.split("/")[1] || DEFAULT_PART;
+    part.setSystemPart(segmentMap[firstSegment] || DEFAULT_PART);
 
     document.title = t(to?.meta?.title || "School Template");
 

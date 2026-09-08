@@ -8,6 +8,8 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     AppAddEditDialog: typeof import('./src/components/AppAddEditDialog.vue')['default']
+    AppAddEditDrawer: typeof import('./src/components/AppAddEditDrawer.vue')['default']
+    AppAddressPicker: typeof import('./src/components/AppAddressPicker.vue')['default']
     AppAutocomplete: typeof import('./src/@core/components/app-form-elements/AppAutocomplete.vue')['default']
     AppAutocompleteTest: typeof import('./src/@core/components/app-form-elements/AppAutocompleteTest.vue')['default']
     AppAvatar: typeof import('./src/components/AppAvatar.vue')['default']
@@ -34,6 +36,7 @@ declare module 'vue' {
     AppLoadingIndicator: typeof import('./src/components/AppLoadingIndicator.vue')['default']
     AppName: typeof import('./src/components/AppName.vue')['default']
     AppSelect: typeof import('./src/@core/components/app-form-elements/AppSelect.vue')['default']
+    AppStatusChip: typeof import('./src/components/AppStatusChip.vue')['default']
     AppStepper: typeof import('./src/@core/components/AppStepper.vue')['default']
     AppTextarea: typeof import('./src/@core/components/app-form-elements/AppTextarea.vue')['default']
     AppTextField: typeof import('./src/@core/components/app-form-elements/AppTextField.vue')['default']

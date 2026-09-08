@@ -14,6 +14,11 @@ use Database\Seeders\Core\CompanySeeder;
 use Database\Seeders\Core\CurrencySeeder;
 use Database\Seeders\Core\DepartmentSeeder;
 use Illuminate\Database\Seeder;
+use Database\Seeders\School\StudentSeeder;
+use Database\Seeders\School\YearSeeder;
+use Database\Seeders\School\CurriculumSeeder;
+use Database\Seeders\School\EducationLevelSeeder;
+use Database\Seeders\School\RoomSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -32,6 +37,11 @@ class DatabaseSeeder extends Seeder
             DepartmentSeeder::class,
             PositionSeeder::class,
             UserSeeder::class,
+            StudentSeeder::class,
+            YearSeeder::class,
+            CurriculumSeeder::class,
+            EducationLevelSeeder::class,
+            RoomSeeder::class,
         ]);
     }
 }

@@ -1,10 +1,16 @@
 <script setup>
 import { useLayoutConfigStore } from "@/@layouts/stores/config";
 import AppAvatar from "@/components/AppAvatar.vue";
+import {
+  getDashboardRoute,
+  getProfileRoute,
+  getSystemPartsForMenu,
+} from "@/config/systemParts";
 import { auth } from "@/utils/auth";
 import { useAuthStore } from "@/stores/authStore";
 import { usePartStore } from "@/stores/partStore";
 import { useRouter } from "vue-router";
+import { version } from "../../../package.json";
 
 const configStore = useLayoutConfigStore();
 const hideTitleAndBadge = configStore.isVerticalNavMini();
@@ -12,6 +18,7 @@ const hideTitleAndBadge = configStore.isVerticalNavMini();
 const router = useRouter();
 
 const authStore = useAuthStore();
+const setting = usePartStore();
 
 const logout = () => {
   useAuthStore().logout();
@@ -21,36 +28,21 @@ const snackbarVisibilityText = ref(null);
 const isLoading = ref(false);
 const { t } = useI18n();
 
+const systemParts = computed(() => getSystemPartsForMenu(setting.system_part));
+
 const profile = () => {
-  const systemPart = usePartStore().system_part;
-  if (systemPart == "loan") {
-    router.push({ name: "loan-user-profile-tab", params: { tab: "account" } });
-  } else if (systemPart == "accounting") {
-    router.push({
-      name: "accounting-user-profile-tab",
-      params: { tab: "account" },
-    });
-  } else if (systemPart == "admin") {
-    router.push({
-      name: "admin-user-profile-tab",
-      params: { tab: "account" },
-    });
-  } else if (systemPart == "hr") {
-    router.push({
-      name: "hr-user-profile-tab",
-      params: { tab: "account" },
-    });
-  }
+  router.push({
+    name: getProfileRoute(setting.system_part),
+    params: { tab: "account" },
+  });
 };
+
 const convertName = (inputString) => {
   const parts = inputString.split("-");
 
-  // 2. Capitalize the first letter of each part and join them with a space
-  const result = parts
+  return parts
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
-
-  return result;
 };
 
 const changeProfile = async (item) => {
@@ -67,100 +59,23 @@ const changeProfile = async (item) => {
 };
 
 const checkSystemPart = (part) => {
-  usePartStore().setSystemPart(part);
+  setting.setSystemPart(part);
   snackbarVisibilityText.value = t(
     `Success Switch Part to ${convertName(part)}`,
   );
   isSnackbarVisibility.value = true;
-  router.push({ name: `${part}-dashboards` });
+  router.push({ name: getDashboardRoute(part) });
 };
-const route = useRoute();
-
-const firstSegment = ref(route.path.split("/")[1]);
-const setting = usePartStore();
-
-const systemParts = ref([
-  {
-    title: "Loan System",
-    icon: "tabler-cash",
-    part: "loan",
-    active: setting.system_part == "loan",
-    permission: "loan-allow-part",
-  },
-  {
-    title: "Accounting System",
-    icon: "tabler-calculator",
-    part: "accounting",
-    active: setting.system_part == "accounting",
-    permission: "accounting-allow-part",
-  },
-  {
-    title: "HR System",
-    icon: "tabler-users",
-    part: "hr",
-    active: setting.system_part == "hr",
-    permission: "hr-allow-part",
-  },
-  {
-    title: "Admin System",
-    icon: "tabler-settings",
-    part: "admin",
-    active: setting.system_part == "admin",
-    permission: "admin-allow-part",
-  },
-]);
-
-watch(
-  () => setting.system_part,
-  (newVal) => {
-    systemParts.value = [
-      {
-        title: "Loan System",
-        icon: "tabler-cash",
-        part: "loan",
-        active: newVal == "loan",
-        permission: "loan-allow-part",
-      },
-      {
-        title: "Accounting System",
-        icon: "tabler-calculator",
-        part: "accounting",
-        active: newVal == "accounting",
-        permission: "accounting-allow-part",
-      },
-      {
-        title: "HR System",
-        icon: "tabler-users",
-        part: "hr",
-        active: newVal == "hr",
-        permission: "hr-allow-part",
-      },
-      {
-        title: "Admin System",
-        icon: "tabler-settings",
-        part: "admin",
-        active: newVal == "admin",
-        permission: "admin-allow-part",
-      },
-    ];
-  },
-);
 
 const allUsers = computed(() => {
   const user = auth()?.user;
-  console.log(user);
 
   if (!user) return [];
 
-  // Place the main_user (if it exists) into an array
   const main = user.main_user ? [user.main_user] : [];
-
-  // Get the sub_users (default to an empty array)
   const subs = user.sub_users || [];
-
   const siblings = user.siblings || [];
 
-  // Return the combined list
   return [...main, ...subs, ...siblings];
 });
 </script>
@@ -202,11 +117,11 @@ const allUsers = computed(() => {
         />
       </VAvatar>
     </VBadge>
-    <div class="user-info-wrapper align-center">
+    <div class="w-100 user-info-wrapper align-center">
       <Transition name="transition-slide-x">
         <div
           v-if="!hideTitleAndBadge"
-          class="d-flex flex-column ml-2 text-no-wrap"
+          class=" w-100 d-flex flex-column ml-2 text-no-wrap"
           key="user-info"
         >
           <span
@@ -215,12 +130,16 @@ const allUsers = computed(() => {
           >
             {{ auth()?.user?.name_kh ?? null }}
           </span>
-          <span
+          <div class="w-100 d-flex justify-space-between">
+            <span
             class="text-xs text-truncate"
             style="font-size: 11px !important; opacity: 0.8"
           >
             {{ auth()?.user?.name_en ?? null }}
           </span>
+          <VChip rounded="xl" color="error" size="x-small">{{ version }}</VChip>
+          </div>
+
         </div>
       </Transition>
     </div>
@@ -326,7 +245,7 @@ const allUsers = computed(() => {
         </template>
         <VDivider class="my-2" />
         <template v-for="(item, index) in systemParts">
-          <template v-if="hasPermission(item.permission)">
+          <template v-if="!item.permission || hasPermission(item.permission)">
             <VListItem
               @click="checkSystemPart(item.part)"
               :active="item.active"
