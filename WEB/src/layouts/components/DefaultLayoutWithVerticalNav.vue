@@ -73,7 +73,6 @@ onUnmounted(() => {
         <!-- <NavbarQrScan class="ml-1" /> -->
 
         <div class="navbar-filters d-flex align-center flex-shrink-1">
-         
           <NavbarCurriculum v-if="setting.system_part === 'school'" />
           <NavbarBranches />
         </div>
@@ -112,6 +111,6 @@ onUnmounted(() => {
     </template>
 
     <!-- 👉 Customizer -->
-    <!-- <TheCustomizer /> -->
+    <TheCustomizer />
   </VerticalNavLayout>
 </template>

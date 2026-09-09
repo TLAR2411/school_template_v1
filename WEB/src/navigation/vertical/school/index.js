@@ -30,5 +30,11 @@ export default [
 
             },
         ],
+    },
+
+    {
+        title: "Teachers",
+        to: { name: "school-teacher" },
+        icon: { icon: "tabler-user" },
     }
 ];

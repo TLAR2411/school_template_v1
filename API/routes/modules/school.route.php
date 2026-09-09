@@ -10,6 +10,8 @@ use App\Http\Controllers\Api\School\EducationLevelController;
 use App\Http\Controllers\Api\School\RoomController;
 use App\Http\Controllers\Api\School\GradeController;
 use App\Http\Controllers\Api\School\ClassController;
+use App\Http\Controllers\Api\School\StudentClassController;
+use App\Http\Controllers\Api\School\TeacherController;
 
 Route::post("students-store", [StudentController::class, "store"]);
 Route::post("students-list", [StudentController::class, "list"]);
@@ -70,3 +72,17 @@ Route::post("classes-update", [ClassController::class, "update"]);
 Route::post("classes-all", [ClassController::class, "all"]);
 Route::post("classes-disable", [ClassController::class, "disable"]);
 Route::post("classes-delete", [ClassController::class, "delete"]);
+Route::post("classes-detail", [ClassController::class, 'detail']);
+
+
+Route::post("teachers-store", [TeacherController::class, "store"]);
+Route::post("teachers-list", [TeacherController::class, "list"]);
+Route::post("teachers-show", [TeacherController::class, "show"]);
+Route::post("teachers-update", [TeacherController::class, "update"]);
+Route::post("teachers-all", [TeacherController::class, "all"]);
+Route::post("teachers-disable", [TeacherController::class, "disable"]);
+Route::post("teachers-delete", [TeacherController::class, "delete"]);
+
+Route::post("student-not-yet-enroll-class", [StudentClassController::class, "studentNotYetEnrollClass"]);
+Route::post("student-class-store", [StudentClassController::class, "store"]);
+Route::post("student-class-list", [StudentClassController::class, "list"]);

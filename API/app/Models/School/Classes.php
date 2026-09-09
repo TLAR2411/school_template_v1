@@ -5,6 +5,8 @@ namespace App\Models\School;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\School\StudentClass;
+use App\Models\School\Student;
 
 class Classes extends Model
 {
@@ -102,5 +104,24 @@ class Classes extends Model
         return $query->when($branchId && $branchId !== '*', function ($q) use ($branchId) {
             $q->where('branch_id', $branchId);
         });
+    }
+
+
+    public function studentClasses()
+    {
+        return $this->hasMany(StudentClass::class, 'class_id');
+    }
+    public function students()
+    {
+        return $this->belongsToMany(Student::class, 'student_class', 'class_id', 'student_id')
+            ->withPivot(['sort', 'rfid', 'is_transfer_class', 'is_active'])
+            ->whereNull('student_class.deleted_at')
+            ->withTimestamps();
+
+        // result 
+        // name_kh:
+        // name_en:
+        // Pivot([sort,rfid,is_transfer])
+
     }
 }

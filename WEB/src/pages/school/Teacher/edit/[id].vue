@@ -1,10 +1,10 @@
 <script setup>
-import EditStudent from "@/views/admin/students/EditStudent.vue";
+import EditTeacher from "@/views/school/Teacher/EditTeacher.vue";
 definePage({
   meta: {
-    title: "Edit Student",
+    title: "Edit Teacher",
     layout: "default",
-    subject: "EditStudent",
+    subject: "EditTeacher",
     requiresAuth: true,
     // permissions: "students:view-page",
   },
@@ -12,5 +12,5 @@ definePage({
 </script>
 
 <template>
-  <EditStudent />
+  <EditTeacher />
 </template>

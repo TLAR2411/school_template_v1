@@ -175,4 +175,18 @@ class ClassController extends Controller
             return response()->json(['status' => false, 'message' => $th->getMessage()], 500);
         }
     }
+
+    public function detail(Request $request)
+    {
+        try {
+            $data = Classes::query()
+                ->with(['students:gender', 'grade:id,grade_level,name_en,name_kh'])
+                ->get();
+            return response()->json([
+                "data" => $data
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json(['status' => false, 'message' => $th->getMessage()], 500);
+        }
+    }
 }

@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
-
+use App\Models\School\StudentClass;
 
 class Student extends Model
 {
@@ -76,13 +76,15 @@ class Student extends Model
             });
     }
 
-    public function curriculums(){
-        return $this->belongsToMany(Curriculum::class,'student_curriculums')
-        ->withPivot('created_by', 'updated_by', 'deleted_by', 'deleted_at', 'is_active', 'is_transfer', 'is_graduate', 'start_date', 'end_date')
-        ->withTimestamps();
+    public function curriculums()
+    {
+        return $this->belongsToMany(Curriculum::class, 'student_curriculums')
+            ->withPivot('created_by', 'updated_by', 'deleted_by', 'deleted_at', 'is_active', 'is_transfer', 'is_graduate', 'start_date', 'end_date')
+            ->withTimestamps();
     }
 
-    public function studentCurriculums(){
+    public function studentCurriculums()
+    {
         return $this->hasMany(StudentCurriculum::class);
     }
 
@@ -99,5 +101,18 @@ class Student extends Model
         });
     }
 
+    #[Scope]
+    public function whereCur($query, $curriculumId)
+    {
+        return $query->when($curriculumId && $curriculumId !== '*', function ($q) use ($curriculumId) {
+            $q->whereHas('studentCurriculums', function ($g) use ($curriculumId) {
+                $g->where('curriculum_id', $curriculumId);
+            });
+        });
+    }
 
+    public function studentClasses()
+    {
+        return $this->hasMany(StudentClass::class, 'student_id');
+    }
 }

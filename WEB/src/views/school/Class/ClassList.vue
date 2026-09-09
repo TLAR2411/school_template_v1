@@ -5,6 +5,7 @@ import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { getGrades, getEducationLevels } from "@/services/dataService";
 import AddEditClassDialog from "@/views/school/Class/AddEditClassDialog.vue";
+import AddEditStudentClassDialog from "@/views/school/studentClass/AddEditStudentClassDialog.vue";
 import AppStatusChip from "@/components/AppStatusChip.vue";
 import { useSettingStore } from "@/stores/settingStore";
 
@@ -210,7 +211,7 @@ const onUpdate = async (data, callback) => {
 
 const onView = async (item) => {
   console.log("item", item);
-  router.push({ name: "global-classes-detail-id", params: { id: item.id } });
+  router.push({ name: "school-class-detail-id", params: { id: item.id } });
   console.log("hel");
 };
 
