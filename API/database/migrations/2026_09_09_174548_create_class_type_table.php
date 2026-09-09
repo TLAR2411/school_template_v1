@@ -11,21 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('classes', function (Blueprint $table) {
+        Schema::create('class_type', function (Blueprint $table) {
             $table->id();
-            $table->string('name_kh')->nullable();
             $table->string('name_en')->nullable();
-            $table->integer('grade_id');
-            $table->string('year_id');
-            $table->integer('branch_id');
-            $table->integer('class_type_id')->nullable();
-            $table->string('room_id')->nullable();
-            $table->string('symbol')->nullable();
-            $table->boolean('is_active')->default(true);
+            $table->string('name_kh');
             $table->integer('created_by')->nullable();
             $table->integer('updated_by')->nullable();
             $table->integer('deleted_by')->nullable();
-            $table->string('description')->nullable();
             $table->softDeletes();
             $table->timestamps();
         });
@@ -36,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('classes');
+        Schema::dropIfExists('class_type');
     }
 };

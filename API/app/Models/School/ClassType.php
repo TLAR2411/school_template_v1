@@ -4,15 +4,12 @@ namespace App\Models\School;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Subject extends Model
+class ClassType extends Model
 {
+    protected $table = 'class_type';
     protected $fillable = [
         'name_en',
         'name_kh',
-        'name_cn',
-        'parent_id',
-        'symbol',
-        ''
-
+        'created_by'
     ];
 }
