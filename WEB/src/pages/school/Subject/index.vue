@@ -1,15 +1,12 @@
 <script setup>
-import ClassList from "@/views/school/Class/ClassList.vue";
-import GradeList from "@/views/school/Grade/GradeList.vue";
-import RoomList from "@/views/school/Room/RoomList.vue";
-
+import SubjectList from "@/views/school/Subject/SubjectList.vue";
+import SubjectSettingList from "@/views/school/SubjectSetting/SubjectSettingList.vue";
 import { ref } from "vue";
-
-const currentTab = ref("class");
+import SubjectActivityTypeList from "@/views/school/SubjectActivityType/SubjectActivityTypeList.vue";
 
 definePage({
   meta: {
-    title: "Classes",
+    title: "Subjects",
     layout: "default",
     subject: "Auth",
     requiresAuth: true,
@@ -17,34 +14,36 @@ definePage({
     layoutWrapperClasses: "layout-content-height-fixed",
   },
 });
+
+const currentTab = ref("class");
 </script>
 
 <template>
   <div class="tabs-wrapper">
     <VTabs v-model="currentTab" grow stacked class="py-0">
-      <VTab value="class" class="py-0 custom-tab">
-        <VIcon icon="tabler-home-cog" class="mr-1" />
-        <span>Classes</span>
+      <VTab value="subject" class="py-0 custom-tab">
+        <VIcon icon="tabler-folders" class="mr-1" />
+        <span>Subjects</span>
       </VTab>
-      <VTab value="grade" class="py-0 custom-tab">
-        <VIcon icon="tabler-chart-arrows-vertical" class="mr-1" />
-        <span>Grades</span>
+      <VTab value="subject-setting" class="py-0 custom-tab">
+        <VIcon icon="tabler-folder-cog" class="mr-1" />
+        <span>Subject Setting</span>
       </VTab>
-      <VTab value="room" class="py-0 custom-tab">
-        <VIcon icon="tabler-home" class="mr-1" />
-        <span>Rooms</span>
-    </VTab>
+      <VTab value="subject-activity" class="py-0 custom-tab">
+        <VIcon icon="tabler-folder" class="mr-1" />
+        <span>Subject Activity Type</span>
+      </VTab>
     </VTabs>
 
     <VWindow v-model="currentTab" class="mt-1">
-      <VWindowItem value="class">
-        <ClassList />
+      <VWindowItem value="subject">
+        <SubjectList />
       </VWindowItem>
-      <VWindowItem value="grade">
-        <GradeList />
+      <VWindowItem value="subject-setting">
+        <!-- <GradeList /> -->
       </VWindowItem>
-      <VWindowItem value="room">
-        <RoomList />
+      <VWindowItem value="subject-activity">
+        <SubjectActivityTypeList />
       </VWindowItem>
     </VWindow>
   </div>

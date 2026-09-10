@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\School\SubjectActivityType;
 use Database\Seeders\Address\AddressSeeder;
 use Database\Seeders\Auth\OAtuhSeeder;
 use Database\Seeders\Auth\PositionSeeder;
@@ -21,7 +22,8 @@ use Database\Seeders\School\CurriculumSeeder;
 use Database\Seeders\School\EducationLevelSeeder;
 use Database\Seeders\School\GradeSeeder;
 use Database\Seeders\School\RoomSeeder;
-
+use Database\Seeders\School\SubjectActivityTypeSeeder;
+use Database\Seeders\School\SubjectSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -47,6 +49,8 @@ class DatabaseSeeder extends Seeder
             RoomSeeder::class,
             ClassTypeSeeder::class,
             GradeSeeder::class,
+            SubjectSeeder::class,
+            SubjectActivityTypeSeeder::class,
         ]);
     }
 }

@@ -102,7 +102,7 @@ class ClassController extends Controller
 
             $data = Classes::query()
                 ->whereYear($yearId)
-                // ->whereBranch($branchId)
+                ->whereBranch($branchId)
                 ->whereCurriculum($curriculumId)
                 ->with([
                     'grade:id,name_en,name_kh,grade_level,edu_id',

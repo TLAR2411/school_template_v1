@@ -11,7 +11,28 @@ use App\Http\Controllers\Api\School\RoomController;
 use App\Http\Controllers\Api\School\GradeController;
 use App\Http\Controllers\Api\School\ClassController;
 use App\Http\Controllers\Api\School\StudentClassController;
+use App\Http\Controllers\Api\School\SubjectActivityTypeController;
+use App\Http\Controllers\Api\School\SubjectController;
 use App\Http\Controllers\Api\School\TeacherController;
+
+
+Route::post("subjects-activity-type-store", [SubjectActivityTypeController::class, "store"]);
+Route::post("subjects-activity-type-list", [SubjectActivityTypeController::class, "list"]);
+Route::post("subjects-activity-type-show", [SubjectActivityTypeController::class, "show"]);
+Route::post("subjects-activity-type-update", [SubjectActivityTypeController::class, "update"]);
+Route::post("subjects-activity-type-disable", [SubjectActivityTypeController::class, "disable"]);
+Route::post("subjects-activity-type-delete", [SubjectActivityTypeController::class, "delete"]);
+Route::post("subjects-activity-type-all", [SubjectActivityTypeController::class, 'all']);
+
+
+
+Route::post("subjects-store", [SubjectController::class, "store"]);
+Route::post("subjects-list", [SubjectController::class, "list"]);
+Route::post("subjects-show", [SubjectController::class, "show"]);
+Route::post("subjects-update", [SubjectController::class, "update"]);
+Route::post("subjects-disable", [SubjectController::class, "disable"]);
+Route::post("subjects-delete", [SubjectController::class, "delete"]);
+Route::post("subjects-all", [SubjectController::class, 'all']);
 
 Route::post("students-store", [StudentController::class, "store"]);
 Route::post("students-list", [StudentController::class, "list"]);

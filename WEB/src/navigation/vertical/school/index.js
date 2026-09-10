@@ -10,26 +10,53 @@ export default [
         to: { name: "school-student-enroll" },
         icon: { icon: "tabler-user-plus" },
     },
-
     {
         title: "Manage Classes",
-        icon: { icon: "tabler-school" },
-        children: [
-            {
-                title: "Classes",
-                to: { name: "school-class" },
-            },
-            {
-                title: "Grades",
-                to: { name: "school-grade" },
+        to: { name: "school-class" },
+        icon: { icon: "tabler-home-cog" },
+    },
 
-            },
-            {
-                title: "Rooms",
-                to: { name: "school-room" },
+    // {
+    //     title: "Manage Classes",
+    //     icon: { icon: "tabler-home-cog" },
+    //     children: [
+    //         {
+    //             title: "Classes",
+    //             to: { name: "school-class" },
+    //         },
+    //         {
+    //             title: "Grades",
+    //             to: { name: "school-grade" },
 
-            },
-        ],
+    //         },
+    //         {
+    //             title: "Rooms",
+    //             to: { name: "school-room" },
+
+    //         },
+    //     ],
+    // },
+
+    {
+        title: "Manage Subjects",
+        icon: { icon: "tabler-files" },
+        to: { name: 'school-subject' }
+        // children: [
+        //     {
+        //         title: "Subject",
+        //         to: { name: "school-subject" },
+        //     },
+        //     {
+        //         title: "Grades",
+        //         to: { name: "school-grade" },
+
+        //     },
+        //     {
+        //         title: "Rooms",
+        //         to: { name: "school-room" },
+
+        //     },
+        // ],
     },
 
     {
