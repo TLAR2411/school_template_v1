@@ -10,10 +10,13 @@ use App\Http\Controllers\Api\School\EducationLevelController;
 use App\Http\Controllers\Api\School\RoomController;
 use App\Http\Controllers\Api\School\GradeController;
 use App\Http\Controllers\Api\School\ClassController;
+use App\Http\Controllers\Api\School\ClassTypeController;
 use App\Http\Controllers\Api\School\StudentClassController;
 use App\Http\Controllers\Api\School\SubjectActivityTypeController;
 use App\Http\Controllers\Api\School\SubjectController;
 use App\Http\Controllers\Api\School\TeacherController;
+use App\Http\Controllers\Api\School\GradingRuleController;
+use App\Http\Controllers\Api\School\AssessmentController;
 
 
 Route::post("subjects-activity-type-store", [SubjectActivityTypeController::class, "store"]);
@@ -95,6 +98,8 @@ Route::post("classes-disable", [ClassController::class, "disable"]);
 Route::post("classes-delete", [ClassController::class, "delete"]);
 Route::post("classes-detail", [ClassController::class, 'detail']);
 
+Route::post("classes-type-all", [ClassTypeController::class, 'all']);
+
 
 Route::post("teachers-store", [TeacherController::class, "store"]);
 Route::post("teachers-list", [TeacherController::class, "list"]);
@@ -107,3 +112,10 @@ Route::post("teachers-delete", [TeacherController::class, "delete"]);
 Route::post("student-not-yet-enroll-class", [StudentClassController::class, "studentNotYetEnrollClass"]);
 Route::post("student-class-store", [StudentClassController::class, "store"]);
 Route::post("student-class-list", [StudentClassController::class, "list"]);
+
+Route::post("grading-rules-list", [GradingRuleController::class, "list"]);
+Route::post('grading-rules-store', [GradingRuleController::class, "store"]);
+Route::post('grading-rules-delete', [GradingRuleController::class, 'delete']);
+
+Route::post('assessments-store', [AssessmentController::class, 'store']);
+Route::post('assessments-delete', [AssessmentController::class, 'delete']);

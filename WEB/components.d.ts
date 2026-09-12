@@ -21,6 +21,7 @@ declare module 'vue' {
     AppCardSetting: typeof import('./src/components/AppCardSetting.vue')['default']
     AppCardTable: typeof import('./src/components/AppCardTable.vue')['default']
     AppCombobox: typeof import('./src/@core/components/app-form-elements/AppCombobox.vue')['default']
+    AppCustomTap: typeof import('./src/components/AppCustomTap.vue')['default']
     AppDateTimePicker: typeof import('./src/@core/components/app-form-elements/AppDateTimePicker.vue')['default']
     'AppDateTimePicker copy': typeof import('./src/@core/components/app-form-elements/AppDateTimePicker copy.vue')['default']
     AppDateTimePickerOld: typeof import('./src/@core/components/app-form-elements/AppDateTimePickerOld.vue')['default']

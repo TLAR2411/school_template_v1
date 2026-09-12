@@ -37,10 +37,10 @@ const headers = [
   { title: t("Name Khmer"), key: "name_kh", visible: true },
   { title: t("Name English"), key: "name_en", visible: true },
   // { title: t("Name Chinese"), key: "name_cn", visible: true },
-  { title: t("Symbol"), key: "code", visible: true },
+  { title: t("Symbol"), key: "symbol", visible: true },
   // { title: t("Main Subject"), key: "parent_subject", visible: true },
   { title: t("Child Subject"), key: "children_count", visible: true },
-  { title: t("Description"), key: "description", visible: true },
+  //   { title: t("Description"), key: "description", visible: true },
 
   {
     title: t("Action"),
@@ -217,7 +217,7 @@ onMounted(async () => {
 
     <template v-slot:item.children_count="{ item }">
       <VChip
-        color="info"
+        color="primary"
         size="small"
         v-if="item.children_count > 0"
         class="cursor-pointer"

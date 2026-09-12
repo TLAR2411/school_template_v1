@@ -2,10 +2,13 @@
 export const staticPrimaryColor = import.meta.env.VITE_PRIMARY_COLOR ?? '#1A56DB'
 export const staticPrimaryDarkenColor = import.meta.env.VITE_PRIMARY_COLOR ?? '#1E429F'
 
+export const staticLightPrimaryColor = '#83e0c7'   // Soft green accent
+
 export const themes = {
   light: {
     dark: false,
     colors: {
+      'lightprimary': staticLightPrimaryColor,
       'primary': staticPrimaryColor,
       'on-primary': '#ffffff',
       'primary-darken-1': staticPrimaryDarkenColor,

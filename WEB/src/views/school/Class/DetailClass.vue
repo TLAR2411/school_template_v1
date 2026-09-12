@@ -1,14 +1,24 @@
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { api } from "@/utils/api.js";
 import StudentClassList from "@/views/school/studentClass/StudentClassList.vue";
-
-const currentTab = ref("window1");
-
-const classDetail = ref(1);
+import AppCustomTap from "@/components/AppCustomTap.vue";
 
 const route = useRoute();
+const router = useRouter();
+
+const currentTab = ref(route.query.tab || "general");
+watch(currentTab, (newVal) => {
+  router.replace({
+    query: {
+      ...route.query,
+      tab: newVal,
+    },
+  });
+});
+
+const classDetail = ref(1);
 
 const payload = ref({
   class_id: route.params.id,
@@ -61,12 +71,33 @@ const getClassDetail = async () => {
   } catch (error) {}
 };
 
+const tabs = [
+  {
+    value: "general",
+    title: "General",
+    description: "General Information",
+    icon: "tabler-settings",
+  },
+  {
+    value: "student",
+    title: "Students",
+    description: "Student Information",
+    icon: "tabler-users-group",
+  },
+  {
+    value: "teacher",
+    title: "Teachers",
+    description: "Teacher Information",
+    icon: "tabler-users",
+  },
+];
+
 onMounted(async () => {
   getClassDetail();
 });
 </script>
 <template>
-  <VTabs v-model="currentTab" grow stacked class="py-0">
+  <!-- <VTabs v-model="currentTab" grow stacked class="py-0">
     <VTab value="window1" class="py-0 custom-tab">
       <VIcon icon="tabler-settings" class="mr-1" />
       <span>General</span>
@@ -80,10 +111,12 @@ onMounted(async () => {
       <VIcon icon="tabler-users" class="mr-1" />
       <span>Teachers</span>
     </VTab>
-  </VTabs>
+  </VTabs> -->
+
+  <AppCustomTap v-model="currentTab" :tabs="tabs" />
 
   <VWindow v-model="currentTab" class="mt-4">
-    <VWindowItem value="window1">
+    <VWindowItem value="general">
       <VCard class="pa-5 mb-4" v-if="classDetail">
         <div class="d-flex align-start justify-space-between flex-wrap ga-3">
           <div class="d-flex align-center ga-3">
@@ -154,11 +187,11 @@ onMounted(async () => {
       </VCard>
     </VWindowItem>
 
-    <VWindowItem value="window2">
+    <VWindowItem value="student">
       <StudentClassList :payload="payload" :class-data="classDetail" />
     </VWindowItem>
 
-    <VWindowItem value="window3">
+    <VWindowItem value="teacher">
       <div>Teachers</div>
     </VWindowItem>
   </VWindow>

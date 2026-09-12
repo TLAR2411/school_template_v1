@@ -4,7 +4,7 @@ namespace App\Models\School;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Attributes\Scope;
-
+use App\Models\School\GradingRule;
 class Subject extends Model
 {
     protected $fillable = [
@@ -61,5 +61,11 @@ class Subject extends Model
             ->when(!empty($filters['edu_id']), function ($q) use ($filters) {
                 $q->where('edu_id', $filters['edu_id']);
             });
+    }
+
+
+    //subject has many grading rule 
+    public function gradingRules (){
+        return $this->hasMany(GradingRule::class,'subject_id');
     }
 }

@@ -13,15 +13,26 @@ class GradeSeeder extends Seeder
      */
     public function run(): void
     {
-        Grade::create([
-            'grade_level' => 1,
-            // 'symbol'=>'ក',
-            // 'name_kh'=>'1 ក',
-            'edu_id' => 1,
-            'cur_id' => 2,
-            'branch_id' => 1,
-            'is_active' => true
 
-        ]);
+        $data = [
+            [
+                'grade_level' => 1,
+                'edu_id' => 1,
+                'cur_id' => 2,
+                'branch_id' => 1,
+                'is_active' => true
+            ],
+            [
+                'name_en' => 'Nursery',
+                'name_kh' => 'មត្តេយ្យ',
+                'cur_id' => 1,
+                'branch_id' => 1,
+                'is_active' => true
+
+            ]
+        ];
+        foreach ($data as $d) {
+            Grade::create($d);
+        }
     }
 }

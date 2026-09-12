@@ -2,6 +2,7 @@
 
 namespace App\Models\School;
 
+use App\Models\School\GradingRule;
 use Illuminate\Database\Eloquent\Model;
 
 class SubjectActivityType extends Model
@@ -22,4 +23,10 @@ class SubjectActivityType extends Model
         'deleted_by',
         'deleted_at'
     ];
+
+
+    // subject activity type has many grading rules
+    public function gradingRules(){
+        return $this->hasMany(GradingRule::class,'subject_activity_type_id');
+    }
 }

@@ -104,14 +104,15 @@ class SubjectActivityTypeController extends Controller
             ]);
         }
     }
-    public function all(Request $request)
+    public function all()
     {
         try {
-            $data = SubjectActivityType::query()
+            $data = SubjectActivityType::all()
                 ->where('is_active', true);
             return response()->json([
                 'data' => $data,
-                'status' => true
+                'status' => true,
+
             ]);
         } catch (\Throwable $th) {
             return response()->json([

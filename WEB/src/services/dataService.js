@@ -335,3 +335,22 @@ export const getSubjects = async () => {
         console.error("Server error: ", error);
     }
 };
+
+export const getSubjectActivity = async () => {
+    try {
+        const response = await api.post("subjects-activity-type-all");
+        return response.data.data;
+    } catch (error) {
+        console.error("Server error: ", error);
+    }
+};
+
+
+export const getClassType = async () => {
+    try {
+        const response = await api.post("classes-type-all");
+        return response.data.data;
+    } catch (error) {
+        console.error("Server error: ", error);
+    }
+};
