@@ -8,9 +8,44 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\School\GradingRule;
 use App\Models\School\Assessment;
+use App\Models\School\Classes;
 
 class GradingRuleController extends Controller
 {
+
+    public function subject_grade(Request $request)
+    {
+        $class = Classes::findOrFail($request->classId);
+        try {
+            $subjects = Subject::query()
+                ->whereIn('id', function ($q) use ($class) {
+                    $q->select('subject_id')
+                        ->from('grading_rules')
+                        ->whereNull('deleted_at')
+                        ->where('grade_id', $class->grade_id)
+                        ->when(
+                            $class->class_type_id,
+                            // class is Social/Science → match that stream OR shared rules
+                            fn($q) => $q->where(function ($q) use ($class) {
+                                $q->where('class_type_id', $class->class_type_id)
+                                    ->orWhereNull('class_type_id');
+                            }),
+                            // class has no stream → only shared rules
+                            fn($q) => $q->whereNull('class_type_id')
+                        )
+                        ->distinct();
+                })
+                ->orderBy('id')
+                ->get(['id', 'name_en', 'name_kh', 'symbol', 'parent_id']);
+
+            return response()->json([
+                'status' => 1,
+                'data' => $subjects
+            ]);
+        } catch (\Throwable $th) {
+            //throw $th;
+        }
+    }
     public function list(Request $request)
     {
         try {

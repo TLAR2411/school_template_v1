@@ -357,6 +357,9 @@ onMounted(async () => {
     <template #item.className="{ item }">
       <span v-if="locale === 'km'">
         {{ item.name_kh }}
+        <VChip size="small" v-if="item.class_type_kh">{{
+          item.class_type_kh
+        }}</VChip>
       </span>
       <span v-else>
         <span v-if="item.grade_level">

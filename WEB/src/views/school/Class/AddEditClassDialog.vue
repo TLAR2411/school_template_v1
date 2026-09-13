@@ -9,6 +9,7 @@ import {
   getGrades,
   getYears,
   getRooms,
+  getClassType,
   getCurrentYearId,
 } from "@/services/dataService";
 import AppAddEditDrawer from "@/components/AppAddEditDrawer.vue";
@@ -54,6 +55,7 @@ const props = defineProps({
 const grades = ref([]);
 const years = ref([]);
 const rooms = ref([]);
+const classTypes = ref([]);
 // Skip auto name sync while loading form (keeps customised names on edit open)
 const isHydrating = ref(false);
 
@@ -68,6 +70,7 @@ const emptyForm = () => ({
   year_id: getCurrentYearId(),
   symbol: null,
   room_id: null,
+  class_type_id: null,
 });
 
 const itemData = ref({
@@ -119,6 +122,7 @@ const applyFormData = async (raw = {}) => {
     description: raw.description ?? null,
     symbol: raw.symbol ?? null,
     id: raw.id ?? null,
+    class_type_id: raw.class_type_id != null ? Number(raw.class_type_id) : null,
     grade_id: raw.grade_id != null ? Number(raw.grade_id) : null,
     year_id: raw.year_id != null ? Number(raw.year_id) : getCurrentYearId(),
     room_id: raw.room_id != null ? Number(raw.room_id) : null,
@@ -176,15 +180,14 @@ watch(
   async (open) => {
     if (!open) return;
 
-    const [gradesData, yearsData, roomsData] = await Promise.all([
-      getGrades(),
-      getYears(),
-      getRooms(),
-    ]);
+    const [gradesData, yearsData, roomsData, classTypeData] = await Promise.all(
+      [getGrades(), getYears(), getRooms(), getClassType()],
+    );
 
     grades.value = gradesData || [];
     years.value = yearsData || [];
     rooms.value = roomsData || [];
+    classTypes.value = classTypeData || [];
 
     await applyFormData(props.itemData || {});
   },
@@ -205,7 +208,7 @@ watch(
     <VRow>
       <VCol cols="12">
         <VRow>
-          <VCol cols="8" sm="8" md="8">
+          <VCol cols="5" sm="5" md="5">
             <AppAutocomplete
               v-model="itemData.grade_id"
               :items="grades"
@@ -218,7 +221,7 @@ watch(
             />
           </VCol>
 
-          <VCol cols="4" sm="4" md="4">
+          <VCol cols="3" sm="3" md="3">
             <AppAutocomplete
               v-model="itemData.symbol"
               :items="symbols"
@@ -228,6 +231,20 @@ watch(
               autocomplete="off"
               persistent-hint
               :rules="[requiredValidator]"
+            />
+          </VCol>
+
+          <VCol cols="4" sm="4" md="4">
+            <AppAutocomplete
+              v-model="itemData.class_type_id"
+              :items="classTypes"
+              :item-title="
+                (item) => (locale === 'km' ? item.name_kh : item.name_en)
+              "
+              item-value="id"
+              :label="t('Class Type')"
+              autocomplete="off"
+              persistent-hint
             />
           </VCol>
 

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\School\StudentClass;
+use App\Models\School\ClassType;
 use App\Models\School\Student;
 
 class Classes extends Model
@@ -19,6 +20,7 @@ class Classes extends Model
         'name_kh',
         'grade_id',
         'year_id',
+        'class_type_id',
         'branch_id',
         'room_id',
         'symbol',
@@ -55,6 +57,11 @@ class Classes extends Model
     public function year()
     {
         return $this->belongsTo(Year::class, 'year_id');
+    }
+
+    public function classtype()
+    {
+        return $this->belongsTo(ClassType::class, 'class_type_id');
     }
 
     #[Scope]

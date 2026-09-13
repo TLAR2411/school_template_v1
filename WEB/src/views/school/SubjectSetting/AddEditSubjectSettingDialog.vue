@@ -69,7 +69,7 @@ const itemData = ref({
 });
 
 const subjectItems = computed(() =>
-  props.subjectOptions?.length ? props.subjectOptions : subjects.value,
+subjects.value?.length ? subjects.value : props.subjectOptions,
 );
 
 const currentSubject = computed(() =>

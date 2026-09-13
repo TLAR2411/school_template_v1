@@ -22,8 +22,8 @@ class TeacherController extends Controller
             'gender' => 'required|string|max:255',
             'nation' => 'required|string|max:255',
             'photo_path' => 'nullable|string',
-            'branch_id' => 'required_if:manage_branch,2|array|min:1',
-            'branch_id.*' => 'integer|exists:branches,id',
+            // 'branch_id' => 'required_if:manage_branch,2|array|min:1',
+            // 'branch_id.*' => 'integer|exists:branches,id',
             'manage_branch' => 'required|in:1,2',  // 1: single branch, 2: multiple branches
         ]);
         try {
@@ -105,6 +105,7 @@ class TeacherController extends Controller
             $teacher = Teacher::query()
                 ->whereBranch($this->getBranch())
                 ->whereCur($this->getCur())
+                ->select('id', 'name_en', 'name_kh')
                 ->get();
             return response()->json([
                 'status' => true,

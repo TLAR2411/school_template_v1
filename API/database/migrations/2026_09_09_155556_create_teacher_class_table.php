@@ -17,6 +17,7 @@ return new class extends Migration
             $table->integer('class_id');
             $table->integer('subject_id');
             $table->boolean('is_classload')->default(false);
+            $table->boolean('is_assisstant')->default(false);
             $table->boolean('is_active')->default(true);
             $table->integer('created_by')->nullable();
             $table->integer('updated_by')->nullable();

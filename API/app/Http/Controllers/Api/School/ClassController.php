@@ -41,6 +41,7 @@ class ClassController extends Controller
                 'symbol' => $data['symbol'] ?? null,
                 'description' => $data['description'] ?? null,
                 'year_id' => $request->year_id,
+                'class_type_id' => $request->class_type_id,
                 'branch_id' => $this->getBranch(),
                 'is_active' => true,
                 'created_by' => auth('api')->id(),
@@ -78,6 +79,7 @@ class ClassController extends Controller
                 "room_id" => $data['room_id'] ?? null,
                 'symbol' => $data['symbol'] ?? null,
                 'description' => $data['description'] ?? null,
+                'class_type_id' => $request->class_type_id,
                 'year_id' => $request->year_id,
                 'branch_id' => $this->getBranch(),
                 'updated_by' => auth('api')->id(),
@@ -108,6 +110,7 @@ class ClassController extends Controller
                     'grade:id,name_en,name_kh,grade_level,edu_id',
                     'grade.educationLevel:id,name_en,name_kh',
                     'room:id,room_number',
+                    'classtype:id,name_en,name_kh'
                 ])
                 ->filter($request->filter)
                 ->latest('id')

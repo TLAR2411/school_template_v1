@@ -24,6 +24,7 @@ use Database\Seeders\School\GradeSeeder;
 use Database\Seeders\School\RoomSeeder;
 use Database\Seeders\School\SubjectActivityTypeSeeder;
 use Database\Seeders\School\SubjectSeeder;
+use Database\Seeders\School\TeacherSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -51,6 +52,7 @@ class DatabaseSeeder extends Seeder
             GradeSeeder::class,
             SubjectSeeder::class,
             SubjectActivityTypeSeeder::class,
+            TeacherSeeder::class
         ]);
     }
 }

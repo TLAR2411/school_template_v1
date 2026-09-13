@@ -27,6 +27,9 @@ class ClassResource extends JsonResource
             'grade_name_kh' => $this->grade?->name_kh,
             'grade_name_en' => $this->grade?->name_en,
             'room_number' => $this->room?->room_number,
+            // 'class_type' => $this->classType
+            'class_type_kh' => $this->classType?->name_kh,
+            'class_type_en' => $this->classType?->name_en,
         ];
     }
 }

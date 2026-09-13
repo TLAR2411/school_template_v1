@@ -24,11 +24,7 @@ class ClassTypeSeeder extends Seeder
                 'name_kh' => 'វិទ្យាសង្គម',
                 'created_by' => 1
             ],
-            [
-                'name_en' => "General",
-                'name_kh' => 'ទូទៅ',
-                'created_by' => 1
-            ]
+
         ];
 
         foreach ($data as $d) {

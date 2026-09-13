@@ -23,6 +23,13 @@ class GradeSeeder extends Seeder
                 'is_active' => true
             ],
             [
+                'grade_level' => 11,
+                'edu_id' => 3,
+                'cur_id' => 2,
+                'branch_id' => 1,
+                'is_active' => true
+            ],
+            [
                 'name_en' => 'Nursery',
                 'name_kh' => 'មត្តេយ្យ',
                 'cur_id' => 1,

@@ -4,6 +4,7 @@ import { useRouter, useRoute } from "vue-router";
 import { api } from "@/utils/api.js";
 import StudentClassList from "@/views/school/studentClass/StudentClassList.vue";
 import AppCustomTap from "@/components/AppCustomTap.vue";
+import TeacherClass from "../TeacherClass/TeacherClass.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -192,7 +193,7 @@ onMounted(async () => {
     </VWindowItem>
 
     <VWindowItem value="teacher">
-      <div>Teachers</div>
+      <TeacherClass :class_id="route.params.id" />
     </VWindowItem>
   </VWindow>
 </template>

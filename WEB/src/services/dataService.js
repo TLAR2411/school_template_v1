@@ -354,3 +354,12 @@ export const getClassType = async () => {
         console.error("Server error: ", error);
     }
 };
+
+export const getTeachers = async () => {
+    try {
+        const response = await api.post("teachers-all");
+        return response.data.data;
+    } catch (error) {
+        console.error("Server error: ", error);
+    }
+};
