@@ -17,17 +17,17 @@ class SettingSeeder extends Seeder
             [
                 'name' => 'Company Name',
                 'key' => 'company_name',
-                'value' => 'Devfin Tech.'
+                'value' => 'Dewey International School'
             ],
             [
                 'name' => 'Company Email',
                 'key' => 'company_email',
-                'value' => '@devfin.cc'
+                'value' => '@diu.edu.kh'
             ],
             [
                 'name' => 'Default Password',
                 'key' => 'default_password',
-                'value' => 'Hello@332211'
+                'value' => 'dewey@123'
             ],
             [
                 'name' => 'Default Sub User Password',

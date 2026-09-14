@@ -17,7 +17,10 @@ use App\Http\Controllers\Api\School\SubjectController;
 use App\Http\Controllers\Api\School\TeacherController;
 use App\Http\Controllers\Api\School\GradingRuleController;
 use App\Http\Controllers\Api\School\AssessmentController;
+use App\Http\Controllers\Api\School\FamilyController;
 use App\Http\Controllers\Api\School\TeacherClassController;
+use App\Http\Controllers\Api\School\StudentFamilyController;
+use App\Http\Controllers\Api\School\FamilyMemberController;
 
 Route::post("subjects-activity-type-store", [SubjectActivityTypeController::class, "store"]);
 Route::post("subjects-activity-type-list", [SubjectActivityTypeController::class, "list"]);
@@ -48,6 +51,7 @@ Route::post("students-show", [StudentController::class, "show"]);
 Route::post("students-update", [StudentController::class, "update"]);
 Route::post("students-disable", [StudentController::class, "disable"]);
 Route::post("students-delete", [StudentController::class, "delete"]);
+Route::post("students-all", [StudentController::class, "all"]);
 
 Route::post("curriculums-store", [CurriculumController::class, "store"]);
 Route::post("curriculums-list", [CurriculumController::class, "list"]);
@@ -125,3 +129,17 @@ Route::post("grading-rules-subjects", [GradingRuleController::class, "subject_gr
 
 Route::post('assessments-store', [AssessmentController::class, 'store']);
 Route::post('assessments-delete', [AssessmentController::class, 'delete']);
+
+
+Route::post('families-store', [FamilyController::class, 'store']);
+Route::post('families-list', [FamilyController::class, 'list']);
+Route::post('families-show', [FamilyController::class, 'show']);
+Route::post('families-update', [FamilyController::class, 'update']);
+
+Route::post('student-family-store', [StudentFamilyController::class, 'store']);
+Route::post('student-family-delete', [StudentFamilyController::class, 'delete']);
+
+Route::post('family-members-show', [FamilyMemberController::class, 'show']);
+Route::post('family-members-store', [FamilyMemberController::class, 'store']);
+Route::post('family-members-update', [FamilyMemberController::class, 'update']);
+Route::post('family-members-delete', [FamilyMemberController::class, 'delete']);

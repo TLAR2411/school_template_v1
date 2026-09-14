@@ -363,3 +363,12 @@ export const getTeachers = async () => {
         console.error("Server error: ", error);
     }
 };
+
+export const getStudents = async () => {
+    try {
+        const response = await api.post("students-all");
+        return response.data.data;
+    } catch (error) {
+        console.error("Server error: ", error);
+    }
+};

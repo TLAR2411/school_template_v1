@@ -4,6 +4,7 @@ import {
   ref,
   watch,
   useId,
+  useSlots,
   onMounted,
   onBeforeUnmount,
   nextTick,
@@ -30,10 +31,13 @@ const props = defineProps({
   apiUrl: { type: String, default: null },
   resetOnBranchChange: { type: Boolean, default: false },
   externalTrigger: Boolean,
+  /** When true, Enter in the search box selects the first filtered item */
+  selectOnEnter: { type: Boolean, default: true },
 });
 
 const emit = defineEmits(["search", "update:menu", "update:items"]);
 const model = defineModel();
+const slots = useSlots();
 
 const settingStore = useSettingStore();
 const selectRef = ref(null);
@@ -52,6 +56,18 @@ const elementId = computed(() =>
 );
 
 const uniqueMenuClass = computed(() => `app-select-menu-${elementId.value}`);
+const hasSearchPrepend = computed(() => !!slots["search-prepend"]);
+const hasSearchAppend = computed(() => !!slots["search-append"]);
+const hasSearchExtra = computed(
+  () => hasSearchPrepend.value || hasSearchAppend.value,
+);
+
+// Keep parent menu open when using nested controls (e.g. branch select)
+const selectMenuProps = computed(() => ({
+  contentClass: `${uniqueMenuClass.value} app-select-menu`,
+  maxHeight: 400,
+  closeOnContentClick: !(props.multiple || hasSearchExtra.value),
+}));
 
 // --- Helper: Robust Value Extraction ---
 const getValue = (item) => {
@@ -193,18 +209,12 @@ const onGlobalKeyDown = (e) => {
   const input = searchInputRef.value?.$el?.querySelector("input");
   if (!input) return;
 
-  // --- FIX START ---
-  // If the input is already focused, let the browser handle the input naturally.
-  // This allows spaces and normal typing without preventDefault interference.
-  if (document.activeElement === input) return;
+  // Already typing in the search box — let the input handle it
+  if (document.activeElement === input || input.contains(e.target)) return;
 
-  // Specifically allow the Space key to behave normally if we are inside the input
-  // (though the check above usually covers this)
-  if (e.key === " " && document.activeElement === input) return;
-  // --- FIX END ---
-
+  // Block VSelect/VList typeahead auto-select; route keystrokes to search instead
   e.preventDefault();
-
+  e.stopPropagation();
   input.focus();
   searchQuery.value += e.key;
 };
@@ -231,7 +241,7 @@ const isMobile = window.matchMedia("(pointer: coarse)").matches;
 onMounted(() => {
   if (props.serverSide && props.apiUrl) searchItems("");
   if (!isMobile) {
-    window.addEventListener("keydown", onGlobalKeyDown);
+    window.addEventListener("keydown", onGlobalKeyDown, true);
   }
   // window.addEventListener("mousedown", handleClickOutside);
 });
@@ -239,7 +249,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   clearTimeout(searchTimeout);
   if (!isMobile) {
-    window.removeEventListener("keydown", onGlobalKeyDown);
+    window.removeEventListener("keydown", onGlobalKeyDown, true);
   }
   // window.removeEventListener("mousedown", handleClickOutside);
 });
@@ -308,9 +318,11 @@ const shouldShowItem = (itemRaw) => {
 
 // --- Event Handlers ---
 const onSearchKeyDown = (e) => {
+  // Stop VSelect typeahead from auto-selecting while typing in the search box
+  e.stopPropagation();
+
   if (e.key === " ") {
-    e.stopPropagation();
-    return; // Return early so we don't process other logic
+    return;
   }
 
   if (isMobile) return;
@@ -328,6 +340,7 @@ const onSearchKeyDown = (e) => {
   }
   if (e.key === "Enter") {
     e.preventDefault();
+    if (!props.selectOnEnter) return;
     if (strictMenuItems.value?.length > 0) {
       const firstItem = strictMenuItems.value[0];
       const val =
@@ -347,7 +360,6 @@ const onSearchKeyDown = (e) => {
     e.preventDefault();
     isMenuOpen.value = false;
   }
-  //  console.log('down here');
 };
 
 // Inside onSearchInputClear
@@ -409,17 +421,32 @@ watch(
       :id="elementId"
       variant="outlined"
       :virtual-scroll="false"
-      :menu-props="{
-        contentClass: `${uniqueMenuClass} app-select-menu`,
-        maxHeight: 400,
-        closeOnContentClick: !props.multiple,
-      }"
+      :menu-props="selectMenuProps"
       v-bind="$attrs"
       clear-icon="tabler-x"
     >
       <template #prepend-item>
-        <div class="search-sticky-container">
-          <div class="select-search-wrapper">
+        <div
+          class="search-sticky-container"
+          @keydown.stop
+          @keyup.stop
+          @keypress.stop
+        >
+          <div
+            class="select-search-wrapper"
+            :class="{ 'has-search-extra': hasSearchExtra }"
+          >
+            <div
+              v-if="hasSearchPrepend"
+              class="search-extra search-prepend"
+              @click.stop
+              @mousedown.stop
+              @mouseup.stop
+              @focusin="isMenuOpen = true"
+            >
+              <slot name="search-prepend" />
+            </div>
+
             <VTextField
               type="text"
               ref="searchInputRef"
@@ -428,7 +455,9 @@ watch(
               hide-details
               autocomplete="off"
               class="select-search-input"
-              @keydown="onSearchKeyDown"
+              @keydown.stop="onSearchKeyDown"
+              @keyup.stop
+              @keypress.stop
               @click.stop
               clearable
               :loading="props.loading || isFetching"
@@ -439,7 +468,19 @@ watch(
                 <VIcon icon="tabler-search" size="20" class="mr-2" />
               </template>
             </VTextField>
+
+            <div
+              v-if="hasSearchAppend"
+              class="search-extra search-append"
+              @click.stop
+              @mousedown.stop
+              @mouseup.stop
+              @focusin="isMenuOpen = true"
+            >
+              <slot name="search-append" />
+            </div>
           </div>
+
           <div v-if="showNoData" class="pa-4 text-center text-medium-emphasis">
             {{ $t("$vuetify.noDataText") }}
           </div>
@@ -448,9 +489,18 @@ watch(
 
       <template v-for="(_, name) in $slots" #[name]="slotProps">
         <slot
+          v-if="
+            name !== 'item' &&
+            name !== 'search-append' &&
+            name !== 'search-prepend'
+          "
           :name="name"
           v-bind="slotProps"
-          v-if="name != 'item' || (name == 'item' && !showNoData)"
+        />
+        <slot
+          v-else-if="name === 'item' && !showNoData"
+          :name="name"
+          v-bind="slotProps"
         />
       </template>
 
@@ -479,6 +529,25 @@ watch(
 </template>
 
 <style scoped>
+.search-extra {
+  flex: 0 0 150px;
+  width: 150px;
+}
+
+.search-extra :deep(.v-field) {
+  --v-field-padding-start: 8px;
+}
+
+.search-extra :deep(.v-field__outline) {
+  display: none;
+}
+
+.search-extra :deep(.v-field__input) {
+  min-height: 32px;
+  padding: 4px 0;
+  font-size: 14px;
+}
+
 .search-sticky-container {
   position: sticky;
   top: 0;
@@ -489,6 +558,17 @@ watch(
 .select-search-wrapper {
   padding: 8px;
   border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+.select-search-wrapper.has-search-extra {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.select-search-wrapper.has-search-extra .select-search-input {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .select-search-input :deep(.v-field__outline) {

@@ -15,6 +15,11 @@ export default [
         to: { name: "school-class" },
         icon: { icon: "tabler-home-cog" },
     },
+    {
+        title: "Family",
+        to: { name: "school-family" },
+        icon: { icon: "tabler-users" },
+    },
 
     // {
     //     title: "Manage Classes",

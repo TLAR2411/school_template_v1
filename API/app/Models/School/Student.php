@@ -54,7 +54,6 @@ class Student extends Model
             $q->where(function ($query) use ($filters) {
                 $query->where('name_kh', 'like', '%' . $filters['search'] . '%')
                     ->orWhere('name_en', 'like', '%' . $filters['search'] . '%')
-                    ->orWhere('student_card_id', 'like', '%' . $filters['search'] . '%')
                     ->orWhere('phone', 'like', '%' . $filters['search'] . '%');
             });
         });

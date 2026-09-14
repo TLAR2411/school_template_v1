@@ -165,13 +165,29 @@ class UserController extends Controller
                 return Setting::where('key', 'company_email')->value('value');
             });
 
-            $defaultPassword = Cache::remember('setting_default_password', 86400, function () {
-                return Setting::where('key', 'default_password')->value('value');
-            });
 
 
-            $lowerName = Str::lower($request->name_en);
-            $name = explode(" ", $lowerName);
+
+            $name = preg_split('/\s+/', Str::lower(trim($request->name_en)));
+            // $lowerString = $name[1] ? $name[1] . $users->id : $name[0] . $users->id;  //(name+id)
+            // $lowerString = $name[1] ? $name[1]  : $name[0];   // only name
+
+            // $lowerString = end($name);
+            $lowerString = implode('.', $name);
+
+            // $defaultPassword = Cache::remember('setting_default_password', 86400, function () use ($lowerString) {
+            //     return Setting::where('key', 'default_password')->value('value') . $lowerString;
+            // });
+
+            $defaultPassword = Cache::remember(
+                'setting_default_password_' . $lowerString,
+                86400,
+                function () use ($lowerString) {
+                    return Setting::where('key', 'default_password')->value('value') . $lowerString;
+                }
+            );
+
+            // $defaultPassword = $name
 
             $userData = $request->all();
             $userData['name_en'] = Str::upper($request->name_en);
@@ -184,7 +200,9 @@ class UserController extends Controller
             $users = User::create($userData);
             $branch = Branch::findOrFail($request->choose_branch_id);
 
-            $lowerString = $name[1] ? $name[1] . $users->id : $name[0] . $users->id;
+
+
+
 
             $users->code = $branch->abbr . "-" . str_pad($users->id, 6, '0', STR_PAD_LEFT);
 
@@ -208,7 +226,9 @@ class UserController extends Controller
             DB::commit();
             return response()->json([
                 'status' => true,
-                'message' => "Successful Created User!"
+                'message' => "Successful Created User!",
+                'name' => $name,
+                'default_password' => $defaultPassword
             ]);
         } catch (\Throwable $th) {
             DB::rollBack();
@@ -405,7 +425,6 @@ class UserController extends Controller
                                 $managerQ->where('users.manage_branch', 3);
                             });
                         });
-
                 });
             })
             ->where('p.department_id', 2)
@@ -574,8 +593,6 @@ class UserController extends Controller
                 'data' => $insert,
                 'message' => "Successful Change Link!"
             ]);
-
-
         } catch (\Throwable $th) {
             DB::rollBack();
             return response()->json([

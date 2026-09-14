@@ -15,7 +15,7 @@ return new class extends Migration {
             $table->string('code')->unique()->nullable();
             $table->index('code');
 
-            $table->unsignedSmallInteger('branch_id');
+            $table->unsignedSmallInteger('branch_id')->nullable();
             $table->foreign('branch_id')
                 ->references('id')
                 ->on('branches')
@@ -25,7 +25,7 @@ return new class extends Migration {
 
             $table->tinyInteger('manage_branch')
                 ->default(1)
-                ->comment('1:one branch, 2:multiple branch, 3:all branch, 4:exclude branch');
+                ->comment('1:one branch, 2:multiple branch, 3:all branch, 4:exclude branch')->nullable();
             $table->index('manage_branch');
 
             $table->string('name_kh');
@@ -50,7 +50,7 @@ return new class extends Migration {
 
             $table->rememberToken();
 
-            $table->unsignedTinyInteger('role_id');
+            $table->unsignedTinyInteger('role_id')->nullable();
             $table->foreign('role_id')
                 ->references('id')
                 ->on('roles')
@@ -80,7 +80,7 @@ return new class extends Migration {
             $table->string('image_path')->nullable();
             $table->boolean('is_reset_password')->default(false);
 
-            $table->enum('type', ['main', 'sub'])->default('main');
+            $table->enum('type', ['main', 'sub'])->default('main')->nullable();
 
             $table->unsignedMediumInteger('parent_user_id')->nullable();
 
