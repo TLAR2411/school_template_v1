@@ -6,7 +6,7 @@ import getImageUrl from "@/utils/image/getImageUrl";
 import { ref, computed, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
-import { getBranches } from "@/services/dataService";
+import { getBranches, getRoles } from "@/services/dataService";
 
 const { locale, t } = useI18n();
 const route = useRoute();
@@ -14,6 +14,8 @@ const router = useRouter();
 
 const isLoading = ref(false);
 const branches = ref([]);
+
+const roles = ref([]);
 
 const manageBranch = [
   { name: "មួយសាខា", value: 1, name_en: "Single Branch" },
@@ -46,6 +48,7 @@ const formData = ref({
   phone: null,
   manage_branch: 1,
   branch_id: [],
+  role_id: null,
 });
 
 const toCode = (value) => (value ? Number(value) : null);
@@ -66,6 +69,7 @@ const initData = async () => {
         dob: data.dob,
         nation: data.nation,
         phone: data.phone,
+        role_id: data.role_id,
         manage_branch: data.manage_branch ?? 1,
         // teacherBranches from show()
         branch_id: (data.teacher_branches || []).map((b) => b.branch_id),
@@ -123,7 +127,7 @@ const onSubmit = async () => {
               :rules="[requiredValidator]"
             />
           </VCol>
-          <VCol cols="12" lg="4" sm="6">
+          <VCol cols="12" lg="2" sm="4">
             <AppTextField
               v-model="formData.name_en"
               label="Name English"
@@ -131,7 +135,7 @@ const onSubmit = async () => {
             />
           </VCol>
 
-          <VCol cols="6" lg="4" sm="6">
+          <VCol cols="6" lg="2" sm="4">
             <AppSelect
               v-model="formData.gender"
               :items="gender"
@@ -165,6 +169,16 @@ const onSubmit = async () => {
           <VCol cols="12" lg="4" sm="6">
             <AppTextField v-model="formData.phone" label="Phone" />
           </VCol>
+          <VCol cols="12" md="4" sm="6">
+            <AppAutocomplete
+              v-model="formData.role_id"
+              :label="t('Role')"
+              :items="roles"
+              item-title="display_name"
+              item-value="id"
+              autocomplete="off"
+            />
+          </VCol>
 
           <VCol cols="12" md="4" sm="6">
             <AppAutocomplete
@@ -183,7 +197,7 @@ const onSubmit = async () => {
               :label="t('Choose Branches')"
               :items="branches"
               :disabled="formData.manage_branch != 2"
-              :item-title="locale === 'km' ? 'name_kh' : 'name_en'"
+              :item-title="locale === 'km' ? 'name' : 'name_en'"
               item-value="id"
               multiple
               eager

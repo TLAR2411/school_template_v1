@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('nation')->nullable();
             $table->string('phone')->nullable();
             $table->integer('cur_id')->nullable();
+            $table->integer('user_id')->nullable();
             $table->boolean('is_active')->default(true);
             $table->boolean('is_teaching')->nullable();
             $table->string('village_code')->nullable();

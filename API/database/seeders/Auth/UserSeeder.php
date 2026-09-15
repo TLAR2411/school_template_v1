@@ -16,7 +16,7 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         $user = User::create([
-            'code' => 'HO-000001',
+            'code' => 'S-000001',
             'branch_id' => 1,
             'name_kh' => 'Admin',
             'name_en' => 'Admin',

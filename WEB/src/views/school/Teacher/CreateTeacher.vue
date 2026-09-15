@@ -4,7 +4,7 @@ import { nations } from "@/utils/formater/formatNation";
 import { app } from "@/utils/app";
 import { ref, watch, computed } from "vue";
 import { useI18n } from "vue-i18n";
-import { getBranches } from "@/services/dataService";
+import { getBranches, getRoles } from "@/services/dataService";
 
 const { locale, t } = useI18n();
 
@@ -12,9 +12,11 @@ const isLoading = ref(false);
 
 const branches = ref([]);
 
+const roles = ref([]);
+
 const manageBranch = [
-  { name: "មួយសាខា", value: 1 },
-  { name: "ច្រើនសាខា", value: 2 },
+  { name: "មួយសាខា", value: 1, name_en: "Single Branch" },
+  { name: "ច្រើនសាខា", value: 2, name_en: "Multiple Branch" },
 ];
 
 const gender = ref([
@@ -43,6 +45,7 @@ const formData = ref({
   phone: null,
   manage_branch: manageBranch[0].value,
   branch_id: [],
+  role_id: null,
 });
 
 const onSubmit = async () => {
@@ -61,6 +64,7 @@ const onSubmit = async () => {
 
 onMounted(async () => {
   branches.value = await getBranches();
+  roles.value = await getRoles();
 });
 </script>
 <template>
@@ -91,7 +95,7 @@ onMounted(async () => {
             />
           </VCol>
 
-          <VCol cols="6" lg="4" sm="6">
+          <VCol cols="6" lg="2" sm="4">
             <AppSelect
               v-model="formData.gender"
               :items="gender"
@@ -102,7 +106,7 @@ onMounted(async () => {
             />
           </VCol>
 
-          <VCol cols="6" lg="4" sm="6">
+          <VCol cols="6" lg="2" sm="4">
             <AppSelect
               v-model="formData.nation"
               :items="nations"
@@ -125,13 +129,25 @@ onMounted(async () => {
           <VCol cols="12" lg="4" sm="6">
             <AppTextField v-model="formData.phone" label="Phone" />
           </VCol>
+          <VCol cols="12" md="4" sm="6">
+            <AppAutocomplete
+              v-model="formData.role_id"
+              :label="t('Role')"
+              :items="roles"
+              item-title="display_name"
+              item-value="id"
+              autocomplete="off"
+            />
+          </VCol>
 
           <VCol cols="12" md="4" sm="6">
             <AppAutocomplete
               v-model="formData.manage_branch"
               :label="t('Manage Branch')"
               :items="manageBranch"
-              item-title="name"
+              :item-title="
+                (item) => (locale == 'km' ? item.name : item.name_en)
+              "
               item-value="value"
               autocomplete="off"
             />

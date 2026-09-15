@@ -151,7 +151,10 @@ class User extends Authenticatable implements LaratrustUser
                     ->orWhere('email', 'like', $searchTerm);
             });
         });
-
+        $query->when(!empty($filters['user_type']), function ($query) use ($filters) {
+            // T-... / S-... / FM-...
+            return $query->where('code', 'like', $filters['user_type'] . '-%');
+        });
     }
 
     public function findForPassport(string $username)

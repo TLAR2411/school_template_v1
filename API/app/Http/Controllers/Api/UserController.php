@@ -204,7 +204,8 @@ class UserController extends Controller
 
 
 
-            $users->code = $branch->abbr . "-" . str_pad($users->id, 6, '0', STR_PAD_LEFT);
+            // $users->code = $branch->abbr . "-" . str_pad($users->id, 6, '0', STR_PAD_LEFT);
+            $users->code = 'S' . "-" . str_pad($users->id, 6, '0', STR_PAD_LEFT);  // S stand for Staff
 
             $users->email = $lowerString . $companyName;
             $users->username = $lowerString;

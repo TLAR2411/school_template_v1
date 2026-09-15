@@ -46,8 +46,16 @@ const userIdSelected = ref(null);
 const permissions = ref([]);
 const userPermissions = ref([]);
 
+const userTypes = [
+  { title: "All", value: null },
+  { title: "Teacher", value: "T" },
+  { title: "Staff", value: "S" },
+  { title: "Family Member", value: "FM" },
+];
+
 const filter = ref({
   search: null,
+  user_type: null, // T | S | FM
 });
 
 const headers = [
@@ -277,6 +285,16 @@ const onUpdatePermission = async (data, callback) => {
     <template #filter>
       <VRow class="justify-end">
         <!----Filter Input-->
+        <VCol cols="12" sm="6" md="4" lg="3">
+          <AppSelect
+            v-model="filter.user_type"
+            :items="userTypes"
+            item-title="title"
+            item-value="value"
+            clearable
+            hide-details
+          />
+        </VCol>
         <VCol cols="12" sm="6" md="4" lg="2">
           <VTextField
             v-model="filter.search"

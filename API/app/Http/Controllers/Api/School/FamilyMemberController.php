@@ -97,6 +97,8 @@ class FamilyMemberController extends Controller
                 'type' => 'main',
                 'created_by' => $createdBy,
             ]);
+
+            $user->code = 'FM' . "-" . str_pad($user->id, 6, '0', STR_PAD_LEFT);
             FamilyMember::create([
                 'family_id' => $validated['family_id'],
                 'user_id' => $user->id,
