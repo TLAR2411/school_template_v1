@@ -20,6 +20,7 @@ return new class extends Migration
             $table->integer('branch_id');
             $table->integer('class_type_id')->nullable();
             $table->string('room_id')->nullable();
+            $table->integer('shift_id')->nullable();
             $table->string('symbol')->nullable();
             $table->boolean('is_active')->default(true);
             $table->integer('created_by')->nullable();

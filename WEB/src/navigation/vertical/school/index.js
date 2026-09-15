@@ -11,6 +11,11 @@ export default [
         icon: { icon: "tabler-user-plus" },
     },
     {
+        title: "Schedule",
+        to: { name: "school-schedule" },
+        icon: { icon: "tabler-calendar" },
+    },
+    {
         title: "Manage Classes",
         to: { name: "school-class" },
         icon: { icon: "tabler-home-cog" },

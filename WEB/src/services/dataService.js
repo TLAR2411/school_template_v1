@@ -372,3 +372,44 @@ export const getStudents = async () => {
         console.error("Server error: ", error);
     }
 };
+
+export const getDays = async () => {
+    try {
+        const response = await api.post("days-all");
+        return response.data.data;
+    } catch (error) {
+        console.error("Server error: ", error);
+    }
+};
+
+export const getClasses = async () => {
+    try {
+        const response = await api.post("classes-all");
+        return response.data.data;
+    } catch (error) {
+        console.error("Server error: ", error);
+    }
+};
+
+/** Subjects assigned to a class (from teacher_class) */
+export const getSubjectClass = async (classId) => {
+    try {
+        const response = await api.post("subject-class", { class_id: classId });
+        return response.data?.data ?? [];
+    } catch (error) {
+        console.error("Server error: ", error);
+        return [];
+    }
+};
+
+export const getShifts = async () => {
+    try {
+        const response = await api.post("shift-all");
+        return response.data?.data ?? [];
+    } catch (error) {
+        console.error("Server error: ", error);
+        return [];
+    }
+};
+
+

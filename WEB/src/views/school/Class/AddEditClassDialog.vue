@@ -11,6 +11,7 @@ import {
   getRooms,
   getClassType,
   getCurrentYearId,
+  getShifts,
 } from "@/services/dataService";
 import AppAddEditDrawer from "@/components/AppAddEditDrawer.vue";
 import { useDisplay } from "vuetify";
@@ -33,6 +34,8 @@ const symbols = ref([
   { name: "D", value: "D" },
   { name: "E", value: "E" },
 ]);
+
+const shifts = ref([]);
 
 const props = defineProps({
   itemData: {
@@ -70,6 +73,7 @@ const emptyForm = () => ({
   year_id: getCurrentYearId(),
   symbol: null,
   room_id: null,
+  shift_id: null,
   class_type_id: null,
 });
 
@@ -122,10 +126,12 @@ const applyFormData = async (raw = {}) => {
     description: raw.description ?? null,
     symbol: raw.symbol ?? null,
     id: raw.id ?? null,
+
     class_type_id: raw.class_type_id != null ? Number(raw.class_type_id) : null,
     grade_id: raw.grade_id != null ? Number(raw.grade_id) : null,
     year_id: raw.year_id != null ? Number(raw.year_id) : getCurrentYearId(),
     room_id: raw.room_id != null ? Number(raw.room_id) : null,
+    shift_id: raw.shift_id != null ? Number(raw.shift_id) : null,
   };
   await nextTick();
   isHydrating.value = false;
@@ -180,14 +186,20 @@ watch(
   async (open) => {
     if (!open) return;
 
-    const [gradesData, yearsData, roomsData, classTypeData] = await Promise.all(
-      [getGrades(), getYears(), getRooms(), getClassType()],
-    );
+    const [gradesData, yearsData, roomsData, classTypeData, shiftData] =
+      await Promise.all([
+        getGrades(),
+        getYears(),
+        getRooms(),
+        getClassType(),
+        getShifts(),
+      ]);
 
     grades.value = gradesData || [];
     years.value = yearsData || [];
     rooms.value = roomsData || [];
     classTypes.value = classTypeData || [];
+    shifts.value = shiftData || [];
 
     await applyFormData(props.itemData || {});
   },
@@ -260,7 +272,7 @@ watch(
             />
           </VCol>
 
-          <VCol cols="8" sm="8" md="8">
+          <VCol cols="4" sm="4" md="4">
             <AppAutocomplete
               v-model="itemData.year_id"
               :items="years"
@@ -270,6 +282,20 @@ watch(
               autocomplete="off"
               persistent-hint
               :rules="[requiredValidator]"
+            />
+          </VCol>
+
+          <VCol cols="4" sm="4" md="4">
+            <AppAutocomplete
+              v-model="itemData.shift_id"
+              :items="shifts"
+              :item-title="
+                (item) => (locale === 'km' ? item.name_kh : item.name_en)
+              "
+              item-value="id"
+              :label="t('Shift')"
+              autocomplete="off"
+              persistent-hint
             />
           </VCol>
         </VRow>

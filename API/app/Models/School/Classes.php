@@ -23,6 +23,7 @@ class Classes extends Model
         'class_type_id',
         'branch_id',
         'room_id',
+        'shift_id',
         'symbol',
         'description',
         'is_active',
@@ -52,6 +53,11 @@ class Classes extends Model
     public function room()
     {
         return $this->belongsTo(Room::class, 'room_id');
+    }
+
+    public function shift()
+    {
+        return $this->belongsTo(Shift::class, 'shift_id');
     }
 
     public function year()

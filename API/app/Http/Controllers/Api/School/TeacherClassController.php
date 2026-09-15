@@ -195,4 +195,47 @@ class TeacherClassController extends Controller
             ]);
         }
     }
+
+    /**
+     * Unique subjects assigned to a class via teacher_class.
+     * Used by Schedule subject picker.
+     */
+    public function subjectClass(Request $request)
+    {
+        try {
+            $request->validate([
+                'class_id' => 'required|integer',
+            ]);
+
+            $rows = TeacherClass::query()
+                ->where('class_id', $request->class_id)
+                ->with(['subject', 'teacher'])
+                ->get();
+
+            $data = $rows
+                ->filter(fn($row) => $row->subject)
+                ->unique('subject_id')
+                ->map(fn($row) => [
+                    'id' => $row->subject_id,
+                    'teacher_class_id' => $row->id,
+                    'name_en' => $row->subject->name_en,
+                    'name_kh' => $row->subject->name_kh,
+                    'symbol' => $row->subject->symbol,
+                    'teacher_id' => $row->teacher_id,
+                    'teacher_name_en' => $row->teacher?->name_en,
+                    'teacher_name_kh' => $row->teacher?->name_kh,
+                ])
+                ->values();
+
+            return response()->json([
+                'data' => $data,
+                'status' => true,
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage(),
+            ]);
+        }
+    }
 }

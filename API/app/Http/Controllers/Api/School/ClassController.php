@@ -43,6 +43,7 @@ class ClassController extends Controller
                 'year_id' => $request->year_id,
                 'class_type_id' => $request->class_type_id,
                 'branch_id' => $this->getBranch(),
+                'shift_id' => $request->shift_id,
                 'is_active' => true,
                 'created_by' => auth('api')->id(),
             ]);
@@ -79,6 +80,7 @@ class ClassController extends Controller
                 "room_id" => $data['room_id'] ?? null,
                 'symbol' => $data['symbol'] ?? null,
                 'description' => $data['description'] ?? null,
+                'shift_id' => $request->shift_id,
                 'class_type_id' => $request->class_type_id,
                 'year_id' => $request->year_id,
                 'branch_id' => $this->getBranch(),
@@ -105,6 +107,7 @@ class ClassController extends Controller
             $data = Classes::query()
                 ->whereYear($yearId)
                 ->whereBranch($branchId)
+                ->with('shift')
                 ->whereCurriculum($curriculumId)
                 ->with([
                     'grade:id,name_en,name_kh,grade_level,edu_id',
@@ -141,10 +144,14 @@ class ClassController extends Controller
         try {
             $yearId = $this->getYear();
             $branchId = $this->getBranch();
+            $curriculumId = $this->getCur();
 
             $data = Classes::query()
                 ->where('is_active', true)
+                ->with('shift')
                 ->whereYear($yearId)
+                ->whereBranch($branchId)
+                ->whereCurriculum($curriculumId)
                 ->orderBy('name_kh')
                 ->get();
 

@@ -55,6 +55,7 @@ declare module 'vue-router/auto-routes' {
     'school-family-detail-id': RouteRecordInfo<'school-family-detail-id', '/school/family/detail/:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,
     'school-grade': RouteRecordInfo<'school-grade', '/school/Grade', Record<never, never>, Record<never, never>>,
     'school-room': RouteRecordInfo<'school-room', '/school/Room', Record<never, never>, Record<never, never>>,
+    'school-schedule': RouteRecordInfo<'school-schedule', '/school/Schedule', Record<never, never>, Record<never, never>>,
     'school-student-enroll': RouteRecordInfo<'school-student-enroll', '/school/StudentEnroll', Record<never, never>, Record<never, never>>,
     'school-subject': RouteRecordInfo<'school-subject', '/school/Subject', Record<never, never>, Record<never, never>>,
     'school-teacher': RouteRecordInfo<'school-teacher', '/school/Teacher', Record<never, never>, Record<never, never>>,

@@ -17,10 +17,14 @@ use App\Http\Controllers\Api\School\SubjectController;
 use App\Http\Controllers\Api\School\TeacherController;
 use App\Http\Controllers\Api\School\GradingRuleController;
 use App\Http\Controllers\Api\School\AssessmentController;
+use App\Http\Controllers\Api\School\DayController;
 use App\Http\Controllers\Api\School\FamilyController;
 use App\Http\Controllers\Api\School\TeacherClassController;
 use App\Http\Controllers\Api\School\StudentFamilyController;
 use App\Http\Controllers\Api\School\FamilyMemberController;
+use App\Http\Controllers\Api\School\ShiftController;
+use App\Http\Controllers\Api\School\ScheduleController;
+use App\Models\School\Shift;
 
 Route::post("subjects-activity-type-store", [SubjectActivityTypeController::class, "store"]);
 Route::post("subjects-activity-type-list", [SubjectActivityTypeController::class, "list"]);
@@ -36,6 +40,7 @@ Route::post("teachers-classes-show", [TeacherClassController::class, 'show']);
 Route::post("teachers-classes-delete_subject", [TeacherClassController::class, 'delete_subject']);
 Route::post("teachers-classes-update", [TeacherClassController::class, 'update']);
 Route::post("teachers-classes-delete", [TeacherClassController::class, 'delete']);
+Route::post("subject-class", [TeacherClassController::class, 'subjectClass']);
 
 Route::post("subjects-store", [SubjectController::class, "store"]);
 Route::post("subjects-list", [SubjectController::class, "list"]);
@@ -143,3 +148,16 @@ Route::post('family-members-show', [FamilyMemberController::class, 'show']);
 Route::post('family-members-store', [FamilyMemberController::class, 'store']);
 Route::post('family-members-update', [FamilyMemberController::class, 'update']);
 Route::post('family-members-delete', [FamilyMemberController::class, 'delete']);
+
+
+
+Route::post('schedules-list', [ScheduleController::class, 'list']);
+Route::post('schedules-store', [ScheduleController::class, 'store']);
+Route::post('schedules-show', [ScheduleController::class, 'show']);
+Route::post('schedules-update', [ScheduleController::class, 'update']);
+Route::post('schedules-delete', [ScheduleController::class, 'delete']);
+
+
+Route::post('days-all', [DayController::class, 'all']);
+
+Route::post('shift-all', [ShiftController::class, 'all']);

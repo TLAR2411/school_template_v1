@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\School\Shift;
 use App\Models\School\SubjectActivityType;
 use Database\Seeders\Address\AddressSeeder;
 use Database\Seeders\Auth\OAtuhSeeder;
@@ -19,12 +20,15 @@ use Illuminate\Database\Seeder;
 use Database\Seeders\School\StudentSeeder;
 use Database\Seeders\School\YearSeeder;
 use Database\Seeders\School\CurriculumSeeder;
+use Database\Seeders\School\DaySeeder;
 use Database\Seeders\School\EducationLevelSeeder;
 use Database\Seeders\School\GradeSeeder;
 use Database\Seeders\School\RoomSeeder;
+use Database\Seeders\School\ShiftSeeder;
 use Database\Seeders\School\SubjectActivityTypeSeeder;
 use Database\Seeders\School\SubjectSeeder;
 use Database\Seeders\School\TeacherSeeder;
+
 
 class DatabaseSeeder extends Seeder
 {
@@ -52,7 +56,9 @@ class DatabaseSeeder extends Seeder
             GradeSeeder::class,
             SubjectSeeder::class,
             SubjectActivityTypeSeeder::class,
-            TeacherSeeder::class
+            TeacherSeeder::class,
+            DaySeeder::class,
+            ShiftSeeder::class,
         ]);
     }
 }
