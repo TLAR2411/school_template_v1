@@ -67,9 +67,8 @@ const headers = [
   { title: t("Grade"), key: "gradeName", visible: true },
   { title: t("Room Number"), key: "room_number", visible: true },
   { title: t("Education Level"), key: "educationLevel", visible: true },
+  { title: t("Schedule"), key: "schedule", visible: true },
   { title: t("Status"), key: "is_active", visible: true },
-
-  { title: t("Description"), key: "description", visible: true },
 
   {
     title: t("Action"),
@@ -79,6 +78,14 @@ const headers = [
     // fixed: mdAndUp.value,
   },
 ];
+
+const onSchedule = (item) => {
+  console.log(item);
+  router.push({
+    name: "school-schedule-id",
+    params: { id: item.id },
+  });
+};
 
 const onDelete = async (item) => {
   try {
@@ -379,6 +386,16 @@ onMounted(async () => {
         {{ locale === "km" ? item.edu_name_kh : item.edu_name_en }}
       </span>
       <span v-else>N/A</span>
+    </template>
+
+    <template #item.schedule="{ item }">
+      <VBtn
+        size="small"
+        variant="tonal"
+        density="comfortable"
+        @click="onSchedule(item)"
+        >{{ t("Schedule") }}</VBtn
+      >
     </template>
 
     <template v-slot:item.is_active="{ item }">

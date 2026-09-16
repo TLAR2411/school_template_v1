@@ -11,15 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('term_periods', function (Blueprint $table) {
+        Schema::create('term_period_list', function (Blueprint $table) {
             $table->id();
-            $table->string('name_en')->nullable();
-            $table->string('name_kh')->nullable();
-            $table->integer('cur_id');
-            $table->integer('branch_id');
+            $table->integer('month_id');
+            $table->integer('term_period_id');
+            $table->integer('grade_id');
+            $table->integer('semester_month_id')->nullable();
+            // $table->integer('edu_id');
+            $table->string('role')->nullable();   //study or exam
             $table->integer('year_id');
-            $table->date('start_date');
-            $table->date('end_date');
+            $table->integer('cur_id')->nullable();
+            $table->integer('branch_id');
             $table->integer('created_by')->nullable();
             $table->integer('updated_by')->nullable();
             $table->timestamps();
@@ -31,6 +33,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('term_periods');
+        Schema::dropIfExists('term_period_list');
     }
 };

@@ -26,6 +26,13 @@ export default [
         icon: { icon: "tabler-users" },
     },
 
+    {
+        title: "Term Period",
+        to: { name: "school-term-period" },
+        icon: { icon: "tabler-calendar-time" },
+    },
+
+
     // {
     //     title: "Manage Classes",
     //     icon: { icon: "tabler-home-cog" },

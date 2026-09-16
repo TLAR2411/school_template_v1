@@ -22,9 +22,22 @@ use App\Http\Controllers\Api\School\FamilyController;
 use App\Http\Controllers\Api\School\TeacherClassController;
 use App\Http\Controllers\Api\School\StudentFamilyController;
 use App\Http\Controllers\Api\School\FamilyMemberController;
+use App\Http\Controllers\Api\School\MonthController;
 use App\Http\Controllers\Api\School\ShiftController;
 use App\Http\Controllers\Api\School\ScheduleController;
-use App\Models\School\Shift;
+use App\Http\Controllers\Api\School\TermPeriodController;
+use App\Http\Controllers\Api\School\TermPeriodListController;
+
+Route::post('term-period-lists-store', [TermPeriodListController::class, 'store']);
+Route::post('term-period-lists-update', [TermPeriodListController::class, 'update']);
+
+
+Route::post('term-periods-store', [TermPeriodController::class, 'store']);
+Route::post('term-periods-list', [TermPeriodController::class, 'list']);
+Route::post('term-periods-show', [TermPeriodController::class, 'show']);
+Route::post('term-periods-update', [TermPeriodController::class, 'update']);
+Route::post('term-periods-delete', [TermPeriodController::class, 'delete']);
+Route::post('term-periods-all', [TermPeriodController::class, 'all']);
 
 Route::post("subjects-activity-type-store", [SubjectActivityTypeController::class, "store"]);
 Route::post("subjects-activity-type-list", [SubjectActivityTypeController::class, "list"]);
@@ -161,3 +174,4 @@ Route::post('schedules-delete', [ScheduleController::class, 'delete']);
 Route::post('days-all', [DayController::class, 'all']);
 
 Route::post('shift-all', [ShiftController::class, 'all']);
+Route::post('months-all', [MonthController::class, 'all']);

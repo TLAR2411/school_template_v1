@@ -1,7 +1,15 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+} from "vue";
 import { useI18n } from "vue-i18n";
 import { useDisplay } from "vuetify";
+import { useRoute } from "vue-router";
 import AddEditScheduleDialog from "./AddEditScheduleDialog.vue";
 import {
   getDays,
@@ -12,6 +20,7 @@ import {
 import { useSettingStore } from "@/stores/settingStore.js";
 import { api } from "@/utils/api.js";
 
+const route = useRoute();
 const { t, locale } = useI18n();
 const { smAndDown } = useDisplay();
 const settingStore = useSettingStore();
@@ -376,9 +385,13 @@ watch(
   },
 );
 
+/** Skip clearing class when we set grade from route param */
+let applyingFromRoute = false;
+
 watch(
   () => formSearch.value.grade_id,
   () => {
+    if (applyingFromRoute) return;
     formSearch.value.class_id = null;
     subjects.value = [];
     schedules.value = [];
@@ -392,6 +405,34 @@ watch(
   },
 );
 
+/** Prefill grade + class when opened as /schedule/:id (from Class list) */
+async function applyClassFromRoute(rawId) {
+  if (!rawId) return;
+
+  const classId = Number(rawId);
+  if (!Number.isFinite(classId)) return;
+
+  if (!allClasses.value.length) {
+    allClasses.value = (await getClasses()) || [];
+  }
+
+  const cls = allClasses.value.find((c) => c.id == classId);
+  if (!cls) return;
+
+  applyingFromRoute = true;
+  formSearch.value.grade_id = cls.grade_id;
+  formSearch.value.class_id = classId;
+  await nextTick();
+  applyingFromRoute = false;
+}
+
+watch(
+  () => route.params.id,
+  (id) => {
+    applyClassFromRoute(id);
+  },
+);
+
 onMounted(async () => {
   isLoading.value = true;
   try {
@@ -399,6 +440,8 @@ onMounted(async () => {
     grades.value = (await getGrades()) || [];
     allClasses.value = (await getClasses()) || [];
     ensureMobileDaySelected();
+    // after classes loaded — apply /schedule/:id if present
+    await applyClassFromRoute(route.params.id);
   } finally {
     isLoading.value = false;
   }
@@ -681,6 +724,14 @@ function onPointerUp() {
   openCreate(dayId, minutesToTime(from), minutesToTime(to));
 }
 
+function teacherName(subjectId) {
+  const s = subjects.value.find((x) => x.id == subjectId);
+  if (!s) return "-";
+  return locale.value === "km"
+    ? s.teacher_name_kh || s.teacher_name_en || "-"
+    : s.teacher_name_en || s.teacher_name_kh || "-";
+}
+
 onBeforeUnmount(() => {
   window.removeEventListener("pointermove", onPointerMove);
   window.removeEventListener("pointerup", onPointerUp);
@@ -702,7 +753,6 @@ onBeforeUnmount(() => {
     @on-update="onUpdate"
     @on-delete="onDelete"
   />
-
   <AppCard
     :title="t('Class Schedule')"
     title-icon="tabler-calendar-time"
@@ -739,52 +789,46 @@ onBeforeUnmount(() => {
             :disabled="!formSearch.grade_id"
           />
         </VCol>
-
-        <VCol
-          cols="6"
-          sm="3"
-          md="3"
-          lg="3"
-          v-if="formSearch.class_id && !isMobile"
-        >
-          <VBtnToggle
-            v-model="viewMode"
-            mandatory
-            rounded="xl"
-            density="compact"
-            color="primary"
-            divided
-            class="view-toggle ma-0 gap-1"
-          >
-            <VBtn value="week" rounded="xl">
-              {{ t("Week") }}
-            </VBtn>
-            <VBtn value="list" rounded="xl">
-              {{ t("List") }}
-            </VBtn>
-          </VBtnToggle>
-        </VCol>
-        <VCol
-          v-if="formSearch.class_id"
-          cols="6"
-          md="3"
-          sm="3"
-          lg="3"
-          class="d-flex justify-md-end ga-2 flex-wrap"
-          :class="{ 'ms-auto': isMobile }"
-        >
-          <VBtn
-            color="primary"
-            variant="tonal"
-            prepend-icon="tabler-plus"
-            :disabled="!formSearch.class_id"
-            @click="openCreate(selectedMobileDayId)"
-          >
-            {{ t("Add Period") }}
-          </VBtn>
-        </VCol>
       </VRow>
     </template>
+
+    <VRow class="d-flex justify-end">
+      <VCol
+        v-if="formSearch.class_id"
+        cols="12"
+        md="12"
+        sm="12"
+        lg="12"
+        class="d-flex justify-space-between"
+        :class="{ 'ms-auto': isMobile }"
+      >
+        <VBtnToggle
+          v-model="viewMode"
+          mandatory
+          rounded="xl"
+          density="compact"
+          color="primary"
+          divided
+          class="view-toggle ma-0 gap-1"
+        >
+          <VBtn value="week" rounded="xl">
+            {{ t("Week") }}
+          </VBtn>
+          <VBtn value="list" rounded="xl">
+            {{ t("List") }}
+          </VBtn>
+        </VBtnToggle>
+        <VBtn
+          color="primary"
+          variant="tonal"
+          prepend-icon="tabler-plus"
+          :disabled="!formSearch.class_id"
+          @click="openCreate(selectedMobileDayId)"
+        >
+          {{ t("Add Period") }}
+        </VBtn>
+      </VCol>
+    </VRow>
 
     <div
       v-if="!formSearch.class_id"
@@ -843,7 +887,7 @@ onBeforeUnmount(() => {
                 {{ subjectName(item.subject_id) }}
               </div>
               <div class="mobile-card__time">
-                {{ formatRangeAmPm(item.start, item.end) }}
+                {{ teacherName(item.subject_id) }}
               </div>
             </div>
             <IconBtn
@@ -919,7 +963,9 @@ onBeforeUnmount(() => {
                 <div class="block-title">
                   {{ subjectName(item.subject_id) }}
                 </div>
-                <div class="block-time">{{ item.start }} – {{ item.end }}</div>
+                <div class="block-time">
+                  ({{ teacherName(item.subject_id) }})
+                </div>
               </button>
             </div>
 

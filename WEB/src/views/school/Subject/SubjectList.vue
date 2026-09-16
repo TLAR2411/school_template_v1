@@ -12,7 +12,7 @@ const router = useRouter();
 const { mdAndUp } = useDisplay();
 definePage({
   meta: {
-    title: "Checkin Checkout",
+    title: "Subjects",
     layout: "default",
     subject: "Auth",
     requiresAuth: true,

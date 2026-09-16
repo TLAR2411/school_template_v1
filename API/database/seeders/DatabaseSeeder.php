@@ -23,6 +23,7 @@ use Database\Seeders\School\CurriculumSeeder;
 use Database\Seeders\School\DaySeeder;
 use Database\Seeders\School\EducationLevelSeeder;
 use Database\Seeders\School\GradeSeeder;
+use Database\Seeders\School\MonthSeeder;
 use Database\Seeders\School\RoomSeeder;
 use Database\Seeders\School\ShiftSeeder;
 use Database\Seeders\School\SubjectActivityTypeSeeder;
@@ -59,6 +60,7 @@ class DatabaseSeeder extends Seeder
             TeacherSeeder::class,
             DaySeeder::class,
             ShiftSeeder::class,
+            MonthSeeder::class,
         ]);
     }
 }

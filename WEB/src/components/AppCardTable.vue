@@ -215,6 +215,42 @@ const mobileHeaders = computed(() => {
   };
 });
 
+const applyLocalItems = () => {
+  let items = Array.isArray(props.items) ? [...props.items] : [];
+  if (props.transformData) items = props.transformData(items);
+
+  const search = (filters.value?.search || "").toString().trim().toLowerCase();
+  if (search) {
+    items = items.filter((item) =>
+      JSON.stringify(item).toLowerCase().includes(search),
+    );
+  }
+
+  const limit =
+    options.value.limit === -1 ? Math.max(items.length, 1) : options.value.limit;
+  const page = options.value.page || 1;
+  const total = items.length;
+  const start = (page - 1) * limit;
+  const pageItems = items.slice(start, start + limit);
+
+  dataItems.value = {
+    data: pageItems,
+    links: [],
+    meta: {
+      total,
+      from: total ? start + 1 : 0,
+      to: start + pageItems.length,
+      per_page: limit,
+      current_page: page,
+      last_page: Math.max(1, Math.ceil(total / limit) || 1),
+    },
+  };
+
+  if (props.expandByDefault) {
+    expandedRows.value = pageItems.map((item) => item[props.itemValue]);
+  }
+};
+
 const initData = async (item) => {
   internalLoading.value = true;
   emit("update:loading", true);
@@ -239,6 +275,8 @@ const initData = async (item) => {
         expandedRows.value = dataItems.value.data.map(
           (item) => item[props.itemValue],
         );
+    } else {
+      applyLocalItems();
     }
   } catch (error) {
     console.error("Failed to fetch data:", error);
@@ -247,6 +285,14 @@ const initData = async (item) => {
     emit("update:loading", false);
   }
 };
+
+watch(
+  () => props.items,
+  () => {
+    if (props.apiUrl == null) applyLocalItems();
+  },
+  { deep: true },
+);
 
 onMounted(() => {
   emit("update:filters", filters.value || {});
