@@ -40,11 +40,8 @@ const isSaving = ref(false);
 
 const grades = ref([]);
 const allClasses = ref([]);
-/** All subjects that day (dropdown never shrinks) */
 const subjectsForDay = ref([]);
 const subjects = computed(() => subjectsForDay.value);
-
-/** All schedule periods that day (from API) */
 const allPeriods = ref([]);
 
 const formSearch = ref({
@@ -61,8 +58,32 @@ const editableRows = ref([]);
 const rowCache = ref({});
 
 let applyingFromRoute = false;
-/** Skip tab watch while applying API data */
 let syncingFromApi = false;
+
+/** Unsaved changes: snapshot after load / tab switch */
+const rowSnapshot = ref(null);
+
+function rowsForCompare(rows) {
+  return rows.map((r) => ({
+    student_id: r.student_id,
+    is_present: r.is_present,
+    is_late: r.is_late,
+    is_permission: r.is_permission,
+    is_approved: r.is_approved,
+    reason: r.reason ?? null,
+  }));
+}
+
+function takeSnapshot() {
+  rowSnapshot.value = JSON.stringify(rowsForCompare(editableRows.value));
+}
+
+const isDirty = computed(() => {
+  if (!rowSnapshot.value || !editableRows.value.length) return false;
+  return (
+    JSON.stringify(rowsForCompare(editableRows.value)) !== rowSnapshot.value
+  );
+});
 
 function isoWeekday(date) {
   if (!date) return null;
@@ -193,7 +214,6 @@ const gradeTitle = (item) => {
   return subjectLabel(item);
 };
 
-/** Periods shown in tabs (filter dropdown only affects view, not API) */
 const periods = computed(() => {
   const sid = formSearch.value.subject_id;
   if (!sid) return allPeriods.value;
@@ -230,7 +250,6 @@ const emptyMessage = computed(() => {
   return "";
 });
 
-/** not_submitted | partial | submitted */
 const submitStatus = computed(() => {
   const rows = editableRows.value;
   if (!rows.length || !activeSubjectId.value) return "empty";
@@ -239,6 +258,14 @@ const submitStatus = computed(() => {
   if (saved === rows.length) return "submitted";
   return "partial";
 });
+
+const studentsNotYetSubmitted = computed(() =>
+  editableRows.value.filter((r) => r.attendance_id == null),
+);
+
+const notSubmittedNamesText = computed(() =>
+  studentsNotYetSubmitted.value.map((r) => studentName(r)).join(", "),
+);
 
 function getCellFromSheet(student, subjectId) {
   const sid = Number(subjectId);
@@ -271,13 +298,15 @@ function applyEditableRowsForSubject(subjectId) {
   const sid = Number(subjectId);
   if (!sid) {
     editableRows.value = [];
+    rowSnapshot.value = null;
     return;
   }
   if (rowCache.value[sid]?.length) {
     editableRows.value = rowCache.value[sid].map((r) => ({ ...r }));
-    return;
+  } else {
+    editableRows.value = buildRowsForSubject(sid);
   }
-  editableRows.value = buildRowsForSubject(sid);
+  nextTick(() => takeSnapshot());
 }
 
 function pickDefaultActiveSubject() {
@@ -297,6 +326,7 @@ async function loadAttendance() {
     subjectsForDay.value = [];
     editableRows.value = [];
     rowCache.value = {};
+    rowSnapshot.value = null;
     return;
   }
 
@@ -315,6 +345,7 @@ async function loadAttendance() {
       sheetStudents.value = [];
       allPeriods.value = [];
       editableRows.value = [];
+      rowSnapshot.value = null;
       return;
     }
 
@@ -336,6 +367,7 @@ async function loadAttendance() {
     console.error("loadAttendance:", err);
     sheetStudents.value = [];
     editableRows.value = [];
+    rowSnapshot.value = null;
   } finally {
     isLoading.value = false;
   }
@@ -405,7 +437,6 @@ watch(
   },
 );
 
-/** Load only when class or date changes (NOT subject — avoids double call + cancel) */
 watch(
   () => [formSearch.value.class_id, formSearch.value.date],
   () => {
@@ -424,7 +455,6 @@ watch(
   },
 );
 
-/** Subject filter or tab → switch rows without API */
 watch(
   () => formSearch.value.subject_id,
   (sid) => {
@@ -484,7 +514,6 @@ onMounted(async () => {
       formSearch.value.day_id = isoWeekday(formSearch.value.date);
     }
     await applyClassFromRoute(route.params.id);
-    // load runs from class_id watch when route sets class
     if (formSearch.value.class_id && formSearch.value.date) {
       await loadAttendance();
     }
@@ -492,20 +521,6 @@ onMounted(async () => {
     console.error(e);
   }
 });
-
-// watch(
-//   () => activeTabSubjectId.value,
-//   (newS) => {
-//     formSearch.value.subject_id = newS;
-//   },
-// );
-
-const studentsNotYetSubmitted = computed(() =>
-  editableRows.value.filter((r) => r.attendance_id == null),
-);
-const notSubmittedNamesText = computed(() =>
-  studentsNotYetSubmitted.value.map((r) => studentName(r)).join(", "),
-);
 </script>
 
 <template>
@@ -561,29 +576,21 @@ const notSubmittedNamesText = computed(() =>
               :disabled="!formSearch.class_id || !subjects.length"
             />
           </VCol>
-          <!-- <VCol cols="12" class="d-flex justify-end gap-2 pb-2">
-            <VBtn
-              variant="tonal"
-              color="info"
-              :disabled="!editableRows.length"
-              @click="approveAllRows"
-            >
-              {{ t("Approve") }}
-            </VBtn>
-            <VBtn
-              color="primary"
-              :loading="isSaving"
-              :disabled="!canLoad || !hasSchedule || !editableRows.length"
-              @click="saveAttendance"
-            >
-              {{ t("Save") }}
-            </VBtn>
-          </VCol> -->
         </VRow>
       </template>
 
+      <!-- Priority: unsaved changes first -->
       <VAlert
-        v-if="
+        v-if="isDirty && editableRows.length"
+        type="warning"
+        variant="outlined"
+        density="compact"
+        class="mb-3"
+      >
+        {{ t("You have unsaved changes. Please save again.") }}
+      </VAlert>
+      <VAlert
+        v-else-if="
           submitStatus === 'not_submitted' && hasSchedule && editableRows.length
         "
         type="warning"
@@ -611,27 +618,9 @@ const notSubmittedNamesText = computed(() =>
       >
         <div class="font-weight-medium mb-1">
           {{ t("Attendance not yet submitted for") }}:
-          <span class="font-weight-bold">{{ notSubmittedNamesText }},</span>
         </div>
+        <div>{{ notSubmittedNamesText }}</div>
       </VAlert>
-
-      <!-- <VTabs
-      v-if="showSubjectTabs"
-      v-model="activeTabSubjectId"
-      class="mb-3"
-      show-arrows
-    >
-      <VTab
-        v-for="p in allPeriods"
-        :key="p.id ?? `${p.subject_id}-${p.start}`"
-        :value="Number(p.subject_id)"
-      >
-        {{ subjectLabel(p.subject) }}
-        <span v-if="p.start" class="text-caption ms-1">
-          ({{ p.start }}–{{ p.end }})
-        </span>
-      </VTab>
-    </VTabs> -->
 
       <VAlert
         v-if="emptyMessage && formSearch.class_id"
@@ -695,7 +684,6 @@ const notSubmittedNamesText = computed(() =>
                   @click="togglePermission(row)"
                 />
               </td>
-
               <td>
                 <AppCombobox
                   v-model="row.reason"
@@ -762,7 +750,6 @@ const notSubmittedNamesText = computed(() =>
                 {{ t("Ask Permission") }}
               </button>
             </div>
-
             <AppCombobox
               v-if="row.is_permission || !row.is_present"
               v-model="row.reason"
@@ -778,6 +765,7 @@ const notSubmittedNamesText = computed(() =>
         </div>
       </template>
     </AppCard>
+
     <VRow class="mt-1">
       <VCol cols="12" class="d-flex justify-end ga-2">
         <VBtn
@@ -789,10 +777,9 @@ const notSubmittedNamesText = computed(() =>
         >
           {{ t("Approve") }}
         </VBtn>
-
         <VBtn
           :class="smAndDown ? 'w-50' : 'w-auto'"
-          color="primary"
+          :color="isDirty ? 'warning' : 'primary'"
           :loading="isSaving"
           :disabled="!canLoad || !hasSchedule || !editableRows.length"
           @click="saveAttendance"
@@ -884,7 +871,6 @@ const notSubmittedNamesText = computed(() =>
 }
 .mobile-actions {
   display: flex;
-
   gap: 6px;
 }
 .att-chip {
