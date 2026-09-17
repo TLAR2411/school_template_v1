@@ -64,19 +64,26 @@ watch(
 
 const headers = [
   {
-    title: t("Action"),
-    key: "actions",
-    align: "left",
+    title: t("Quick Action"),
+    key: "quickaction",
     visible: true,
-
-    // fixed: mdAndUp.value,
+    align: "left",
   },
+
   { title: t("Class Name"), key: "className", visible: true, align: "left" },
   { title: t("Grade"), key: "gradeName", visible: true },
   { title: t("Room Number"), key: "room_number", visible: true },
   { title: t("Education Level"), key: "educationLevel", visible: true },
   //   { title: t("Schedule"), key: "schedule", visible: true },
   { title: t("Status"), key: "is_active", visible: true },
+  {
+    title: t("Action"),
+    key: "actions",
+    align: "center",
+    visible: true,
+
+    // fixed: mdAndUp.value,
+  },
 ];
 
 const onSchedule = (item) => {
@@ -263,6 +270,13 @@ watch(
   },
 );
 
+const teacherAction = (item) => {
+  router.push({
+    name: "school-teacher-action-id",
+    params: { id: item.id },
+  });
+};
+
 onMounted(async () => {
   educationLevels.value = await getEducationLevels();
   grades.value = await getGrades();
@@ -303,8 +317,8 @@ onMounted(async () => {
     is-add
     is-attendance
     btn-attendance
-    is-schedule
     btn-schedule
+    is-schedule
     is-delete
     is-disable
     is-view
@@ -367,6 +381,14 @@ onMounted(async () => {
       </VRow>
     </template>
 
+    <template #item.quickaction="{ item }">
+      <div class="d-flex ga-2">
+        <VBtn @click="teacherAction(item)" density="comfortable">{{
+          $t("Action")
+        }}</VBtn>
+      </div>
+    </template>
+
     <template #item.className="{ item }">
       <span v-if="locale === 'km'">
         {{ item.name_kh }}
@@ -380,11 +402,6 @@ onMounted(async () => {
         </span>
         {{ item.name_en }}
       </span>
-    </template>
-
-    <template #item.gradeName="{ item }">
-      <span v-if="item.grade_level != null">{{ item.grade_level }}</span>
-      {{ locale === "km" ? item.grade_name_kh : item.grade_name_en }}
     </template>
 
     <template #item.educationLevel="{ item }">

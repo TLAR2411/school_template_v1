@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('type')->nullable();
             $table->string('email')->nullable();
             $table->string('phone')->nullable();
+            $table->integer('family_id')->nullable();
             $table->integer('created_by')->nullable();
             $table->integer('updated_by')->nullable();
             $table->integer('deleted_by')->nullable();

@@ -1,13 +1,14 @@
 <script setup>
-import ClassList from "@/views/school/Class/ClassList.vue";
-import GradeList from "@/views/school/Grade/GradeList.vue";
-import RoomList from "@/views/school/Room/RoomList.vue";
-import { useRoute, useRouter } from "vue-router";
-import { ref } from "vue";
+import { ref, watch } from "vue";
+import CheckAttendance from "@/views/school/Attendance/CheckAttendance.vue";
 import AppCustomTap from "@/components/AppCustomTap.vue";
 
+import { useRoute, useRouter } from "vue-router";
+
 const route = useRoute();
+
 const router = useRouter();
+
 const currentTab = ref(route.query.tab || "class");
 
 watch(
@@ -19,33 +20,27 @@ watch(
 
 const tabs = [
   {
-    value: "class",
-    title: "Classes",
-    description: "Manage Classes",
-    icon: "tabler-home-cog",
+    value: "attendance",
+    title: "Attendances",
+    description: "Attendances",
+    icon: "tabler-file-check",
   },
   {
-    value: "grade",
-    title: "Grades",
-    description: "Manage Grades",
-    icon: "tabler-chart-arrows-vertical",
-  },
-  {
-    value: "room",
-    title: "Rooms",
-    description: "Manage Rooms",
-    icon: "tabler-home",
+    value: "score",
+    title: "Score",
+    description: "Score",
+    icon: "tabler-folders",
   },
 ];
 
 definePage({
   meta: {
-    title: "Classes",
+    title: "Teacher Action",
     layout: "default",
     subject: "Auth",
     requiresAuth: true,
     // permissions: "positions:view-page",
-    layoutWrapperClasses: "layout-content-height-fixed",
+    // layoutWrapperClasses: "layout-content-height-fixed",
   },
 });
 </script>
@@ -55,14 +50,11 @@ definePage({
     <AppCustomTap v-model="currentTab" :tabs="tabs" />
 
     <VWindow v-model="currentTab" class="mt-1">
-      <VWindowItem value="class">
-        <ClassList />
+      <VWindowItem value="attendance">
+        <CheckAttendance />
       </VWindowItem>
-      <VWindowItem value="grade">
-        <GradeList />
-      </VWindowItem>
-      <VWindowItem value="room">
-        <RoomList />
+      <VWindowItem value="score">
+        <!-- <GradeList /> -->
       </VWindowItem>
     </VWindow>
   </div>

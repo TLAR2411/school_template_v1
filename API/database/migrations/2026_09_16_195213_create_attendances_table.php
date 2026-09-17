@@ -23,6 +23,8 @@ return new class extends Migration
             $table->boolean('is_permission')->default(false);
             $table->boolean('is_present')->default(true);
             $table->boolean('is_approved')->default(false);
+            $table->integer('branch_id')->nullable();
+            $table->integer('cur_id')->nullable();
             $table->integer('created_by')->nullable();
             $table->integer('updated_by')->nullable();
 

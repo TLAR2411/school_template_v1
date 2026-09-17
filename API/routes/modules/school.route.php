@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\School\SubjectController;
 use App\Http\Controllers\Api\School\TeacherController;
 use App\Http\Controllers\Api\School\GradingRuleController;
 use App\Http\Controllers\Api\School\AssessmentController;
+use App\Http\Controllers\Api\School\AttendanceController;
 use App\Http\Controllers\Api\School\DayController;
 use App\Http\Controllers\Api\School\FamilyController;
 use App\Http\Controllers\Api\School\TeacherClassController;
@@ -27,6 +28,9 @@ use App\Http\Controllers\Api\School\ShiftController;
 use App\Http\Controllers\Api\School\ScheduleController;
 use App\Http\Controllers\Api\School\TermPeriodController;
 use App\Http\Controllers\Api\School\TermPeriodListController;
+
+Route::post('attendance-list', [AttendanceController::class, 'getAttendanceData']);
+Route::post('attendance-store', [AttendanceController::class, 'store']);
 
 Route::post('term-period-lists-store', [TermPeriodListController::class, 'store']);
 Route::post('term-period-lists-update', [TermPeriodListController::class, 'update']);

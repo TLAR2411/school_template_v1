@@ -581,12 +581,17 @@
   "Yearly": "ប្រចាំឆ្នាំ",
 
   "Reload": "ទាញទិន្នន័យ",
-  "Schedule": "តារាងបង់ប្រាក់",
+  "Schedule": "កាលវិភាគ",
+  "Attendance": "អវត្តមាន",
 
-  "Present": "វត្តមាន",
+  "Students": "សិស្ស",
+  "Family": "គ្រួសារសិស្ស",
+
+  "Present": "មករៀន",
   "Absent": "អវត្តមាន",
   "Late": "យឺត",
   "Ask Permission": "មានច្បាប់",
+  "Term Period": "រយៈពេលសិក្សា",
 
   "Deposit Transactions": "ប្រតិបត្តិការប្រាក់តម្កល់",
   "Deposit": "ប្រាក់តម្កល់",
@@ -594,11 +599,21 @@
   "Deposit Amount": "ចំនួនប្រាក់តម្កល់",
   "Deposit History": "ប្រវត្តិប្រាក់តម្កល់",
   "Deposit Rate": "អត្រាប្រាក់តម្កល់",
+  "Do not come": "មិនមក",
+  "Teachers": "គ្រូបង្រៀន",
+
+  "Attendance not yet submitted for": "មិនទាន់រក្សាទុកវត្តមានសម្រាប់",
+  "Students not yet submitted": "សិស្សដែលមិនទាន់រក្សាទុក",
 
   "Loan Portfolio": "ទុនឥណទាន",
   "Loan Operational": "ប្រតិបត្តិការប្រាក់កម្ចី",
 
   "Expense Reports": "របាយការណ៍ចំណាយ",
+  "Subjects": "មុខវិជ្ជា",
+  "Photo": "រូបភាព",
+  "Nationality": "សញ្ជាតិ",
+  "Date of Birth": "ថ្ងៃខែឆ្នាំកំណើត",
+  "Phone": "ទូរស័ព្ទ",
 
   "All Loans": "ទាំងអស់",
   "Current Loans": "ល្អ",

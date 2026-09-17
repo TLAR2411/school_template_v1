@@ -19,6 +19,16 @@ class Attendance extends Model
         'is_present',
         'is_approved',
         'created_by',
-        'updated_by'
+        'updated_by',
+        'branch_id',
+        'cur_id',
+    ];
+
+    protected $casts = [
+        'date' => 'date',
+        'is_late' => 'boolean',
+        'is_permission' => 'boolean',
+        'is_present' => 'boolean',
+        'is_approved' => 'boolean',
     ];
 }

@@ -167,6 +167,7 @@ onMounted(async () => {
           :label="t('Main Subject')"
           autocomplete="off"
           persistent-hint
+          clearable
         />
       </VCol>
       <VCol cols="12" sm="12" md="12">
@@ -219,6 +220,7 @@ onMounted(async () => {
           :label="t('Main Subject')"
           autocomplete="off"
           persistent-hint
+          clearable
         />
       </VCol>
       <VCol cols="12" sm="12" md="12">

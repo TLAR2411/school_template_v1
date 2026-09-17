@@ -8,7 +8,7 @@ export default [
     {
         title: "Students",
         to: { name: "school-student-enroll" },
-        icon: { icon: "tabler-user-plus" },
+        icon: { icon: "tabler-users" },
     },
     {
         title: "Attendance",
@@ -21,21 +21,23 @@ export default [
         icon: { icon: "tabler-calendar" },
     },
     {
-        title: "Manage Classes",
+        title: "Classes",
         to: { name: "school-class" },
         icon: { icon: "tabler-home-cog" },
     },
     {
-        title: "Family",
-        to: { name: "school-family" },
-        icon: { icon: "tabler-users" },
+        title: "Teachers",
+        to: { name: "school-teacher" },
+        icon: { icon: "tabler-user" },
     },
 
     {
-        title: "Term Period",
-        to: { name: "school-term-period" },
-        icon: { icon: "tabler-calendar-time" },
+        title: "Family",
+        to: { name: "school-family" },
+        icon: { icon: "tabler-users-group" },
     },
+
+
 
 
     // {
@@ -60,7 +62,7 @@ export default [
     // },
 
     {
-        title: "Manage Subjects",
+        title: "Subjects",
         icon: { icon: "tabler-files" },
         to: { name: 'school-subject' }
         // children: [
@@ -81,9 +83,10 @@ export default [
         // ],
     },
 
+
     {
-        title: "Teachers",
-        to: { name: "school-teacher" },
-        icon: { icon: "tabler-user" },
-    }
+        title: "Term Period",
+        to: { name: "school-term-period" },
+        icon: { icon: "tabler-calendar-time" },
+    },
 ];

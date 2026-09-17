@@ -12,9 +12,7 @@ import { useRouter } from "vue-router";
 // import AddEditStudentClassDialog from "../studentclass/AddEditStudentClassDialog.vue";
 import AddEditStudentEnrollDialog from "./AddEditStudentEnrollDialog.vue";
 
-
 const router = useRouter();
-
 
 const { mdAndUp } = useDisplay();
 
@@ -46,17 +44,41 @@ definePage({
 const { t, locale } = useI18n();
 
 const headers = ref([
-{ title: "Photo", key: "photo_path", visible: true },
+  { title: t("Students"), key: "photo_path", visible: true },
 
-{ title: "Gender", key: "gender", visible: true,value:(items)=>formatGender(items.gender) },
-{ title: "Nationality", key: "nation", visible: true, value:(items)=>formatNation(items.nation) },
-{ title: "Date of Birth", key: "dob", visible: true,value:(items)=>formatDate(items.dob) },
-{ title: "Phone", key: "phone", visible: true,value:(items)=>formatContact(items.phone) },
-{ title: "Email", key: "email", visible: true },
-{
-  title: "Action",key: "actions", visible: true,align: "center",sortable: false,
-}
-])
+  {
+    title: t("Gender"),
+    key: "gender",
+    visible: true,
+    value: (items) => formatGender(items.gender),
+  },
+  {
+    title: t("Nationality"),
+    key: "nation",
+    visible: true,
+    value: (items) => formatNation(items.nation),
+  },
+  {
+    title: t("Date of Birth"),
+    key: "dob",
+    visible: true,
+    value: (items) => formatDate(items.dob),
+  },
+  {
+    title: "Phone",
+    key: t("phone"),
+    visible: true,
+    value: (items) => formatContact(items.phone),
+  },
+  { title: "Email", key: "email", visible: true },
+  {
+    title: "Action",
+    key: "actions",
+    visible: true,
+    align: "center",
+    sortable: false,
+  },
+]);
 
 const onDisable = async (item) => {
   try {
@@ -109,7 +131,6 @@ const onCreate = async (data, callback) => {
 const onEdit = async (item) => {
   router.push({ name: "admin-students-edit-id", params: { id: item.id } });
 };
-
 </script>
 
 <template>

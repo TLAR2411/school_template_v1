@@ -64,6 +64,7 @@ declare module 'vue-router/auto-routes' {
     'school-teacher': RouteRecordInfo<'school-teacher', '/school/Teacher', Record<never, never>, Record<never, never>>,
     'school-teacher-create': RouteRecordInfo<'school-teacher-create', '/school/Teacher/create', Record<never, never>, Record<never, never>>,
     'school-teacher-edit-id': RouteRecordInfo<'school-teacher-edit-id', '/school/Teacher/edit/:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,
+    'school-teacher-action-id': RouteRecordInfo<'school-teacher-action-id', '/school/TeacherAction/:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,
     'school-term-period': RouteRecordInfo<'school-term-period', '/school/TermPeriod', Record<never, never>, Record<never, never>>,
     'school-term-period-id': RouteRecordInfo<'school-term-period-id', '/school/TermPeriod/:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,
     'second-page': RouteRecordInfo<'second-page', '/second-page', Record<never, never>, Record<never, never>>,
