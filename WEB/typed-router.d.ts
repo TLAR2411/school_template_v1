@@ -48,6 +48,8 @@ declare module 'vue-router/auto-routes' {
     'login': RouteRecordInfo<'login', '/login', Record<never, never>, Record<never, never>>,
     'not-authorized': RouteRecordInfo<'not-authorized', '/not-authorized', Record<never, never>, Record<never, never>>,
     'scan': RouteRecordInfo<'scan', '/scan', Record<never, never>, Record<never, never>>,
+    'school-attendance': RouteRecordInfo<'school-attendance', '/school/Attendance', Record<never, never>, Record<never, never>>,
+    'school-attendance-id': RouteRecordInfo<'school-attendance-id', '/school/Attendance/:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,
     'school-class': RouteRecordInfo<'school-class', '/school/Class', Record<never, never>, Record<never, never>>,
     'school-class-detail-id': RouteRecordInfo<'school-class-detail-id', '/school/Class/detail/:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,
     'school-dashboards': RouteRecordInfo<'school-dashboards', '/school/dashboards', Record<never, never>, Record<never, never>>,

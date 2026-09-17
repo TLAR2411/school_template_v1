@@ -63,20 +63,20 @@ watch(
 );
 
 const headers = [
-  { title: t("Class Name"), key: "className", visible: true },
-  { title: t("Grade"), key: "gradeName", visible: true },
-  { title: t("Room Number"), key: "room_number", visible: true },
-  { title: t("Education Level"), key: "educationLevel", visible: true },
-  { title: t("Schedule"), key: "schedule", visible: true },
-  { title: t("Status"), key: "is_active", visible: true },
-
   {
     title: t("Action"),
     key: "actions",
-    align: "center",
+    align: "left",
     visible: true,
+
     // fixed: mdAndUp.value,
   },
+  { title: t("Class Name"), key: "className", visible: true, align: "left" },
+  { title: t("Grade"), key: "gradeName", visible: true },
+  { title: t("Room Number"), key: "room_number", visible: true },
+  { title: t("Education Level"), key: "educationLevel", visible: true },
+  //   { title: t("Schedule"), key: "schedule", visible: true },
+  { title: t("Status"), key: "is_active", visible: true },
 ];
 
 const onSchedule = (item) => {
@@ -86,7 +86,6 @@ const onSchedule = (item) => {
     params: { id: item.id },
   });
 };
-
 const onDelete = async (item) => {
   try {
     isLoading.value = true;
@@ -247,10 +246,12 @@ const gradeLabel = (item) => {
     .join(" ");
 };
 
-// const onAtt = (item) => {
-//   console.log(item);
-//   router.push({ name: "global-attendance-id", params: { id: item.id } });
-// };
+const onAttendance = (item) => {
+  router.push({
+    name: "school-attendance-id",
+    params: { id: item.id },
+  });
+};
 
 watch(
   () => settingStore.curriculum_id,
@@ -301,17 +302,22 @@ onMounted(async () => {
     is-edit
     is-add
     is-attendance
+    btn-attendance
+    is-schedule
+    btn-schedule
     is-delete
     is-disable
     is-view
     create-dialog
     save-state
     :is-back="false"
+    @on-schedule="onSchedule"
     @on-delete="onDelete"
     @on-edit="onEdit"
     @on-disable="onDisable"
     @on-add="onAdd"
     @on-view="onView"
+    @on-attendance="onAttendance"
   >
     <template #filter>
       <VRow class="justify-end">
@@ -388,15 +394,11 @@ onMounted(async () => {
       <span v-else>N/A</span>
     </template>
 
-    <template #item.schedule="{ item }">
-      <VBtn
-        size="small"
-        variant="tonal"
-        density="comfortable"
-        @click="onSchedule(item)"
-        >{{ t("Schedule") }}</VBtn
-      >
-    </template>
+    <!-- <template #item.schedule="{ item }">
+      <VBtn variant="tonal" density="comfortable" @click="onSchedule(item)">{{
+        t("Schedule")
+      }}</VBtn>
+    </template> -->
 
     <template v-slot:item.is_active="{ item }">
       <AppStatusChip

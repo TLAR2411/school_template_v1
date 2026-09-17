@@ -62,6 +62,8 @@ Route::post("subjects-update", [SubjectController::class, "update"]);
 Route::post("subjects-disable", [SubjectController::class, "disable"]);
 Route::post("subjects-delete", [SubjectController::class, "delete"]);
 Route::post("subjects-all", [SubjectController::class, 'all']);
+Route::post("subejects-by-day", [SubjectController::class, 'subjectByDay']);
+
 
 Route::post("students-store", [StudentController::class, "store"]);
 Route::post("students-list", [StudentController::class, "list"]);

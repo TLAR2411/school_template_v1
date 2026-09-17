@@ -11,6 +11,11 @@ export default [
         icon: { icon: "tabler-user-plus" },
     },
     {
+        title: "Attendance",
+        to: { name: "school-attendance" },
+        icon: { icon: "tabler-file-check" },
+    },
+    {
         title: "Schedule",
         to: { name: "school-schedule" },
         icon: { icon: "tabler-calendar" },

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\School;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\DataTableResource;
+use App\Models\School\Schedule;
 use App\Models\School\Subject;
 use Illuminate\Http\Request;
 use PhpParser\Node\Stmt\TryCatch;
@@ -140,6 +141,36 @@ class SubjectController extends Controller
                 'status' => false,
                 "message" => $th->getMessage()
             ]);
+        }
+    }
+
+    public function subjectByDay(Request $request)
+    {
+        try {
+            $data = Schedule::query()
+                ->where('class_id', $request->class_id)
+                ->where('day_id', $request->day_id)
+                ->with('subject')
+                ->get()
+                ->map(function ($item) {
+                    return [
+                        'id' => $item->id,
+                        'subject_id' => $item->subject->id,
+                        'subject_name_en' => $item->subject->name_en,
+                        'subject_name_kh' => $item->subject->name_kh,
+                    ];
+                });
+
+            return response()->json([
+                'data' => $data,
+                'status' => 1
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Schedule delete failed',
+                'error' => $th->getMessage(),
+            ], 500);
         }
     }
 }

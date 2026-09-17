@@ -436,7 +436,7 @@ defineExpose({
                   </div>
                 </div>
               </VCardItem>
-              <VDivider />
+              <!-- <VDivider /> -->
             </template>
 
             <!---Card Filter Slot-->

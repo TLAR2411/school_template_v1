@@ -262,6 +262,7 @@
   "Total Expense": "សរុបចំណាយ",
   "Total Liabilities": "សរុបបំណុល",
   "Total Liabilities and Equity": "សរុបបំណុល និងដើមទុន",
+
   "Balance Sheet Reports": "របាយការណ៍សមតុល្យ",
   "First Balance": "សមតុល្យដើមគ្រា",
   "Last Balance": "សមតុល្យចុងគ្រា",
@@ -581,6 +582,11 @@
 
   "Reload": "ទាញទិន្នន័យ",
   "Schedule": "តារាងបង់ប្រាក់",
+
+  "Present": "វត្តមាន",
+  "Absent": "អវត្តមាន",
+  "Late": "យឺត",
+  "Ask Permission": "មានច្បាប់",
 
   "Deposit Transactions": "ប្រតិបត្តិការប្រាក់តម្កល់",
   "Deposit": "ប្រាក់តម្កល់",

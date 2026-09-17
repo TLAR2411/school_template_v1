@@ -172,7 +172,7 @@ class TeacherController extends Controller
     public function show(Request $request)
     {
         try {
-            $data = Teacher::with(['user.userBranches']) // add these relations on models
+            $data = Teacher::with(['user.userBranch']) // add these relations on models
                 ->findOrFail($request->id);
             // flatten for frontend edit form
             $data->user_branches = $data->user

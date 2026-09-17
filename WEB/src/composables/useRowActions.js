@@ -64,6 +64,16 @@ export const dataTableProps = {
         default: null,
     },
 
+    isAttendance: Boolean,
+    btnAttendance: Boolean,
+    canAttendance: String,
+    attendanceCondition: {
+        type: [Function, Boolean],
+        default: null,
+    },
+
+
+
     isScheduleForClient: Boolean,
     btnScheduleForClient: Boolean,
     canScheduleForClient: String,
@@ -163,6 +173,8 @@ export const dataTableEmits = [
     "onPaginate",
     "onDefault",
     "onSchedule",
+    "onAttendance",
+
     "onScheduleForClient",
     "onRestructure",
 ];
@@ -195,6 +207,8 @@ export function useRowActions(emit, props, { t, showDialog, debounce, DEBOUNCE_D
         recovery: debounce((item) => emit("onRecovery", item), DEBOUNCE_DELAY),
         detail: debounce((item) => emit("onDetail", item), DEBOUNCE_DELAY),
         schedule: debounce((item) => emit("onSchedule", item), DEBOUNCE_DELAY),
+        attendance: debounce((item) => emit("onAttendance", item), DEBOUNCE_DELAY),
+
         scheduleForClient: debounce((item) => emit("onScheduleForClient", item), DEBOUNCE_DELAY),
         edit: debounce((item) => emit("onEdit", item), DEBOUNCE_DELAY),
         approve: debounce((item) => emit("onApprove", item), DEBOUNCE_DELAY),
@@ -389,6 +403,17 @@ export function useRowActions(emit, props, { t, showDialog, debounce, DEBOUNCE_D
             btn: props?.btnSchedule,
             condition: props?.scheduleCondition || ((item) => true),
         },
+        {
+            title: "Attendance",
+            value: "attendance",
+            icon: "tabler-file-check",
+            color: "primary",
+            permission: props?.canAttendance,
+            show: props?.isAttendance,
+            action: actionHandlers.attendance,
+            btn: props?.btnAttendance,
+            condition: props?.attendanceCondition || ((item) => true),
+        },
 
         {
             title: "Schedule For Client",
@@ -438,6 +463,7 @@ export function useRowActions(emit, props, { t, showDialog, debounce, DEBOUNCE_D
             action: actionHandlers.receiveHistory,
             btn: props?.btnReceiveHistory,
         },
+
 
 
 
