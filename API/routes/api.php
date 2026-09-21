@@ -28,3 +28,7 @@ Route::group(['prefix' => '/web'], function () {
         include 'modules/school.route.php';
     });
 });
+
+Route::group(['prefix' => '/app'], function () {
+    include 'modules/app.route.php';
+});

@@ -122,6 +122,24 @@
 }
 
 @font-face {
+  font-family: "hanuman";
+  src: url("./hanuman.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "nokora";
+  src: url("./nokora.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "odormeanchey";
+  src: url("./odormeanchey.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
   font-family: "freehand";
   src: url("./freehand.ttf") format("truetype");
   font-display: swap;
@@ -145,4 +163,13 @@
 }
 .freehand {
   font-family: "freehand", sans-serif !important;
+}
+.hanuman {
+  font-family: "hanuman", sans-serif !important;
+}
+.nokora {
+  font-family: "nokora", sans-serif !important;
+}
+.odormeanchey {
+  font-family: "odormeanchey", sans-serif !important;
 }

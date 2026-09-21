@@ -130,7 +130,11 @@ class ClassController extends Controller
     public function show(Request $request)
     {
         try {
-            $data = Classes::with(['grade:id,name_en,name_kh,grade_level', 'room:id,room_number'])
+            $data = Classes::with([
+                    'grade:id,name_en,name_kh,grade_level,edu_id',
+                    'grade.educationLevel:id,name_en,name_kh,symbol',
+                    'room:id,room_number',
+                ])
                 ->findOrFail($request->id);
 
             return response()->json(['status' => true, 'data' => $data]);

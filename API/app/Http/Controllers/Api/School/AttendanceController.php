@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\School;
 
 use App\Http\Controllers\Controller;
 use App\Models\School\Attendance;
+use App\Models\School\Classes;
 use App\Models\School\Schedule;
 use App\Models\School\StudentClass;
 use App\Models\School\Teacher;
@@ -13,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 
 class AttendanceController extends Controller
 {
+    /** Load students + schedule + saved marks for one class/date. */
     public function getAttendanceData(Request $request)
     {
         $data = $request->validate([
@@ -20,13 +22,19 @@ class AttendanceController extends Controller
             'date'       => 'required|date',
             'day_id'     => 'nullable|integer|min:1|max:7',
             'subject_id' => 'nullable|integer|exists:subjects,id',
+            'session'    => 'nullable|in:AM,PM',
         ]);
         try {
             $classId = (int) $data['class_id'];
             $date    = Carbon::parse($data['date'])->format('Y-m-d');
-            $dayId = (int) $data['day_id'];
+            $dayId = isset($data['day_id'])
+                ? (int) $data['day_id']
+                : Carbon::parse($date)->dayOfWeekIso();
             $subjectId = isset($data['subject_id']) ? (int) $data['subject_id'] : null;
 
+            $class = Classes::query()->with('shift')->findOrFail($classId);
+            $session = $this->resolveSession($class, $date, $data['session'] ?? null);
+            $isFullDay = $this->isFullDay($class);
 
             // 1) Schedules — filter subject BEFORE get()
             $scheduleQuery = Schedule::query()
@@ -38,7 +46,10 @@ class AttendanceController extends Controller
                 $scheduleQuery->where('subject_id', $subjectId);
             }
             $periods = $scheduleQuery->get();
-            $subjectIds =  $periods->pluck('subject_id')->unique()->filter()->values()->all();
+            if ($isFullDay && $session) {
+                $periods = $this->filterPeriodsBySession($periods, $session, $class->shift);
+            }
+            $subjectIds = $periods->pluck('subject_id')->unique()->filter()->values()->all();
 
             // 2) Students — always student_class
             $studentClass = StudentClass::query()
@@ -49,7 +60,7 @@ class AttendanceController extends Controller
                 ->orderBy('sort')
                 ->get();
 
-            // 3) Attendance rows for this day (+ subjects in scope)
+            // 3) Attendance rows for this day (+ session / subjects in scope)
             $attendanceQuery = Attendance::query()
                 ->where('class_id', $classId)
                 ->whereDate('date', $date);
@@ -59,9 +70,14 @@ class AttendanceController extends Controller
             } elseif (!empty($subjectIds)) {
                 $attendanceQuery->whereIn('subject_id', $subjectIds);
             }
+            if ($session) {
+                $attendanceQuery->where(function ($q) use ($session) {
+                    $q->where('session', $session)->orWhereNull('session');
+                });
+            }
 
             $attendanceMap = $attendanceQuery->get()->keyBy(
-                fn($a) => $a->student_id . '_' . $a->subject_id
+                fn ($a) => $a->student_id . '_' . ($a->subject_id ?? 'general')
             );
             $defaultCell = [
                 'attendance_id' => null,
@@ -72,13 +88,14 @@ class AttendanceController extends Controller
                 'reason'        => null,
             ];
 
+            $idsToLoop = !empty($subjectIds) ? $subjectIds : [null];
+
             // យក Student ម្នាក់ៗមក transform ទៅជា format ថ្មី។
-            $students = $studentClass->map(function ($row) use ($subjectIds, $attendanceMap, $defaultCell) {
+            $students = $studentClass->map(function ($row) use ($idsToLoop, $attendanceMap, $defaultCell) {
                 $bySubject = [];
-                $idsToLoop = !empty($subjectIds) ? $subjectIds : [null];
                 foreach ($idsToLoop as $sid) {
-                    $key = $row->student_id . '_' . $sid;
-                    $saved = $sid !== null ? $attendanceMap->get($key) : null;
+                    $key = $row->student_id . '_' . ($sid ?? 'general');
+                    $saved = $attendanceMap->get($key);
                     $bySubject[$sid ?? 'general'] = $saved ? [
                         'attendance_id' => $saved->id,
                         'is_present'    => (bool) $saved->is_present,
@@ -99,7 +116,7 @@ class AttendanceController extends Controller
                     'by_subject' => $bySubject,
                 ];
             })->values();
-            $subjectsForSelect = $periods->map(fn($s) => [
+            $subjectsForSelect = $periods->map(fn ($s) => [
                 'id'      => $s->subject_id,
                 'name_en' => $s->subject?->name_en,
                 'name_kh' => $s->subject?->name_kh,
@@ -107,21 +124,19 @@ class AttendanceController extends Controller
             return response()->json([
                 'status' => true,
                 'data'   => [
-                    'date'     => $date,
-                    'day_id'   => $dayId,
-                    'periods'  => $periods,
-                    'subjects' => $subjectsForSelect,
-                    'students' => $students,
+                    'date'              => $date,
+                    'day_id'            => $dayId,
+                    'session'           => $session,
+                    'shift_code'        => $this->shiftCode($class),
+                    'is_full_day'       => $isFullDay,
+                    'session_submitted' => $isFullDay
+                        ? $this->sessionSubmittedMap($classId, $date)
+                        : null,
+                    'periods'           => $periods,
+                    'subjects'          => $subjectsForSelect,
+                    'students'          => $students,
                 ],
             ]);
-            // return response()->json([
-            //     'scheduleQuery' => $subjectIds,
-            //     'status' => true,
-            //     "students" => $studentClass,
-            //     'subjectIdRequest' => $subjectId,
-            //     "attendanceQuery" => $attendanceQuery,
-            //     'attendanceMap' => $attendanceMap
-            // ]);
         } catch (\Throwable $th) {
             return response()->json([
                 'message' => $th->getMessage(),
@@ -130,7 +145,7 @@ class AttendanceController extends Controller
         }
     }
 
-
+    /** Save present / late / permission for the current session (and subject if any). */
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -138,6 +153,7 @@ class AttendanceController extends Controller
             'date'       => 'required|date',
             'day_id'     => 'nullable|integer|min:1|max:7',
             'subject_id' => 'nullable|integer|exists:subjects,id',
+            'session'    => 'nullable|in:AM,PM',
             'rows'       => 'required|array|min:1',
             'rows.*.student_id'    => 'required|integer|exists:students,id',
             'rows.*.attendance_id' => 'nullable|integer|exists:attendances,id',
@@ -154,6 +170,10 @@ class AttendanceController extends Controller
             ? (int) $data['day_id']
             : Carbon::parse($date)->dayOfWeekIso();
 
+        $class = Classes::query()->with('shift')->findOrFail($classId);
+        $session = $this->resolveSession($class, $date, $data['session'] ?? null);
+        $isFullDay = $this->isFullDay($class);
+
         $userId    = auth('api')->id();
         $teacherId = Teacher::query()->where('user_id', $userId)->value('id');
 
@@ -166,13 +186,17 @@ class AttendanceController extends Controller
                 ->all()
         );
 
-        // Which subjects to save
+        // No subject = all subjects in this session (Full Day morning 4, afternoon 2, …)
         if (!empty($data['subject_id'])) {
             $subjectIds = [(int) $data['subject_id']];
         } else {
-            $subjectIds = Schedule::query()
+            $periodQuery = Schedule::query()
                 ->where('class_id', $classId)
-                ->where('day_id', $dayId)
+                ->where('day_id', $dayId);
+            if ($isFullDay && $session) {
+                $this->applySessionTimeFilter($periodQuery, $session, $class->shift);
+            }
+            $subjectIds = $periodQuery
                 ->pluck('subject_id')
                 ->unique()
                 ->filter()
@@ -196,14 +220,16 @@ class AttendanceController extends Controller
                 $onSchedule = Schedule::query()
                     ->where('class_id', $classId)
                     ->where('day_id', $dayId)
-                    ->where('subject_id', $subjectId)
-                    ->exists();
+                    ->where('subject_id', $subjectId);
+                if ($isFullDay && $session) {
+                    $this->applySessionTimeFilter($onSchedule, $session, $class->shift);
+                }
 
-                if (!$onSchedule) {
+                if (!$onSchedule->exists()) {
                     DB::rollBack();
                     return response()->json([
                         'status'  => false,
-                        'message' => "Subject {$subjectId} is not on the schedule for this day.",
+                        'message' => "Subject {$subjectId} is not on the schedule for this session.",
                     ], 422);
                 }
 
@@ -211,6 +237,7 @@ class AttendanceController extends Controller
                     $classId,
                     $date,
                     $subjectId,
+                    $session,
                     $data['rows'],
                     $userId,
                     $teacherId,
@@ -223,6 +250,7 @@ class AttendanceController extends Controller
             return response()->json([
                 'status'  => true,
                 'message' => 'Attendance saved successfully',
+                'session' => $session,
             ]);
         } catch (\Throwable $th) {
             DB::rollBack();
@@ -234,10 +262,12 @@ class AttendanceController extends Controller
         }
     }
 
+    /** Insert or update one student row for one subject + session. */
     private function saveSubjectRows(
         int $classId,
         string $date,
-        int $subjectId,
+        ?int $subjectId,
+        ?string $session,
         array $rows,
         $userId,
         ?int $teacherId,
@@ -259,12 +289,12 @@ class AttendanceController extends Controller
             $matchKeys = [
                 'student_id' => $studentId,
                 'class_id'   => $classId,
-                'subject_id' => $subjectId,
                 'date'       => $date,
             ];
 
             $values = [
                 'teacher_id'    => $teacherId,
+                'session'       => $session,
                 'is_present'    => $isPresent,
                 'is_late'       => $isLate,
                 'is_permission' => $isPermission,
@@ -275,11 +305,25 @@ class AttendanceController extends Controller
                 'cur_id' => $this->getCur()
             ];
 
-            // attendance_id only matches THIS subject — else upsert by natural key
+            $scoped = function ($query) use ($matchKeys, $subjectId, $session) {
+                $query->where($matchKeys);
+                if ($subjectId === null) {
+                    $query->whereNull('subject_id');
+                } else {
+                    $query->where('subject_id', $subjectId);
+                }
+                if ($session) {
+                    $query->where('session', $session);
+                } else {
+                    $query->whereNull('session');
+                }
+            };
+
+            // attendance_id only matches THIS subject + session — else upsert by natural key
             if (!empty($row['attendance_id'])) {
                 $byId = Attendance::query()
                     ->where('id', (int) $row['attendance_id'])
-                    ->where($matchKeys)
+                    ->where(fn ($q) => $scoped($q))
                     ->first();
 
                 if ($byId) {
@@ -288,13 +332,30 @@ class AttendanceController extends Controller
                 }
             }
 
-            $existing = Attendance::query()->where($matchKeys)->first();
+            $existing = Attendance::query()->where(fn ($q) => $scoped($q))->first();
+
+            if (!$existing && $session) {
+                $legacy = Attendance::query()
+                    ->where($matchKeys)
+                    ->whereNull('session')
+                    ->when(
+                        $subjectId === null,
+                        fn ($q) => $q->whereNull('subject_id'),
+                        fn ($q) => $q->where('subject_id', $subjectId)
+                    )
+                    ->first();
+                if ($legacy) {
+                    $legacy->update($values);
+                    continue;
+                }
+            }
 
             if ($existing) {
                 $existing->update($values);
             } else {
                 Attendance::create([
                     ...$matchKeys,
+                    'subject_id' => $subjectId,
                     ...$values,
                     'created_by' => $userId,
                     'teacher_id' => $userId,
@@ -321,5 +382,116 @@ class AttendanceController extends Controller
             return [false, false, false];
         }
         return [true, false, false];
+    }
+
+    /** AM / PM from class shift. FULL from clock (optional override). */
+    private function resolveSession(Classes $class, string $date, ?string $override = null): ?string
+    {
+        $code = $this->shiftCode($class);
+
+        if ($code === 'AM' || $code === 'PM') {
+            return $code;
+        }
+
+        if ($code !== 'FULL') {
+            return null;
+        }
+
+        $override = $override ? strtoupper($override) : null;
+        if (in_array($override, ['AM', 'PM'], true)) {
+            return $override;
+        }
+
+        $now = Carbon::now()->format('H:i:s');
+        [$breakStart, $breakEnd] = $this->breakTimes($class->shift);
+
+        if ($now < $breakStart) {
+            return 'AM';
+        }
+        if ($now >= $breakEnd) {
+            return 'PM';
+        }
+
+        $morningSaved = Attendance::query()
+            ->where('class_id', $class->id)
+            ->whereDate('date', $date)
+            ->where('session', 'AM')
+            ->whereNotNull('subject_id')
+            ->exists();
+
+        return $morningSaved ? 'PM' : 'AM';
+    }
+
+    private function isFullDay(Classes $class): bool
+    {
+        return $this->shiftCode($class) === 'FULL';
+    }
+
+    private function shiftCode(Classes $class): string
+    {
+        return strtoupper((string) ($class->shift?->code ?? ''));
+    }
+
+    /** Lunch window from shift, with Full Day defaults 11:00–14:00. */
+    private function breakTimes($shift): array
+    {
+        $start = Carbon::parse($shift?->break_start ?? '11:00:00')->format('H:i:s');
+        $end = Carbon::parse($shift?->break_end ?? '14:00:00')->format('H:i:s');
+
+        return [$start, $end];
+    }
+
+    /** Keep only morning or afternoon periods for a Full Day class. */
+    private function filterPeriodsBySession($periods, string $session, $shift)
+    {
+        return $periods
+            ->filter(fn ($period) => $this->periodBelongsToSession($period, $session, $shift))
+            ->values();
+    }
+
+    private function periodBelongsToSession($period, string $session, $shift): bool
+    {
+        if (!$period->start) {
+            return false;
+        }
+
+        $start = Carbon::parse($period->start)->format('H:i:s');
+        [$breakStart, $breakEnd] = $this->breakTimes($shift);
+
+        if ($session === 'AM') {
+            return $start < $breakStart;
+        }
+
+        return $start >= $breakEnd;
+    }
+
+    /** SQL filter: period.start is in AM or PM for Full Day. */
+    private function applySessionTimeFilter($query, string $session, $shift): void
+    {
+        [$breakStart, $breakEnd] = $this->breakTimes($shift);
+
+        if ($session === 'AM') {
+            $query->where('start', '<', $breakStart);
+        } else {
+            $query->where('start', '>=', $breakEnd);
+        }
+    }
+
+    /** Which Full Day sessions already have at least one saved row today. */
+    private function sessionSubmittedMap(int $classId, string $date): array
+    {
+        $saved = Attendance::query()
+            ->where('class_id', $classId)
+            ->whereDate('date', $date)
+            ->whereNotNull('subject_id')
+            ->whereIn('session', ['AM', 'PM'])
+            ->distinct()
+            ->pluck('session')
+            ->all();
+
+        return [
+            'AM' => in_array('AM', $saved, true),
+            'PM' => in_array('PM', $saved, true),
+        ];
     }
 }

@@ -14,7 +14,9 @@ const NON_CANCELLABLE_ENDPOINTS = [
   '/update',
   '/create',
   '/delete',
-  '/upload'
+  '/upload',
+  'report-templates-save',
+  'report-templates-show',
 ];
 
 /**

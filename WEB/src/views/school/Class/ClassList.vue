@@ -404,6 +404,20 @@ onMounted(async () => {
       </span>
     </template>
 
+    <template #item.gradeName="{ item }">
+      <span v-if="item.grade_level">
+        {{ item.grade_level }}
+      </span>
+      <span v-else>
+        <span v-if="locale == 'km'">
+          {{ item.grade_name_kh }}
+        </span>
+        <span v-else>
+          {{ item.grade_name_en }}
+        </span>
+      </span>
+    </template>
+
     <template #item.educationLevel="{ item }">
       <span v-if="item.grade_level != null">
         {{ locale === "km" ? item.edu_name_kh : item.edu_name_en }}

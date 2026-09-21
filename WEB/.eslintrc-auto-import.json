@@ -395,6 +395,23 @@
     "useDialog": true,
     "useGoogleMaps": true,
     "usePrintStyle": true,
-    "useRowActions": true
+    "useRowActions": true,
+    "provideReportContext": true,
+    "provideReportSheet": true,
+    "snapPercent": true,
+    "useReport": true,
+    "useReportContext": true,
+    "useReportSheet": true,
+    "readImageFile": true,
+    "formatReportDate": true,
+    "todayIso": true,
+    "buildScheduleReportGrid": true,
+    "minutesToTime": true,
+    "timeToMinutes": true,
+    "deepMerge": true,
+    "extractBrandConfig": true,
+    "extractReportConfig": true,
+    "mergeBrandAndReport": true,
+    "resolveReportAsset": true
   }
 }

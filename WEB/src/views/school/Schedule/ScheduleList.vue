@@ -9,7 +9,7 @@ import {
 } from "vue";
 import { useI18n } from "vue-i18n";
 import { useDisplay } from "vuetify";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import AddEditScheduleDialog from "./AddEditScheduleDialog.vue";
 import {
   getDays,
@@ -21,6 +21,7 @@ import { useSettingStore } from "@/stores/settingStore.js";
 import { api } from "@/utils/api.js";
 
 const route = useRoute();
+const router = useRouter();
 const { t, locale } = useI18n();
 const { smAndDown } = useDisplay();
 const settingStore = useSettingStore();
@@ -554,6 +555,29 @@ function hasOverlap(candidate) {
 // ─────────────────────────────────────────────
 // Dialog / CRUD (API)
 // ─────────────────────────────────────────────
+// Opens the report designer in a new tab so printing does not disturb the list.
+function openReport() {
+  if (!formSearch.value.class_id) return;
+
+  const { href } = router.resolve({
+    name: "school-schedule-print",
+    query: { class_id: formSearch.value.class_id },
+  });
+
+  window.open(href, "_blank");
+}
+
+function openPreview() {
+  if (!formSearch.value.class_id) return;
+
+  const { href } = router.resolve({
+    name: "school-schedule-preview",
+    query: { class_id: formSearch.value.class_id },
+  });
+
+  window.open(href, "_blank");
+}
+
 function openCreate(dayId, start, end) {
   if (!formSearch.value.class_id) return;
 
@@ -818,15 +842,35 @@ onBeforeUnmount(() => {
             {{ t("List") }}
           </VBtn>
         </VBtnToggle>
-        <VBtn
-          color="primary"
-          variant="tonal"
-          prepend-icon="tabler-plus"
-          :disabled="!formSearch.class_id"
-          @click="openCreate(selectedMobileDayId)"
-        >
-          {{ t("Add Period") }}
-        </VBtn>
+        <div class="d-flex gap-2">
+          <VBtn
+            color="secondary"
+            variant="tonal"
+            prepend-icon="tabler-eye"
+            :disabled="!formSearch.class_id"
+            @click="openPreview"
+          >
+            {{ t("Preview") }}
+          </VBtn>
+          <VBtn
+            color="secondary"
+            variant="tonal"
+            prepend-icon="tabler-printer"
+            :disabled="!formSearch.class_id"
+            @click="openReport"
+          >
+            {{ t("Print") }}
+          </VBtn>
+          <VBtn
+            color="primary"
+            variant="tonal"
+            prepend-icon="tabler-plus"
+            :disabled="!formSearch.class_id"
+            @click="openCreate(selectedMobileDayId)"
+          >
+            {{ t("Add Period") }}
+          </VBtn>
+        </div>
       </VCol>
     </VRow>
 

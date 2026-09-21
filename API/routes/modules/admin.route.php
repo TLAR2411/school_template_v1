@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\Admin\RoleController;
 use App\Http\Controllers\Api\AdminDashboardController;
 use App\Http\Controllers\Api\BranchController;
 use App\Http\Controllers\Api\CurrencyController;
+use App\Http\Controllers\Api\ReportTemplateController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -65,3 +66,6 @@ Route::post("permissions-list", [PermissionController::class, "list"])->middlewa
 Route::post("permissions-store", [PermissionController::class, "store"])->middleware(['auth:api', 'permission:add-permissions']);
 Route::post("permissions-update", [PermissionController::class, "update"])->middleware(['auth:api', 'permission:edit-permissions']);
 Route::post("permissions-delete", [PermissionController::class, "delete"])->middleware(['auth:api', 'permission:delete-permissions']);
+
+Route::post("report-templates-show", [ReportTemplateController::class, "show"]);
+Route::post("report-templates-save", [ReportTemplateController::class, "save"]);

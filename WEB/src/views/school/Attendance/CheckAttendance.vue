@@ -57,6 +57,19 @@ const sheetStudents = ref([]);
 const editableRows = ref([]);
 const rowCache = ref({});
 
+/** null = API picks AM/PM from class shift or current time */
+const sessionOverride = ref(null);
+const apiSession = ref(null);
+const sessionSubmitted = ref({ AM: false, PM: false });
+
+const selectedClass = computed(() =>
+  allClasses.value.find((c) => c.id == formSearch.value.class_id),
+);
+
+const isFullDay = computed(
+  () => String(selectedClass.value?.shift?.code || "").toUpperCase() === "FULL",
+);
+
 let applyingFromRoute = false;
 let syncingFromApi = false;
 
@@ -259,6 +272,12 @@ const submitStatus = computed(() => {
   return "partial";
 });
 
+const sessionLabel = computed(() =>
+  apiSession.value === "PM"
+    ? t("Afternoon attendance")
+    : t("Morning attendance"),
+);
+
 const studentsNotYetSubmitted = computed(() =>
   editableRows.value.filter((r) => r.attendance_id == null),
 );
@@ -268,21 +287,28 @@ const notSubmittedNamesText = computed(() =>
 );
 
 function getCellFromSheet(student, subjectId) {
-  const sid = Number(subjectId);
   const by = student.by_subject || {};
+  if (subjectId == null) return by.general ?? defaultRowCell();
+  const sid = Number(subjectId);
   return by[sid] ?? by[String(sid)] ?? defaultRowCell();
 }
 
-function buildRowsForSubject(subjectId) {
-  const sid = Number(subjectId);
-  if (!sid) return [];
-  return sheetStudents.value.map((s) => ({
+function studentBase(s) {
+  return {
     student_id: s.student_id,
     sort: s.sort,
     name_en: s.name_en,
     name_kh: s.name_kh,
     gender: s.gender,
     photo_path: s.photo_path,
+  };
+}
+
+function buildRowsForSubject(subjectId) {
+  const sid = Number(subjectId);
+  if (!sid) return [];
+  return sheetStudents.value.map((s) => ({
+    ...studentBase(s),
     subject_id: sid,
     ...getCellFromSheet(s, sid),
   }));
@@ -309,6 +335,14 @@ function applyEditableRowsForSubject(subjectId) {
   nextTick(() => takeSnapshot());
 }
 
+/** Catch-up only: open Morning or Afternoon without a required dropdown. */
+function selectSession(code) {
+  if (apiSession.value === code && sessionOverride.value === code) return;
+  sessionOverride.value = code;
+  formSearch.value.subject_id = null;
+  loadAttendance();
+}
+
 function pickDefaultActiveSubject() {
   if (formSearch.value.subject_id) {
     activeTabSubjectId.value = Number(formSearch.value.subject_id);
@@ -318,6 +352,7 @@ function pickDefaultActiveSubject() {
   activeTabSubjectId.value = list.length ? Number(list[0].subject_id) : null;
 }
 
+/** POST attendance-list — fill the table. */
 async function loadAttendance() {
   const { class_id, date } = formSearch.value;
   if (!class_id || !date) {
@@ -327,6 +362,7 @@ async function loadAttendance() {
     editableRows.value = [];
     rowCache.value = {};
     rowSnapshot.value = null;
+    apiSession.value = null;
     return;
   }
 
@@ -339,6 +375,7 @@ async function loadAttendance() {
       date: formatDateApi(date),
       day_id: formSearch.value.day_id,
       subject_id: null,
+      session: sessionOverride.value,
     });
 
     if (!res.data?.status) {
@@ -356,6 +393,8 @@ async function loadAttendance() {
     subjectsForDay.value = data.subjects ?? [];
     sheetStudents.value = data.students ?? [];
     rowCache.value = {};
+    apiSession.value = data.session ?? null;
+    sessionSubmitted.value = data.session_submitted ?? { AM: false, PM: false };
 
     pickDefaultActiveSubject();
     applyEditableRowsForSubject(activeSubjectId.value);
@@ -373,6 +412,7 @@ async function loadAttendance() {
   }
 }
 
+/** POST attendance-store — save current sheet. */
 async function saveAttendance() {
   if (!canLoad.value || !activeSubjectId.value) return;
   persistActiveTabToCache();
@@ -382,6 +422,7 @@ async function saveAttendance() {
     date: formatDateApi(formSearch.value.date),
     subject_id: formSearch.value.subject_id,
     day_id: formSearch.value.day_id,
+    session: sessionOverride.value,
     rows: editableRows.value.map((r) => ({
       student_id: r.student_id,
       attendance_id: r.attendance_id,
@@ -440,6 +481,8 @@ watch(
 watch(
   () => [formSearch.value.class_id, formSearch.value.date],
   () => {
+    sessionOverride.value = null;
+    if (isFullDay.value) formSearch.value.subject_id = null;
     if (!formSearch.value.class_id || !formSearch.value.date) return;
     subjectsForDay.value = [];
     loadAttendance();
@@ -578,6 +621,33 @@ onMounted(async () => {
           </VCol>
         </VRow>
       </template>
+
+      <div
+        v-if="isFullDay && formSearch.class_id"
+        class="d-flex align-center flex-wrap ga-2 mb-3"
+      >
+        <VChip color="primary" variant="tonal" size="small">
+          {{ sessionLabel }}
+        </VChip>
+        <VChip
+          size="small"
+          :variant="apiSession === 'AM' ? 'flat' : 'tonal'"
+          :color="sessionSubmitted.AM ? 'success' : 'warning'"
+          @click="selectSession('AM')"
+        >
+          {{ t("Morning") }}
+          {{ sessionSubmitted.AM ? "✓" : "" }}
+        </VChip>
+        <VChip
+          size="small"
+          :variant="apiSession === 'PM' ? 'flat' : 'tonal'"
+          :color="sessionSubmitted.PM ? 'success' : 'warning'"
+          @click="selectSession('PM')"
+        >
+          {{ t("Afternoon") }}
+          {{ sessionSubmitted.PM ? "✓" : "" }}
+        </VChip>
+      </div>
 
       <!-- Priority: unsaved changes first -->
       <VAlert

@@ -31,7 +31,7 @@ class TeacherController extends Controller
             'nation' => 'required|string|max:255',
             'photo_path' => 'nullable|string',
             'manage_branch' => 'required|in:1,2',
-            'branch_id' => 'required_if:manage_branch,2|array|min:1',
+            // 'branch_id' => 'required_if:manage_branch,2|array|min:1',
             'branch_id.*' => 'integer|exists:branches,id',
             'role_id' => 'nullable|exists:roles,id', // teacher role
             'phone' => 'nullable|string',

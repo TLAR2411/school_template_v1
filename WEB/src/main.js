@@ -6,6 +6,7 @@ import "@core/scss/template/index.scss"
 import "@styles/styles.scss"
 import 'vue3-perfect-scrollbar/style.css';
 import Notifications, { notify } from "@kyvg/vue3-notification"
+import print from "vue3-print-nb"
 import { router } from "@/router"
 import { useAuthStore } from "@/stores/authStore"
 import { getAccessToken } from "@/utils/accessToken"
@@ -17,6 +18,7 @@ const app = createApp(App)
 registerPlugins(app)
 app.use(Notifications)
 app.use(PerfectScrollbarPlugin);
+app.use(print)
 
 async function start() {
   if (getAccessToken()) {
