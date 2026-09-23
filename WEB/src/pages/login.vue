@@ -65,7 +65,7 @@ const { smAndDown } = useDisplay();
             <div class="app-logo d-flew flex-column w-100 mt-2">
               <img
                 class="justify-center align-center"
-                style="width: 50px !important"
+                style="width: 100px !important"
                 :src="MainLogo"
               />
               <!-- <VNodeRenderer :nodes="themeConfig.app.logo" /> -->
