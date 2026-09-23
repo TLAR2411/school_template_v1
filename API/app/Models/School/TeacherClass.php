@@ -4,6 +4,10 @@ namespace App\Models\School;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\School\Teacher;
+use App\Models\School\Subject;
+use Illuminate\Support\Facades\Auth;
+use App\Scopes\Scope;
 
 class TeacherClass extends Model
 {
@@ -32,4 +36,6 @@ class TeacherClass extends Model
     {
         return $this->belongsTo(Subject::class, 'subject_id');
     }
+
+   
 }

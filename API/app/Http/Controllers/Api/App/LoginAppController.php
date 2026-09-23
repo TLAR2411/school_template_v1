@@ -56,9 +56,6 @@ class LoginAppController extends Controller
                     'email',
                     'contact',
                 ]),
-
-
-
             ]);
         } catch (\Throwable $th) {
             return response()->json([

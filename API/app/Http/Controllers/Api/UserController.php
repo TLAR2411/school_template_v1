@@ -112,10 +112,14 @@ class UserController extends Controller
             $users['province_code'] = $province['code'] ?? null;
 
             $users['user_permission'] = $userPermssion;
+            $users['_branch_id'] = $users->userBranch
+                ->pluck('branch_id')
+                ->map(fn ($id) => (int) $id)
+                ->values();
 
             return response()->json([
                 'status' => true,
-                'data' => $users
+                'data' => $users,
             ]);
         } catch (\Throwable $th) {
             return response()->json([
@@ -205,7 +209,7 @@ class UserController extends Controller
 
 
             // $users->code = $branch->abbr . "-" . str_pad($users->id, 6, '0', STR_PAD_LEFT);
-            
+
 
             $users->email = $lowerString . $companyName;
             $users->username = $lowerString;
@@ -217,7 +221,7 @@ class UserController extends Controller
             $userData['user_id'] = $users->id;
 
             if ($userData['manage_branch'] == 2 || $userData['manage_branch'] == 4) {
-                foreach ($userData['_branch_id'] as $branch_id) {
+                foreach ($userData['_branch_id'] ?? [] as $branch_id) {
                     UserBranch::create([
                         'user_id' => $userData['user_id'],
                         'branch_id' => $branch_id
@@ -265,11 +269,10 @@ class UserController extends Controller
 
             $users->syncRoles([$request->role_id]);
 
+            UserBranch::where('user_id', $request->id)->delete();
+
             if ($request->manage_branch == 2 || $request->manage_branch == 4) {
-
-                UserBranch::where('user_id', $request->id)->delete();
-
-                foreach ($request->_branch_id as $branch_id) {
+                foreach ($request->_branch_id ?? [] as $branch_id) {
                     UserBranch::create([
                         'user_id' => $request->id,
                         'branch_id' => $branch_id

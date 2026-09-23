@@ -4,6 +4,7 @@ import CheckAttendance from "@/views/school/Attendance/CheckAttendance.vue";
 import AppCustomTap from "@/components/AppCustomTap.vue";
 
 import { useRoute, useRouter } from "vue-router";
+import ScoreEntry from "@/views/school/ScoreEntry/ScoreEntry.vue";
 
 const route = useRoute();
 
@@ -51,10 +52,10 @@ definePage({
 
     <VWindow v-model="currentTab" class="mt-1">
       <VWindowItem value="attendance">
-        <CheckAttendance />
+        <CheckAttendance :class-id="route.params.id" lock-class />
       </VWindowItem>
       <VWindowItem value="score">
-        <!-- <GradeList /> -->
+        <ScoreEntry :class-id="route.params.id" lock-class />
       </VWindowItem>
     </VWindow>
   </div>

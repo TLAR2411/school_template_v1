@@ -131,10 +131,10 @@ class ClassController extends Controller
     {
         try {
             $data = Classes::with([
-                    'grade:id,name_en,name_kh,grade_level,edu_id',
-                    'grade.educationLevel:id,name_en,name_kh,symbol',
-                    'room:id,room_number',
-                ])
+                'grade:id,name_en,name_kh,grade_level,edu_id',
+                'grade.educationLevel:id,name_en,name_kh,symbol',
+                'room:id,room_number',
+            ])
                 ->findOrFail($request->id);
 
             return response()->json(['status' => true, 'data' => $data]);
@@ -199,6 +199,33 @@ class ClassController extends Controller
             return response()->json([
                 "data" => $data
             ]);
+        } catch (\Throwable $th) {
+            return response()->json(['status' => false, 'message' => $th->getMessage()], 500);
+        }
+    }
+
+    public function teacherClass(Request $request)
+    {
+        $yearId = $this->getYear();
+        $branchId = $this->getBranch();
+        $curriculumId = $this->getCur();
+        try {
+            $data = Classes::query()
+            ->where('is_active', true)
+            ->whereYear($yearId)
+            ->whereBranch($branchId)
+            ->whereCurriculum($curriculumId)
+            ->whereTeacher()
+            ->with([
+                'shift',
+                'grade:id,name_en,name_kh,grade_level,edu_id',
+                'grade.educationLevel:id,name_en,name_kh',
+                'room:id,room_number',
+                'classtype:id,name_en,name_kh',
+            ])
+            ->orderBy('name_kh')
+            ->get();
+                return response()->json(['status' => true, 'data' => $data]);
         } catch (\Throwable $th) {
             return response()->json(['status' => false, 'message' => $th->getMessage()], 500);
         }

@@ -27,6 +27,12 @@ const filter = ref({
   search: null,
 });
 
+const response = ref({});
+const summary = computed(() => ({
+  enrolled: response.value?.summary?.enrolled ?? 0,
+  notEnrolled: response.value?.summary?.not_enrolled ?? 0,
+}));
+
 watch(isDialogVisible, (open) => {
   if (!open) formData.value = {};
 });
@@ -148,6 +154,7 @@ const onEdit = async (item) => {
 
   <AppCardTable
     v-model:isDialogCreateVisible="isDialogVisible"
+    v-model:response="response"
     ref="dataTableRef"
     title="Students"
     title-icon="tabler-user-cog"
@@ -165,6 +172,16 @@ const onEdit = async (item) => {
     :is-back="false"
     @on-disable="onDisable"
   >
+    <template #title>
+      {{ t("Students") }}
+      <span class="enroll-count ms-4">
+        {{ t("Enroll") }} {{ summary.enrolled }}
+      </span>
+      <span class="enroll-count ms-4">
+        {{ t("Not yet") }} {{ summary.notEnrolled }}
+      </span>
+    </template>
+
     <template #filter>
       <VRow class="justify-end">
         <VCol cols="12" sm="6" md="4" lg="2">
@@ -180,6 +197,8 @@ const onEdit = async (item) => {
         </VCol>
       </VRow>
     </template>
+
+    
 
     <template #[`item.photo_path`]="{ item }">
       <div class="d-flex flex-row pt-2 pb-2">
@@ -199,3 +218,11 @@ const onEdit = async (item) => {
     </template>
   </AppCardTable>
 </template>
+
+<style scoped>
+.enroll-count {
+  font-size: 16px;
+  font-weight: 500;
+  color: rgba(var(--v-theme-on-surface), 0.7);
+}
+</style>

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\School\StudentClass;
 use App\Models\School\ClassType;
 use App\Models\School\Student;
+use Illuminate\Support\Facades\Auth;
 
 class Classes extends Model
 {
@@ -136,5 +137,26 @@ class Classes extends Model
         // name_en:
         // Pivot([sort,rfid,is_transfer])
 
+    }
+
+
+
+    public function teacherClasses()
+    {
+        return $this->hasMany(TeacherClass::class, 'class_id');
+    }
+
+
+    #[Scope]
+    public function whereTeacher($query)
+    {
+        $teacherId = Teacher::query()
+            ->where('user_id', auth('api')->id())
+            ->value('id');
+        return $query->when($teacherId, function ($q) use ($teacherId) {
+            $q->whereHas('teacherClasses', function ($sub) use ($teacherId) {
+                $sub->where('teacher_id', $teacherId);
+            });
+        });
     }
 }

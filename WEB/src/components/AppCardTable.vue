@@ -64,6 +64,7 @@ const props = defineProps({
   saveState: Boolean,
   isFilter: Boolean,
   repsonce: { type: Object, default: () => ({}) },
+  response: { type: Object, default: () => ({}) },
   showFilters: Boolean,
   isFullHeight: { type: Boolean, default: true },
   isFullHeightTab: Boolean,
@@ -109,7 +110,13 @@ const toggleMobileRow = (id) => {
 const savedOptions = props.saveState
   ? getTableState(props.saveStateName)
   : null;
-const options = ref(savedOptions || { page: 1, limit: props.limit });
+const contextMatchesSaved =
+  savedOptions?.branchId == settingStore.branch_id &&
+  savedOptions?.curriculumId == settingStore.curriculum_id;
+const options = ref({
+  page: contextMatchesSaved ? savedOptions.page || 1 : 1,
+  limit: savedOptions?.limit || props.limit,
+});
 const filters = ref(savedOptions?.filter || { ...(props?.filters || []) });
 const showFilters = ref(
   savedOptions?.showFilter || (props?.showFilters ? [0] : []),
@@ -141,6 +148,8 @@ const saveState = () => {
       {
         page: options.value.page,
         limit: options.value.limit,
+        branchId: settingStore.branch_id,
+        curriculumId: settingStore.curriculum_id,
         filter: filters?.value || [],
         showFilter: showFilters?.value || [],
         showHeader: headerVisible.value,
@@ -353,11 +362,24 @@ watch(
     page: options.value.page,
     branchId: settingStore.branch_id,
     curriculumId: settingStore.curriculum_id,
-
     limit: options.value.limit,
   }),
   (n, o) => {
-    if (n.page !== o.page || n.limit !== o.limit || n.branchId !== o.branchId || n.curriculumId !== o.curriculumId) {
+    if (!o) return;
+
+    const contextChanged =
+      n.branchId !== o.branchId || n.curriculumId !== o.curriculumId;
+
+    if (contextChanged && options.value.page !== 1) {
+      options.value.page = 1;
+      return;
+    }
+
+    if (
+      n.page !== o.page ||
+      n.limit !== o.limit ||
+      contextChanged
+    ) {
       saveState();
       initData();
     }
@@ -449,8 +471,9 @@ defineExpose({ reload, exportToExcel });
                       font-family: kantumruy, sans-serif;
                       font-weight: 500;
                     "
-                    >{{ $t(title) }}</span
                   >
+                    <slot name="title">{{ $t(title) }}</slot>
+                  </span>
                 </span>
                 <!-- <h5 >
                   <div class="d-flex align-center text-primary">
@@ -1217,6 +1240,12 @@ $app-card-header-height: 76px;
 .section-header {
   gap: 10px;
   margin-block: 0;
+}
+
+.section-header__text {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
 }
 
 .section-header .v-icon svg {

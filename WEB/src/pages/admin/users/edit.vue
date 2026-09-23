@@ -129,26 +129,28 @@ const initData = async () => {
     isInitializing.value = true;
     const res = await api.post("users-show", { id: route.query.id });
     if (res.data.status) {
-      formData.value = res.data.data;
+      const data = res.data.data;
+      formData.value = data;
 
-      if (res.data.data.email) {
-        const email = res.data.data.email.split("@");
+      if (data.email) {
+        const email = data.email.split("@");
         formData.value.email = email[0];
         formData.value.email_type = `@${email[1]}`;
       }
 
-      // console.log(res.data.data.email.split("@"));
-      formData.value.dob = res.data.data?.dob;
-
-      formData.value.gender = res.data.data?.gender;
-      formData.value.contact = res.data.data?.contact;
-      formData.value.national_id_number = res.data.data?.national_id_number;
-      formData.value.national_id_issue_date =
-        res.data.data?.national_id_issue_date;
-      formData.value.join_date = res.data.data?.join_date;
-      formData.value.choose_branch_id = res.data.data.branch_id;
-      // formData.value.village_code = res.data.data?.village_code;
-      await initializeAddressFields(res.data.data);
+      formData.value.dob = data?.dob;
+      formData.value.gender = data?.gender;
+      formData.value.contact = data?.contact;
+      formData.value.national_id_number = data?.national_id_number;
+      formData.value.national_id_issue_date = data?.national_id_issue_date;
+      formData.value.join_date = data?.join_date;
+      formData.value.choose_branch_id = data.branch_id;
+      formData.value._branch_id = (
+        data._branch_id ||
+        data.user_branch ||
+        []
+      ).map((item) => Number(item?.branch_id ?? item));
+      await initializeAddressFields(data);
     }
   } catch (error) {
     console.error("Failed to fetch data:", error);
@@ -159,16 +161,16 @@ const initData = async () => {
 };
 
 onMounted(async () => {
-  initData();
-  const dataBranches = await getBranches();
-  const dataRoles = await getRoles();
-  const dataPositions = await getPositions();
-  // const dataUsers = await getUsers();
+  const [dataBranches, dataRoles, dataPositions] = await Promise.all([
+    getBranches(),
+    getRoles(),
+    getPositions(),
+  ]);
 
-  roles.value = dataRoles;
-  positions.value = dataPositions;
-  branches.value = dataBranches;
-  // users.value = dataUsers;
+  branches.value = dataBranches || [];
+  roles.value = dataRoles || [];
+  positions.value = dataPositions || [];
+  await initData();
 });
 
 watch(

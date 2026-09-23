@@ -23,6 +23,72 @@ class SubjectSeeder extends Seeder
                 "edu_id" => 3,
             ],
             [
+                'name_en' => "Khmer",
+                'name_kh' => 'ខ្មែរ',
+                "symbol" => "M",
+                'cur_id' => 2,
+                "edu_id" => 3,
+            ],
+            [
+                'name_en' => "English",
+                'name_kh' => 'អង់គ្លេស',
+                "symbol" => "M",
+                'cur_id' => 2,
+                "edu_id" => 3,
+            ],
+            [
+                'name_en' => "Biology",
+                'name_kh' => 'ជីវិទ្យា',
+                "symbol" => "M",
+                'cur_id' => 2,
+                "edu_id" => 3,
+            ],
+            [
+                'name_en' => "Chemistry",
+                'name_kh' => 'គីមី',
+                "symbol" => "M",
+                'cur_id' => 2,
+                "edu_id" => 3,
+            ],
+            [
+                'name_en' => "Physics",
+                'name_kh' => 'រូប',
+                "symbol" => "M",
+                'cur_id' => 2,
+                "edu_id" => 3,
+            ],
+            [
+                'name_en' => "Earth",
+                'name_kh' => 'ផែនដី',
+                "symbol" => "M",
+                'cur_id' => 2,
+                "edu_id" => 3,
+            ],
+            [
+                'name_en' => "Geology",
+                'name_kh' => 'ភូមិ',
+                "symbol" => "M",
+                'cur_id' => 2,
+                "edu_id" => 3,
+            ],
+            [
+                'name_en' => "សីលធម៌",
+                'name_kh' => 'គណិតវិទ្យា',
+                "symbol" => "M",
+                'cur_id' => 2,
+                "edu_id" => 3,
+            ],
+            [
+                'name_en' => "History",
+                'name_kh' => 'ប្រវត្តវិទ្យា',
+                "symbol" => "M",
+                'cur_id' => 2,
+                "edu_id" => 3,
+            ],
+         
+         
+
+            [
                 'name_en' => "Language Art",
                 'name_kh' => 'ភាសា',
                 "symbol" => "LA",
@@ -33,28 +99,28 @@ class SubjectSeeder extends Seeder
                 'name_kh' => 'អាន',
                 "symbol" => "R",
                 'cur_id' => 1,
-                'parent_id' => 2
+                'parent_id' => 11
             ],
             [
                 'name_en' => "Listening",
                 'name_kh' => 'ស្ដាប់',
                 "symbol" => "L",
                 'cur_id' => 1,
-                'parent_id' => 2
+                'parent_id' => 11
             ],
             [
                 'name_en' => "Writing",
                 'name_kh' => 'សរសេរ',
                 "symbol" => "W",
                 'cur_id' => 1,
-                'parent_id' => 2
+                'parent_id' => 11
             ],
             [
                 'name_en' => "Speaking",
                 'name_kh' => 'និយាយ',
                 "symbol" => "R",
                 'cur_id' => 1,
-                'parent_id' => 2
+                'parent_id' => 11
             ]
         ];
         foreach ($data as $d) {

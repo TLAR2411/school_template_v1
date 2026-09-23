@@ -194,7 +194,7 @@ class User extends Authenticatable implements LaratrustUser
 
     public function userBranch()
     {
-        return $this->hasMany(UserBranch::class, 'id', 'user_id');
+        return $this->hasMany(UserBranch::class, 'user_id', 'id');
     }
 
     public function mainUser()

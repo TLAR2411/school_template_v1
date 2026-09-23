@@ -5,10 +5,8 @@ namespace App\Http\Controllers\Api\School;
 use App\Http\Controllers\Controller;
 use App\Models\School\Student;
 use Illuminate\Http\Request;
-use Illuminate\Database\Eloquent\Builder;
 use App\Http\Resources\DataTableResource;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\DB;
 
 class StudentController extends Controller
 {
@@ -123,7 +121,9 @@ class StudentController extends Controller
     public function list(Request $request)
     {
         try {
-            $data  = Student::query()
+
+
+            $data = Student::query()
                 ->whereBranch($this->getBranch())
                 ->filter($request->filter)
                 ->paginate($request->limit);

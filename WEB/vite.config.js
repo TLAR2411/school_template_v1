@@ -44,7 +44,9 @@ export default defineConfig(({ mode }) => {
           },
         },
       }),
-      VueDevTools(),
+      VueDevTools({
+       launchEditor: 'code'
+      }),
       vueJsx(),
       Layouts(), // <--- Ensure it's used here
 

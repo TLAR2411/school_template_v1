@@ -27,12 +27,19 @@ class AuthController extends Controller
         if ($user->manage_branch == 1) {
             return Branch::where('id', $user->branch_id)->where('is_active', true)->get();
         } elseif ($user->manage_branch == 2) {
+            // return Branch::query()
+            //     ->join('user_branches as ub', 'ub.branch_id', 'branches.id')
+            //     ->where('ub.user_id', $user->id)
+            //     ->where('branches.is_active', true)
+            //     ->orderBy('branches.id', 'asc')
+            //     ->get();
             return Branch::query()
-                ->join('user_branches as ub', 'ub.branch_id', 'branches.id')
-                ->where('ub.user_id', $user->id)
-                ->where('branches.is_active', true)
-                ->orderBy('branches.id', 'asc')
-                ->get();
+    ->select('branches.*')
+    ->join('user_branches as ub', 'ub.branch_id', 'branches.id')
+    ->where('ub.user_id', $user->id)
+    ->where('branches.is_active', true)
+    ->orderBy('branches.id', 'asc')
+    ->get();
         } elseif ($user->manage_branch == 3) {
             return Branch::orderBy('id', 'asc')->where('is_active', true)->get();
         } elseif ($user->manage_branch == 4) {
@@ -110,25 +117,12 @@ class AuthController extends Controller
             } else if ($user->is_active == false) {
                 abort(500, "Account is disabled!");
             }
-            $defaultBranch = "*";
+            $defaultBranch = $user->branch_id;
 
-            if ($user->manage_branch == 1) {
-                $defaultBranch = $user->branch_id;
-            } else {
-                if ($user->manage_branch == 3) {
-                    $branch = Branch::where('is_active', true)->count();
-                    if ($branch <= 1) {
-                        $defaultBranch = $user->branch_id;
-                    }
-                } elseif ($user->manage_branch == 2) {
-                    $branch = UserBranch::join('branches as b', 'b.id', 'user_branches.branch_id')
-                        ->where('b.is_active', true)
-                        ->where('user_branches.user_id', $user->id)
-                        ->count();
-
-                    if ($branch <= 1) {
-                        $defaultBranch = $user->branch_id;
-                    }
+            if ((int) $user->manage_branch === 3) {
+                $activeBranchCount = Branch::where('is_active', true)->count();
+                if ($activeBranchCount > 1) {
+                    $defaultBranch = '*';
                 }
             }
 
@@ -155,6 +149,7 @@ class AuthController extends Controller
             return response()->json([
                 'status' => true,
                 'is_login' => true,
+                'user_id' => $user->id,
                 'data' => [
                     'access_token' => [
                         'value' => $response->access_token,

@@ -318,6 +318,7 @@ onMounted(async () => {
     is-attendance
     btn-attendance
     btn-schedule
+    btn-view
     is-schedule
     is-delete
     is-disable

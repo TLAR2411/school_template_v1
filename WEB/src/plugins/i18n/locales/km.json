@@ -636,6 +636,8 @@
   "Attendance": "អវត្តមាន",
 
   "Students": "សិស្ស",
+  "Enroll": "បានចុះឈ្មោះ",
+  "Not yet": "មិនទាន់",
   "Family": "គ្រួសារសិស្ស",
 
   "Present": "មករៀន",
@@ -939,6 +941,7 @@
   "Force check for updates": "បង្ខំឱ្យពិនិត្យមើលការអាប់ដេត",
   "Principal Receive": "ប្រមូលពីប្រាក់ដើម",
   "Interest Receive": "ប្រមូលពីការប្រាក់",
+  "Score Entry": "បញ្ចូលពិន្ទុ",
 
   "Delete Old Records": "លុបកំណត់ត្រាចាស់",
   "By Period": "តាមរយៈកាលបរិច្ឆេទ",

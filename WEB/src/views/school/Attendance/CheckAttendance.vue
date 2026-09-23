@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, watch, onMounted, nextTick } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { useDisplay } from "vuetify";
 import axios from "axios";
@@ -8,6 +8,11 @@ import { api } from "@/utils/api";
 import { getGrades, getClasses } from "@/services/dataService";
 import { useSettingStore } from "@/stores/settingStore.js";
 import formatGender from "@/utils/formater/formatGender";
+
+const props = defineProps({
+  classId: { type: [Number, String], default: null },
+  lockClass: { type: Boolean, default: false },
+});
 
 const CONFIG = {
   apiLoad: "attendance-list",
@@ -23,6 +28,8 @@ const CONFIG = {
     empty: "#f5f5f5",
   },
 };
+
+const router = useRouter();
 
 const reasons = computed(() => [
   { title: t("Trip"), value: "Trip" },
@@ -65,6 +72,26 @@ const sessionSubmitted = ref({ AM: false, PM: false });
 const selectedClass = computed(() =>
   allClasses.value.find((c) => c.id == formSearch.value.class_id),
 );
+
+const routeClassId = computed(() => props.classId ?? route.params.id);
+const hasClassFromRoute = computed(() => {
+  if (props.lockClass) return true;
+  const id = Number(routeClassId.value);
+  return Number.isFinite(id) && id > 0;
+});
+
+const className = computed(() => {
+  const cls = selectedClass.value;
+  if (!cls) return "";
+  return locale.value === "km"
+    ? cls.name_kh || cls.name_en || ""
+    : cls.name_en || cls.name_kh || "";
+});
+
+const pageTitle = computed(() => {
+  const base = t("Attendance");
+  return className.value ? `${base} ${className.value}` : base;
+});
 
 const isFullDay = computed(
   () => String(selectedClass.value?.shift?.code || "").toUpperCase() === "FULL",
@@ -525,12 +552,16 @@ watch(
   () => settingStore.curriculum_id,
   async (id) => {
     if (!id) return;
-    formSearch.value.grade_id = null;
-    formSearch.value.class_id = null;
     formSearch.value.subject_id = null;
     subjectsForDay.value = [];
     grades.value = (await getGrades()) || [];
     allClasses.value = (await getClasses()) || [];
+    if (hasClassFromRoute.value) {
+      await applyClassFromRoute(routeClassId.value);
+      return;
+    }
+    formSearch.value.grade_id = null;
+    formSearch.value.class_id = null;
   },
 );
 
@@ -544,10 +575,7 @@ watch(
   },
 );
 
-watch(
-  () => route.params.id,
-  (id) => applyClassFromRoute(id),
-);
+watch(routeClassId, (id) => applyClassFromRoute(id));
 
 onMounted(async () => {
   try {
@@ -556,7 +584,7 @@ onMounted(async () => {
     if (formSearch.value.date) {
       formSearch.value.day_id = isoWeekday(formSearch.value.date);
     }
-    await applyClassFromRoute(route.params.id);
+    await applyClassFromRoute(routeClassId.value);
     if (formSearch.value.class_id && formSearch.value.date) {
       await loadAttendance();
     }
@@ -569,16 +597,16 @@ onMounted(async () => {
 <template>
   <div>
     <AppCard
-      :title="t('Attendance')"
+      :title="pageTitle"
       title-icon="tabler-file-check"
-      :is-back="false"
+      :is-back="true"
       :is-filter="true"
       :show-filters="!smAndDown"
       :loading="isLoading"
     >
       <template #filter>
         <VRow class="align-end">
-          <VCol cols="6" sm="3" md="3">
+          <VCol v-if="!hasClassFromRoute" cols="6" sm="3" md="3">
             <AppAutocomplete
               v-model="formSearch.grade_id"
               :items="grades"
@@ -589,7 +617,7 @@ onMounted(async () => {
               hide-details
             />
           </VCol>
-          <VCol cols="6" sm="3" md="3">
+          <VCol v-if="!hasClassFromRoute" cols="6" sm="3" md="3">
             <AppAutocomplete
               v-model="formSearch.class_id"
               :items="filteredClasses"
@@ -601,13 +629,21 @@ onMounted(async () => {
               :disabled="CONFIG.requireGradeBeforeClass && !formSearch.grade_id"
             />
           </VCol>
-          <VCol cols="6" sm="3" md="3">
+          <VCol
+            cols="6"
+            :sm="hasClassFromRoute ? 6 : 3"
+            :md="hasClassFromRoute ? 4 : 3"
+          >
             <AppDateTimePicker
               v-model="formSearch.date"
               :placeholder="t('Select date')"
             />
           </VCol>
-          <VCol cols="6" sm="3" md="3">
+          <VCol
+            cols="6"
+            :sm="hasClassFromRoute ? 6 : 3"
+            :md="hasClassFromRoute ? 4 : 3"
+          >
             <AppAutocomplete
               v-model="formSearch.subject_id"
               :items="subjects"

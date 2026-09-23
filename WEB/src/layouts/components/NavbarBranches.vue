@@ -15,9 +15,13 @@ const filter = ref({
 const { locale } = useI18n();
 const { smAndDown } = useDisplay();
 
+const canSeeAllBranches = computed(
+  () => Number(auth()?.user?.manage_branch) === 3 && (branches.value?.length ?? 0) > 1,
+);
+
 const formatBranches = (branchList) => {
-  if (branchList?.length > 1) {
-    const all = [
+  if (canSeeAllBranches.value && branchList?.length > 1) {
+    return [
       {
         name_kh: "គ្រប់សាខា",
         name_en: "All Branch",
@@ -25,21 +29,21 @@ const formatBranches = (branchList) => {
         id: "*",
         province_code: null,
       },
+      ...branchList,
     ];
-    return [...all, ...branchList];
   }
-  return branchList;
+  return branchList || [];
 };
 
 const showBranches = computed(() => formatBranches(branches.value));
 
 watch(
-  () => auth()?.branches,
-  (newBranches) => {
+  [() => auth()?.branches, () => auth()?.user?.manage_branch],
+  ([newBranches]) => {
     if (newBranches) {
       branches.value = newBranches;
-      setBranch();
     }
+    setBranch();
   },
   { deep: true },
 );
@@ -49,20 +53,27 @@ onMounted(() => {
 });
 
 const setBranch = () => {
-  filter.value.branch_id =
-    useSettingStore().branch_id || showBranches?.value[0]?.id || null;
+  const settingStore = useSettingStore();
+  const assignedIds = (branches.value || []).map((b) => b.id);
+  let branchId = settingStore.branch_id;
 
-  useSettingStore().setBranchId(filter.value.branch_id);
+  const isAssigned = assignedIds.some((id) => id == branchId);
+  const isAllSelected = branchId === "*";
 
-  const branchAbbr = showBranches.value.find(
-    (i) => i.id == filter.value.branch_id,
-  )?.abbr;
-  const provinceCode = showBranches.value.find(
-    (i) => i.id == filter.value.branch_id,
-  )?.province_code;
+  if ((isAllSelected && !canSeeAllBranches.value) || (!isAllSelected && !isAssigned)) {
+    const userBranchId = auth()?.user?.branch_id;
+    branchId = assignedIds.some((id) => id == userBranchId)
+      ? userBranchId
+      : assignedIds[0] ?? null;
+  }
 
-  useSettingStore().setBranchAbbr(branchAbbr);
-  useSettingStore().setBranchProvinceCode(provinceCode);
+  filter.value.branch_id = branchId;
+  settingStore.setBranchId(branchId);
+
+  const selected = showBranches.value.find((i) => i.id == branchId);
+
+  settingStore.setBranchAbbr(selected?.abbr);
+  settingStore.setBranchProvinceCode(selected?.province_code);
 };
 
 const changeBranch = (id) => {

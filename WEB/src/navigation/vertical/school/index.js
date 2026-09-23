@@ -4,7 +4,6 @@ export default [
         to: { name: "school-dashboards" },
         icon: { icon: "tabler-dashboard" },
     },
-
     {
         title: "Students",
         to: { name: "school-student-enroll" },
@@ -35,6 +34,18 @@ export default [
         title: "Family",
         to: { name: "school-family" },
         icon: { icon: "tabler-users-group" },
+    },
+
+    {
+        title: "Actions",
+        to: { name: "school-class-grid" },
+        icon: { icon: "tabler-dashboard" },
+    },
+
+    {
+        title: "Score Entry",
+        to: { name: "school-score-entry" },
+        icon: { icon: "tabler-file-check" },
     },
 
 

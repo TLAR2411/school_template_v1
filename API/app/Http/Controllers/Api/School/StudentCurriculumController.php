@@ -99,28 +99,65 @@ class StudentCurriculumController extends Controller
 
     }
 
-    public function list(Request $request){
-        $curId = $this->getCur();
-        $branchId = $this->getBranch();
-        try {
-           $data = StudentCurriculum::query()
-           ->with('student')
-           ->whereBranch($branchId)
-           ->whereCurriculum($curId)
-           ->filter($request->filter)
-           ->paginate($request->limit);
+    // public function list(Request $request){
+    //     $curId = $this->getCur();
+    //     $branchId = $this->getBranch();
+    //     try {
+    //        $data = StudentCurriculum::query()
+    //        ->with('student')
+    //        ->whereBranch($branchId)
+    //        ->whereCurriculum($curId)
+    //        ->filter($request->filter)
+    //        ->paginate($request->limit);
 
-           $data = StudentCurriculumResource::collection($data)->response()->getData(true);;
-           return response()->json([
-            'status'  => true,
-            'data'    => $data,
-        ], 200);
-        } catch (\Throwable $th) {
-            return response()->json([
-            'status'  => false,
-            'message' => 'Enrollment failed',
-            'error'   => $th->getMessage(),
-        ], 500);
-        }
-    }
+    //        $data = StudentCurriculumResource::collection($data)->response()->getData(true);;
+    //        return response()->json([
+    //         'status'  => true,
+    //         'data'    => $data,
+    //     ], 200);
+    //     } catch (\Throwable $th) {
+    //         return response()->json([
+    //         'status'  => false,
+    //         'message' => 'Enrollment failed',
+    //         'error'   => $th->getMessage(),
+    //     ], 500);
+    //     }
+    // }
+
+    public function list(Request $request)
+{
+    $curId = $this->getCur();
+    $branchId = $this->getBranch();
+
+    $totalStudents = Student::query()
+        ->whereBranch($branchId)
+        ->count();
+
+    $enrolled = Student::query()
+        ->whereBranch($branchId)
+        ->whereHas('studentCurriculums', function ($q) use ($curId) {
+            $q->where('curriculum_id', $curId)
+              ->where('is_active', true);
+        })
+        ->count();
+
+    $data = StudentCurriculum::query()
+        ->with('student')
+        ->whereBranch($branchId)
+        ->whereCurriculum($curId)
+        ->filter($request->filter)
+        ->paginate($request->limit);
+
+    $data = StudentCurriculumResource::collection($data)->response()->getData(true);
+
+    return response()->json([
+        'status' => true,
+        'data' => $data,
+        'summary' => [
+            'total_students' => $totalStudents,
+            'enrolled' => $enrolled,
+            'not_enrolled' => $totalStudents - $enrolled,
+        ],
+    ]);
+}
 }
