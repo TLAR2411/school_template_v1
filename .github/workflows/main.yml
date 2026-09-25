@@ -1,7 +1,15 @@
 name: Deploy Laravel API
 
 on:
+  # Manual deploy
   workflow_dispatch:
+
+  # Auto deploy when API changes
+  push:
+    branches:
+      - main
+    paths:
+      - "API/**"
 
 jobs:
 
@@ -22,6 +30,7 @@ jobs:
           test -d API
           test -f API/artisan
           test -f API/composer.json
+          test -f API/composer.lock
 
           echo "API structure OK"
 
@@ -45,6 +54,7 @@ jobs:
           test -d API/bootstrap
           test -d API/config
           test -d API/database
+          test -d API/database/migrations
           test -d API/public
           test -d API/routes
 
