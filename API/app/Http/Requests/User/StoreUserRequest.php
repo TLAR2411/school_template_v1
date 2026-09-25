@@ -24,9 +24,9 @@ class StoreUserRequest extends FormRequest
         return [
             'name_kh' => 'required|string',
             'name_en' => 'required|string',
-            'dob' => 'required|date',
+            // 'dob' => 'required|date',
             'gender' => 'required|string',
-            'national_id_number' => 'unique:users,national_id_number',
+            // 'national_id_number' => 'unique:users,national_id_number',
         ];
     }
 }

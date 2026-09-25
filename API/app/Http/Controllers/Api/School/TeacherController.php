@@ -74,6 +74,7 @@ class TeacherController extends Controller
                 'password' => Hash::make($defaultPassword),
                 'username' => 'default',
                 'is_active' => true,
+                'email' => $lowerString . $companyName,
                 'village_code' => $request->village_code,
                 'default_part' => 'school',
             ]);
