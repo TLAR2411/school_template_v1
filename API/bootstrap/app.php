@@ -27,6 +27,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // (Postman-style), not Sanctum cookie/CSRF SPA auth. Enabling it makes
         // browser requests behave differently from Postman and can break login.
     })
+    ->withCommands([
+        __DIR__ . '/../app/Console/Commands',
+    ])
     ->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();

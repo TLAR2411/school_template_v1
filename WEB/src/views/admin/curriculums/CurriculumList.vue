@@ -167,6 +167,10 @@ const onDisable = async (item) => {
     is-delete
     is-disable
     create-dialog
+    can-create="add-curriculums"
+    can-edit="edit-curriculums"
+    can-delete="delete-curriculums"
+    can-disable="change-active-curriculums"
     save-state
     :is-back="false"
     @on-delete="onDelete"

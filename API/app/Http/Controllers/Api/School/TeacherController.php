@@ -7,15 +7,18 @@ use App\Models\School\Teacher;
 use App\Models\School\TeacherBranch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Exports\TeacherImportTemplateExport;
 use App\Http\Resources\DataTableResource;
 use App\Models\Auth\Role;
 use App\Models\Auth\UserBranch;
+use App\Services\School\TeacherImportService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use App\Models\Core\Setting;
 use App\Models\User;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
+use Maatwebsite\Excel\Facades\Excel;
 
 class TeacherController extends Controller
 {
@@ -72,6 +75,7 @@ class TeacherController extends Controller
                 'username' => 'default',
                 'is_active' => true,
                 'village_code' => $request->village_code,
+                'default_part' => 'school',
             ]);
             $user->code = 'T' . '-' . str_pad($user->id, 6, '0', STR_PAD_LEFT);
             $user->username = $lowerString;
@@ -125,6 +129,59 @@ class TeacherController extends Controller
                 'status' => false,
             ], 500);
         }
+    }
+
+    public function import(Request $request, TeacherImportService $service)
+    {
+        $request->validate([
+            'file' => 'required|file|max:10240',
+            'role_id' => 'nullable|exists:roles,id',
+        ]);
+
+        $file = $request->file('file');
+        $extension = strtolower($file->getClientOriginalExtension());
+        if (! in_array($extension, ['xlsx', 'xls', 'csv'], true)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Please upload an Excel file (.xlsx, .xls, .csv)',
+            ], 422);
+        }
+
+        try {
+            $result = $service->import($file->getRealPath(), [
+                'branch_id' => $this->getBranch(),
+                'cur_id' => $this->getCur(),
+                'role_id' => $request->role_id,
+                'created_by' => auth('api')->id(),
+            ]);
+
+            $message = "Imported {$result['created']} teacher(s)";
+            if ($result['skipped']) {
+                $message .= ", skipped {$result['skipped']}";
+            }
+            if ($result['failed']) {
+                $message .= ", failed {$result['failed']}";
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => $message,
+                'data' => $result,
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function importTemplate()
+    {
+        return Excel::download(
+            new TeacherImportTemplateExport(),
+            'teacher-import-template.xlsx'
+        );
     }
 
     public function list(Request $request)

@@ -6,8 +6,8 @@ import { useDisplay } from "vuetify";
 import AppName from "@/components/AppName.vue";
 import formatGender from "@/utils/formater/formatGender";
 import { useRouter } from "vue-router";
-
-import { storeToRefs } from "pinia";
+import ImportTeachersDialog from "./ImportTeachersDialog.vue";
+import hasPermission from "@/utils/hasPermission";
 
 const router = useRouter();
 
@@ -101,6 +101,11 @@ const onView = async (item) => {
 };
 
 const filter = ref({ search: null });
+const isImportDialogVisible = ref(false);
+
+const onImported = () => {
+  dataTableRef.value?.reload();
+};
 
 onMounted(() => {});
 </script>
@@ -126,12 +131,30 @@ onMounted(() => {});
     is-view
     create-dialog
     create-page="school-teacher-create"
+    can-create="add-teachers"
+    can-edit="edit-teachers"
+    can-delete="delete-teachers"
+    can-disable="change-active-teachers"
+    can-view="view-teachers"
     save-state
     @on-view="onView"
     @on-delete="onDelete"
     @on-edit="onEdit"
     @on-disable="onDisable"
   >
+    <template #card-header>
+      <VBtn
+        v-if="hasPermission('import-teachers')"
+        color="primary"
+        size="small"
+        class="mr-2"
+        prepend-icon="tabler-upload"
+        variant="tonal"
+        @click="isImportDialogVisible = true"
+      >
+        {{ t("Import") }}
+      </VBtn>
+    </template>
     <template #filter>
       <VRow class="justify-end">
         <!----Filter Input-->
@@ -173,4 +196,9 @@ onMounted(() => {});
       />
     </template>
   </AppCardTable>
+
+  <ImportTeachersDialog
+    v-model:is-dialog-visible="isImportDialogVisible"
+    @imported="onImported"
+  />
 </template>

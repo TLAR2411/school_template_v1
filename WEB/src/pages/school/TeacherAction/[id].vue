@@ -1,6 +1,7 @@
 <script setup>
 import { ref, watch } from "vue";
 import CheckAttendance from "@/views/school/Attendance/CheckAttendance.vue";
+import AttendanceReport from "@/views/school/Attendance/AttendanceReport.vue";
 import AppCustomTap from "@/components/AppCustomTap.vue";
 
 import { useRoute, useRouter } from "vue-router";
@@ -10,7 +11,7 @@ const route = useRoute();
 
 const router = useRouter();
 
-const currentTab = ref(route.query.tab || "class");
+const currentTab = ref(route.query.tab || "attendance");
 
 watch(
   () => currentTab.value,
@@ -32,6 +33,12 @@ const tabs = [
     description: "Score",
     icon: "tabler-folders",
   },
+  {
+    value: "report",
+    title: "Attendance Report",
+    description: "Attendance Report",
+    icon: "tabler-report-analytics",
+  },
 ];
 
 definePage({
@@ -40,7 +47,7 @@ definePage({
     layout: "default",
     subject: "Auth",
     requiresAuth: true,
-    // permissions: "positions:view-page",
+    permissions: "view-classes",
     // layoutWrapperClasses: "layout-content-height-fixed",
   },
 });
@@ -56,6 +63,13 @@ definePage({
       </VWindowItem>
       <VWindowItem value="score">
         <ScoreEntry :class-id="route.params.id" lock-class />
+      </VWindowItem>
+      <VWindowItem value="report">
+        <AttendanceReport
+          :class-id="route.params.id"
+          lock-class
+          :is-back="false"
+        />
       </VWindowItem>
     </VWindow>
   </div>

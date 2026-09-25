@@ -171,6 +171,10 @@ const onDisable = async (item) => {
     is-delete
     is-disable
     create-dialog
+    can-create="add-branches"
+    can-edit="edit-branches"
+    can-delete="delete-branches"
+    can-disable="change-active-branches"
     save-state
     :is-back="false"
     @onEdit="onEdit"

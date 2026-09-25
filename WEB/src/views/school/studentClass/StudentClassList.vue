@@ -160,6 +160,8 @@ onMounted(() => {
     item-value="id"
     show-select
     create-dialog
+    can-create="add-student-classes"
+    can-delete="delete-student-classes"
     save-state
     @on-delete="onDelete"
     @on-delete-selected="onDeleteSelected"

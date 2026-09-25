@@ -19,6 +19,7 @@ definePage({
     layout: "blank",
     subject: "Auth",
     requiresAuth: true,
+    permissions: "view-schedules",
   },
 });
 

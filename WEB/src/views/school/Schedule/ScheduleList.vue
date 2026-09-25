@@ -19,6 +19,7 @@ import {
 } from "@/services/dataService.js";
 import { useSettingStore } from "@/stores/settingStore.js";
 import { api } from "@/utils/api.js";
+import hasPermission from "@/utils/hasPermission";
 
 const route = useRoute();
 const router = useRouter();
@@ -31,7 +32,7 @@ const isMobile = computed(() => smAndDown.value);
 // Customize here
 const SCHEDULE_CONFIG = {
   pxPerHour: 60, // row height per hour
-  snapMinutes: 60, // drag snap (15 / 30 / 60)
+  snapMinutes: 5, // drag snap (15 / 30 / 60)
   blockGap: 4, // padding around blocks
   timeGutterWidth: 64, // px — keep in sync with CSS grid
   // fallback when class has no shift
@@ -579,6 +580,7 @@ function openPreview() {
 }
 
 function openCreate(dayId, start, end) {
+  if (!hasPermission("add-schedules")) return;
   if (!formSearch.value.class_id) return;
 
   const subject = subjects.value[0];
@@ -600,6 +602,7 @@ function openCreate(dayId, start, end) {
 }
 
 function openEdit(item) {
+  if (!hasPermission("edit-schedules")) return;
   formData.value = {
     ...item,
     start: normalizeTime(item.start),
@@ -652,6 +655,7 @@ const onUpdate = async (data, callback) => {
 };
 
 const onDelete = async (data, callback) => {
+  if (!hasPermission("delete-schedules")) return;
   isLoading.value = true;
   try {
     const res = await api.post("schedules-delete", { id: data.id });
@@ -862,6 +866,7 @@ onBeforeUnmount(() => {
             {{ t("Print") }}
           </VBtn>
           <VBtn
+            v-if="hasPermission('add-schedules')"
             color="primary"
             variant="tonal"
             prepend-icon="tabler-plus"

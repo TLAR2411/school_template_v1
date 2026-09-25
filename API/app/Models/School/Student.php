@@ -8,9 +8,11 @@ use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use App\Models\School\StudentClass;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Student extends Model
 {
+    use SoftDeletes;
     protected $fillable = [
         'name_en',
         'name_kh',

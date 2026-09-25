@@ -156,6 +156,10 @@ const onUpdate = async (data, callback) => {
     is-delete
     is-view
     create-dialog
+    can-create="add-families"
+    can-edit="edit-families"
+    can-delete="delete-families"
+    can-view="view-families"
     save-state
     :is-back="false"
     @on-delete="onDelete"

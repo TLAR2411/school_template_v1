@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\School\Student;
 use Illuminate\Http\Request;
 use App\Http\Resources\DataTableResource;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class StudentController extends Controller
@@ -16,9 +17,9 @@ class StudentController extends Controller
         $validate = $request->validate([
             'name_en' => 'required|string|max:255',
             'name_kh' => 'required|string|max:255',
-            'dob' => 'required|date',
+            'dob' => 'nullable|date',
             'gender' => 'required|string|max:255',
-            'nation' => 'required|string|max:255',
+            'nation' => 'nullable|string|max:255',
             'photo_path' => 'nullable|string',
         ]);
         try {
@@ -222,6 +223,41 @@ class StudentController extends Controller
         } catch (\Throwable $th) {
             return response()->json([
                 'status' => false,
+                'message' => $th->getMessage(),
+            ], 500);
+        }
+    }
+
+    /** Delete many students at once: { "ids": [1, 2, 3] } */
+    public function deleteMany(Request $request)
+    {
+        $data = $request->validate([
+            'ids'   => 'required|array|min:1',
+            'ids.*' => 'integer|exists:students,id',
+        ]);
+
+        try {
+            $students = Student::query()
+                ->whereIn('id', $data['ids'])
+                ->whereBranch($this->getBranch())
+                ->get();
+
+            $deleted = 0;
+            DB::transaction(function () use ($students, &$deleted) {
+                foreach ($students as $student) {
+                    $student->delete(); // keeps Student::boot() photo cleanup
+                    $deleted++;
+                }
+            });
+
+            return response()->json([
+                'status'  => true,
+                'message' => "Deleted {$deleted} student(s)",
+                'deleted' => $deleted,
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status'  => false,
                 'message' => $th->getMessage(),
             ], 500);
         }

@@ -17,6 +17,13 @@ const NON_CANCELLABLE_ENDPOINTS = [
   '/upload',
   'report-templates-save',
   'report-templates-show',
+  'teachers-import',
+  'teachers-import-template',
+  'permissions-store',
+  'permissions-update',
+  'permissions-delete',
+  'students-delete',
+  'students-delete-many',
 ];
 
 /**
@@ -95,7 +102,11 @@ api.interceptors.request.use((config) => {
 
   // --- DATA FORMATTING ---
   if (config.data instanceof FormData) {
-    // For FormData, add branch ID if available
+    if (typeof config.headers?.delete === "function") {
+      config.headers.delete("Content-Type");
+    } else {
+      delete config.headers["Content-Type"];
+    }
     if (settingStore.branch_id) {
       config.data.append("branchId", settingStore.branch_id);
     }

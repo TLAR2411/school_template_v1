@@ -12,6 +12,9 @@ const filter = ref({
 });
 const { locale } = useI18n();
 const { smAndDown } = useDisplay();
+const isCurriculumLocked = computed(
+  () => curriculums.value.length <= 1,
+);
 
 watch(
   () => auth()?.curriculums,
@@ -77,7 +80,7 @@ const fieldStyle = computed(() =>
     <AppAutocomplete
       class="curriculum-autocomplete"
       :class="{
-        'single-curriculum': curriculums.length === 1,
+        'single-curriculum': isCurriculumLocked,
         'is-compact': smAndDown,
       }"
       v-model="filter.curriculum_id"
@@ -86,8 +89,8 @@ const fieldStyle = computed(() =>
       item-value="id"
       density="compact"
       hide-details
-      :readonly="curriculums.length <= 1"
-      :disabled="curriculums.length === 1"
+      :readonly="isCurriculumLocked"
+      :disabled="isCurriculumLocked"
       @update:model-value="(value) => changeCurriculum(value)"
       autocomplete="off"
       :style="fieldStyle"

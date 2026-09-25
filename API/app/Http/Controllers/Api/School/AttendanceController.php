@@ -8,12 +8,49 @@ use App\Models\School\Classes;
 use App\Models\School\Schedule;
 use App\Models\School\StudentClass;
 use App\Models\School\Teacher;
+use App\Services\School\AttendanceReportService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class AttendanceController extends Controller
 {
+    /**
+     * Optional filters: class_id, date, date_from+date_to, month_id, session.
+     * Returns summary counts + per-student present / late / permission / absent.
+     */
+    public function report(Request $request, AttendanceReportService $service)
+    {
+        $data = $request->validate([
+            'class_id'   => 'nullable|integer|exists:classes,id',
+            'student_id' => 'nullable|integer|exists:students,id',
+            'subject_id' => 'nullable|integer|exists:subjects,id',
+            'session'    => 'nullable|in:AM,PM',
+            // string so d-m-Y from the picker still works; service normalizes to Y-m-d
+            'date'       => 'nullable|string',
+            'date_from'  => 'nullable|string',
+            'date_to'    => 'nullable|string',
+            'month_id'   => 'nullable|integer|exists:months,id',
+        ]);
+
+        try {
+            return response()->json([
+                'status' => true,
+                'data'   => $service->run(
+                    $data,
+                    $this->getBranch(),
+                    $this->getCur(),
+                    $this->getYear()
+                ),
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status'  => false,
+                'message' => $th->getMessage(),
+            ], 500);
+        }
+    }
+
     /** Load students + schedule + saved marks for one class/date. */
     public function getAttendanceData(Request $request)
     {

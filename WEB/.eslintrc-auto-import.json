@@ -412,6 +412,16 @@
     "extractBrandConfig": true,
     "extractReportConfig": true,
     "mergeBrandAndReport": true,
-    "resolveReportAsset": true
+    "resolveReportAsset": true,
+    "isRequiredField": true,
+    "initPwaInstall": true,
+    "usePwaInstall": true,
+    "buildPermissionName": true,
+    "emptySummary": true,
+    "fetchAttendanceReport": true,
+    "formatPermissionLabel": true,
+    "slugifyPermission": true,
+    "toReportPayload": true,
+    "useAttendanceReport": true
   }
 }

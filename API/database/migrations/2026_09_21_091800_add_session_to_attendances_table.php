@@ -10,6 +10,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('attendances', function (Blueprint $table) {
+            $table->boolean('is_sent')->default(false);
             $table->string('session', 8)->nullable()->after('subject_id');
             $table->index(['class_id', 'date', 'session'], 'attendances_class_date_session_index');
         });

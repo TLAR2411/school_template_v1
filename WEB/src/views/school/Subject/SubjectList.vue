@@ -190,6 +190,11 @@ onMounted(async () => {
     is-view
     is-disable
     create-dialog
+    can-create="add-subjects"
+    can-edit="edit-subjects"
+    can-delete="delete-subjects"
+    can-disable="change-active-subjects"
+    can-view="view-subjects"
     save-state
     :is-back="false"
     @on-delete="onDelete"

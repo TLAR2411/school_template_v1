@@ -8,6 +8,7 @@ import {
   isNavLinkActive,
 } from "@layouts/utils";
 import hasPermission from "@/utils/hasPermission.js";
+import { auth } from "@/utils/auth";
 
 const props = defineProps({
   item: {
@@ -24,7 +25,8 @@ const hideTitleAndBadge = configStore.isVerticalNavMini();
   <li
     v-if="
       can(item.action, item.subject) &&
-      (!item.permission || hasPermission(item.permission))
+      (!item.permission || hasPermission(item.permission)) &&
+      !item.hideForRoles?.includes(auth()?.user?.role?.name)
     "
     class="nav-link"
     :class="{ disabled: item.disable }"

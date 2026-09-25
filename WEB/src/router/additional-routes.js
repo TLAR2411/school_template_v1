@@ -8,6 +8,12 @@ const isLoggedIn = () => !!getAccessToken()
 const redirectToPartDashboard = (partKey) => {
   if (!isLoggedIn()) return { name: 'login' }
 
+  if (auth()?.user?.role?.name === 'teacher') {
+    return hasPermission('school-allow-part')
+      ? { name: 'school-class-grid' }
+      : { name: 'not-authorized' }
+  }
+
   const part = SYSTEM_PARTS.find((p) => p.key === partKey)
   if (!part) return { name: 'not-authorized' }
 

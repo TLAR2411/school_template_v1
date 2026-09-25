@@ -204,6 +204,11 @@ body,
   &:not(.v-field-label--floating) {
     color: rgba(var(--v-theme-on-background), var(--v-medium-emphasis-opacity));
   }
+
+  .text-error {
+    color: rgb(var(--v-theme-error)) !important;
+    opacity: 1;
+  }
 }
 
 // 👉 Overlay

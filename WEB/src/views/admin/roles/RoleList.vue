@@ -154,6 +154,9 @@ onMounted(async () => {
     is-edit
     is-delete
     create-dialog
+    can-create="add-roles"
+    can-edit="edit-roles"
+    can-delete="delete-roles"
     save-state
     @on-delete="onDelete"
     @on-edit="onEdit"

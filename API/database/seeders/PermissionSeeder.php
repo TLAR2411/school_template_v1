@@ -25,35 +25,59 @@ class PermissionSeeder extends Seeder
         }
 
         foreach ($attribute as $item) {
-            Permission::create([
-                'name' => $item . '-' . $group,
-                'group' => $group,
-                'display_name' => $item,
-            ]);
+            Permission::firstOrCreate(
+                ['name' => $item . '-' . $group],
+                [
+                    'group' => $group,
+                    'display_name' => $item,
+                ]
+            );
         }
     }
 
     public function run(): void
     {
         $this->insert('allow-part', [
-            'loan',
-            'accounting',
-            'hr',
             'admin',
+            'school',
         ], false);
 
-        $this->insert('branches');
+        $this->insert('branches', ['change-active']);
         $this->insert('users', [
             'change-active',
             'change-password',
         ]);
+
+        $this->insert('attendance', ['approve']);
+        $this->insert('score-entry', ['approve']);
+
         $this->insert('activity-log');
-        $this->insert('positions');
+        $this->insert('positions', ['change-active']);
         $this->insert('roles');
-        $this->insert('permission');
+        $this->insert('permissions');
         $this->insert('villages');
         $this->insert('communes');
         $this->insert('districts');
         $this->insert('provinces');
+
+        $this->insert('students', ['change-active', 'enroll']);
+        $this->insert('teachers', ['change-active', 'import']);
+        $this->insert('classes', ['change-active']);
+        $this->insert('subjects', ['change-active']);
+        $this->insert('families');
+        $this->insert('schedules');
+        $this->insert('attendance');
+        $this->insert('score-entry');
+        $this->insert('term-periods');
+        $this->insert('curriculums', ['change-active']);
+        $this->insert('years', ['change-active']);
+        $this->insert('education-levels', ['change-active']);
+        $this->insert('rooms', ['change-active']);
+        $this->insert('grades', ['change-active']);
+        $this->insert('teacher-classes');
+        $this->insert('student-classes');
+        $this->insert('grading-rules');
+        $this->insert('assessments');
+        $this->insert('subject-activity-types', ['change-active']);
     }
 }

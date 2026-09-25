@@ -10,6 +10,7 @@ import print from "vue3-print-nb"
 import { router } from "@/router"
 import { useAuthStore } from "@/stores/authStore"
 import { getAccessToken } from "@/utils/accessToken"
+import { initPwaInstall } from "@/composables/usePwaInstall"
 
 // Create app
 const app = createApp(App)
@@ -21,6 +22,8 @@ app.use(PerfectScrollbarPlugin);
 app.use(print)
 
 async function start() {
+  initPwaInstall()
+
   if (getAccessToken()) {
     await useAuthStore().bootstrap()
   }

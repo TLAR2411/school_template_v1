@@ -8,6 +8,7 @@ use App\Models\Auth\Position;
 use App\Models\Auth\Role;
 use App\Models\Auth\UserBranch;
 use App\Models\Core\Branch;
+use App\Models\School\Teacher;
 use App\Traits\TracksUserActions;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -218,5 +219,26 @@ class User extends Authenticatable implements LaratrustUser
             ->where('id', '!=', auth()->id())
             ->where('is_active', true)
             ->orderByDesc('created_at');
+    }
+
+    public function teacher()
+    {
+        return $this->hasOne(Teacher::class, 'user_id');
+    }
+
+    public function isTeacher(): bool
+    {
+        return $this->hasRole('teacher') || $this->role?->name === 'teacher';
+    }
+
+    public function assignedCurriculumId(): ?int
+    {
+        if (!$this->isTeacher()) {
+            return null;
+        }
+
+        $curId = $this->teacher?->cur_id;
+
+        return $curId ? (int) $curId : null;
     }
 }

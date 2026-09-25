@@ -168,6 +168,8 @@ const onEdit = async (item) => {
     is-excel
     is-disable
     create-dialog
+    can-create="enroll-students"
+    can-disable="change-active-students"
     save-state
     :is-back="false"
     @on-disable="onDisable"

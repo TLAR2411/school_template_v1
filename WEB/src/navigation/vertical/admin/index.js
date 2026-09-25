@@ -14,19 +14,19 @@ export default [
         title: "Students",
         to: { name: "admin-students" },
         icon: { icon: "tabler-users" },
-        // permission: "view-students",
+        permission: "view-students",
     },
     {
         title: "Curriculums",
         to: { name: "admin-curriculums" },
         icon: { icon: "tabler-book" },
-        // permission: "view-curriculums",
+        permission: "view-curriculums",
     },
     {
         title: "Years",
         to: { name: "admin-years" },
         icon: { icon: "tabler-calendar" },
-        // permission: "view-years",
+        permission: "view-years",
     },
     {
         title: "Activity Log",
@@ -59,6 +59,13 @@ export default [
                     name: "admin-roles",
                 },
                 permission: "view-roles",
+            },
+            {
+                title: "Permissions",
+                to: {
+                    name: "admin-permissions",
+                },
+                permission: "view-permissions",
             },
             {
                 title: "Positions",

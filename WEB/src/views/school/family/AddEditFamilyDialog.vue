@@ -283,7 +283,6 @@ const dialogModelValueUpdate = (newVal) => {
                   :label="t('Name Khmer')"
                   autocomplete="off"
                   :disabled="isUpdate"
-                  :rules="isUpdate ? [] : [requiredValidator]"
                 />
               </VCol>
               <VCol cols="12" md="3">
@@ -292,7 +291,6 @@ const dialogModelValueUpdate = (newVal) => {
                   :label="t('Phone')"
                   autocomplete="off"
                   :disabled="isUpdate"
-                  :rules="isUpdate ? [] : [requiredValidator]"
                 />
               </VCol>
               <VCol v-if="!isUpdate" cols="12" class="d-flex justify-end">

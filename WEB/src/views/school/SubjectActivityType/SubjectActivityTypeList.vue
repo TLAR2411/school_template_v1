@@ -144,6 +144,9 @@ const onUpdate = async (data, callback) => {
     is-edit
     is-delete
     create-dialog
+    can-create="add-subject-activity-types"
+    can-edit="edit-subject-activity-types"
+    can-delete="delete-subject-activity-types"
     save-state
     :is-back="false"
     @on-delete="onDelete"

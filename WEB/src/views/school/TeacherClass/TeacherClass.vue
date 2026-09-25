@@ -6,6 +6,7 @@ import AddEditTeacherClassDialog from "./AddEditTeacherClassDialog.vue";
 import { useDialog } from "@/composables/useDialog";
 import { useI18n } from "vue-i18n";
 import getImageUrl from "@/utils/image/getImageUrl";
+import hasPermission from "@/utils/hasPermission";
 
 const { showDialog } = useDialog();
 const { t } = useI18n();
@@ -200,6 +201,7 @@ onMounted(() => {
     <VCardTitle class="d-flex align-center justify-space-between pa-4">
       <VChip class="rounded-l" color="primary">Teacher and Subjects</VChip>
       <VBtn
+        v-if="hasPermission('add-teacher-classes')"
         id="page-tour-add-teacher"
         color="primary"
         size="small"
@@ -227,6 +229,7 @@ onMounted(() => {
           >
             <div class="card-actions">
               <VBtn
+                v-if="hasPermission('edit-teacher-classes')"
                 icon
                 size="x-small"
                 variant="text"
@@ -236,6 +239,7 @@ onMounted(() => {
                 <VIcon size="14">tabler-edit</VIcon>
               </VBtn>
               <VBtn
+                v-if="hasPermission('delete-teacher-classes')"
                 icon
                 size="x-small"
                 variant="text"
@@ -285,6 +289,7 @@ onMounted(() => {
               <div v-for="s in item.subjects" :key="s.subject_id">
                 {{ s.name_en }}
                 <VBtn
+                  v-if="hasPermission('delete-teacher-classes')"
                   icon
                   size="x-small"
                   variant="text"

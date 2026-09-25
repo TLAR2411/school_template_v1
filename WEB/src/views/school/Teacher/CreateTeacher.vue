@@ -121,7 +121,6 @@ onMounted(async () => {
             <AppDateTimePicker
               v-model="formData.dob"
               label="Date of birth"
-              :rules="[requiredValidator]"
               :config="{ allowInput: true }"
             />
           </VCol>

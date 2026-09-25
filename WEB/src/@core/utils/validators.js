@@ -9,6 +9,21 @@ export const requiredValidator = value => {
   return !!String(value).trim().length || t('This field is required')
 }
 
+export const isRequiredField = (rules, requiredFlag) => {
+  if (requiredFlag === true || requiredFlag === '' || requiredFlag === 'required')
+    return true
+
+  if (!Array.isArray(rules) || !rules.length)
+    return false
+
+  return rules.some(rule => {
+    if (rule === requiredValidator)
+      return true
+
+    return typeof rule === 'function' && rule.name === 'requiredValidator'
+  })
+}
+
 // 👉 Email Validator
 export const emailValidator = value => {
   if (isEmpty(value))

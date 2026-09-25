@@ -9,6 +9,7 @@ import AddEditAssessmentDialog from "./AddEditAssessmentDialog.vue";
 import { useDialog } from "@/composables/useDialog";
 const { showDialog } = useDialog();
 import { useSettingStore } from "@/stores/settingStore.js";
+import hasPermission from "@/utils/hasPermission";
 
 const settingStore = useSettingStore();
 
@@ -297,6 +298,7 @@ onMounted(async () => {
 
       <VCol cols="12" sm="6" md="8">
         <VBtn
+          v-if="hasPermission('add-grading-rules')"
           variant="tonal"
           color="success"
           prepend-icon="tabler-plus"

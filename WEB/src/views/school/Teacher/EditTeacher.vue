@@ -161,7 +161,6 @@ const onSubmit = async () => {
             <AppDateTimePicker
               v-model="formData.dob"
               label="Date of birth"
-              :rules="[requiredValidator]"
               :config="{ allowInput: true }"
             />
           </VCol>
@@ -185,7 +184,7 @@ const onSubmit = async () => {
               v-model="formData.manage_branch"
               :label="t('Manage Branch')"
               :items="manageBranch"
-              :item-title="locale === 'km' ? 'name_kh' : 'name_en'"
+              :item-title="locale === 'km' ? 'name' : 'name_en'"
               item-value="value"
               autocomplete="off"
             />

@@ -8,6 +8,7 @@ import { debounce } from "lodash";
 
 import AppTextField from "@/@core/components/app-form-elements/AppTextField.vue";
 import { useDisplay } from "vuetify";
+import { usePwaInstall } from "@/composables/usePwaInstall";
 
 definePage({
   meta: {
@@ -41,6 +42,21 @@ const onSubmit = debounce(async () => {
 }, 500);
 
 const { smAndDown } = useDisplay();
+
+const { isIos, isIosNonSafari, install } = usePwaInstall();
+
+const isIosGuideOpen = ref(false);
+
+const onInstall = async () => {
+  console.log("ios", isIos.value);
+
+  if (isIos.value) {
+    isIosGuideOpen.value = true;
+    return;
+  }
+
+  await install();
+};
 </script>
 
 <template>
@@ -148,11 +164,66 @@ const { smAndDown } = useDisplay();
                 >
                   {{ $t("Login") }}
                 </VBtn>
+
+                <VBtn
+                  block
+                  variant="outlined"
+                  class="mt-3"
+                  prepend-icon="tabler-download"
+                  type="button"
+                  @click="onInstall"
+                >
+                  {{ isIos ? $t("How to install") : $t("Install App") }}
+                </VBtn>
               </VCol>
             </VRow>
           </VForm>
         </VCardText>
       </VCard>
+
+      <VDialog v-model="isIosGuideOpen" max-width="400">
+        <VCard>
+          <VCardItem>
+            <VCardTitle class="text-wrap">
+              {{ $t("Install on iPhone") }}
+            </VCardTitle>
+          </VCardItem>
+
+          <VCardText>
+            <p class="mb-4">
+              {{ $t("iOS install intro") }}
+            </p>
+
+            <VAlert
+              v-if="isIosNonSafari"
+              type="warning"
+              variant="tonal"
+              class="mb-4"
+            >
+              {{ $t("iOS install safari only") }}
+            </VAlert>
+
+            <ol class="ios-install-steps ps-4 mb-0">
+              <li class="mb-2">
+                {{ $t("iOS install step 1") }}
+              </li>
+              <li class="mb-2">
+                {{ $t("iOS install step 2") }}
+              </li>
+              <li>
+                {{ $t("iOS install step 3") }}
+              </li>
+            </ol>
+          </VCardText>
+
+          <VCardActions>
+            <VSpacer />
+            <VBtn color="primary" @click="isIosGuideOpen = false">
+              {{ $t("Got it") }}
+            </VBtn>
+          </VCardActions>
+        </VCard>
+      </VDialog>
     </div>
   </div>
 </template>
@@ -163,5 +234,9 @@ const { smAndDown } = useDisplay();
 .auth-card {
   width: 350px !important; // Change 600px to your desired width
   max-width: 90vw !important; // Ensures mobile responsiveness
+}
+
+.ios-install-steps {
+  line-height: 1.5;
 }
 </style>

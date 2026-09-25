@@ -15,9 +15,9 @@ class YearSeeder extends Seeder
     {
         $datas = [
             [
-                "name" => "2027 - 2028",
-                "start_date" => "2027-01-01",
-                "end_date" => "2027-12-31",
+                "name" => "2026 - 2027",
+                "start_date" => "2026-01-01",
+                "end_date" => "2026-12-31",
                 "created_at" => now(),
                 "updated_at" => now(),
             ],

@@ -140,7 +140,6 @@ watch(
           <AppTextField
             v-model="form.name_kh"
             :label="t('Name Khmer')"
-            :rules="[requiredValidator]"
             autocomplete="off"
           />
         </VCol>
@@ -158,7 +157,6 @@ watch(
           <AppTextField
             v-model="form.phone"
             :label="t('Phone')"
-            :rules="[requiredValidator]"
             autocomplete="off"
           />
         </VCol>

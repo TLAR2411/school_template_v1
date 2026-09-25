@@ -20,6 +20,7 @@ declare global {
   const autoResetRef: typeof import('@vueuse/core')['autoResetRef']
   const avatarText: typeof import('./src/@core/utils/formatters.js')['avatarText']
   const betweenValidator: typeof import('./src/@core/utils/validators.js')['betweenValidator']
+  const buildPermissionName: typeof import('./src/utils/permissionName.js')['buildPermissionName']
   const buildScheduleReportGrid: typeof import('./src/utils/scheduleReportGrid.js')['buildScheduleReportGrid']
   const cancelAllPendingRequests: typeof import('./src/utils/api.js')['cancelAllPendingRequests']
   const checkPermission: typeof import('./src/composables/useRowActions.js')['checkPermission']
@@ -59,12 +60,15 @@ declare global {
   const eagerComputed: typeof import('@vueuse/core')['eagerComputed']
   const effectScope: typeof import('vue')['effectScope']
   const emailValidator: typeof import('./src/@core/utils/validators.js')['emailValidator']
+  const emptySummary: typeof import('./src/composables/useAttendanceReport.js')['emptySummary']
   const encrypt: typeof import('./src/utils/encrypteData.js')['encrypt']
   const extendRef: typeof import('@vueuse/core')['extendRef']
   const extractBrandConfig: typeof import('./src/utils/reportTemplateMerge.js')['extractBrandConfig']
   const extractReportConfig: typeof import('./src/utils/reportTemplateMerge.js')['extractReportConfig']
+  const fetchAttendanceReport: typeof import('./src/composables/useAttendanceReport.js')['fetchAttendanceReport']
   const formatDate: typeof import('./src/@core/utils/formatters.js')['formatDate']
   const formatDateToMonthShort: typeof import('./src/@core/utils/formatters.js')['formatDateToMonthShort']
+  const formatPermissionLabel: typeof import('./src/utils/permissionName.js')['formatPermissionLabel']
   const formatReportDate: typeof import('./src/utils/formatReportDate.js')['formatReportDate']
   const getAccessToken: typeof import('./src/utils/accessToken.js')['getAccessToken']
   const getAccountants: typeof import('./src/utils/getData.js')['getAccountants']
@@ -123,6 +127,7 @@ declare global {
   const hasPermission2: typeof import('./src/utils/hasPermission2.js')['default']
   const hexToRgb: typeof import('./src/@core/utils/colorConverter.js')['hexToRgb']
   const ignorableWatch: typeof import('@vueuse/core')['ignorableWatch']
+  const initPwaInstall: typeof import('./src/composables/usePwaInstall.js')['initPwaInstall']
   const inject: typeof import('vue')['inject']
   const injectLocal: typeof import('@vueuse/core')['injectLocal']
   const integerValidator: typeof import('./src/@core/utils/validators.js')['integerValidator']
@@ -135,6 +140,7 @@ declare global {
   const isReactive: typeof import('vue')['isReactive']
   const isReadonly: typeof import('vue')['isReadonly']
   const isRef: typeof import('vue')['isRef']
+  const isRequiredField: typeof import('./src/@core/utils/validators.js')['isRequiredField']
   const isShallow: typeof import('vue').isShallow
   const isToday: typeof import('./src/@core/utils/helpers.js')['isToday']
   const kFormatter: typeof import('./src/@core/utils/formatters.js')['kFormatter']
@@ -214,6 +220,7 @@ declare global {
   const shallowReactive: typeof import('vue')['shallowReactive']
   const shallowReadonly: typeof import('vue')['shallowReadonly']
   const shallowRef: typeof import('vue')['shallowRef']
+  const slugifyPermission: typeof import('./src/utils/permissionName.js')['slugifyPermission']
   const snapPercent: typeof import('./src/composables/useReport.js')['snapPercent']
   const storeToRefs: typeof import('pinia')['storeToRefs']
   const syncRef: typeof import('@vueuse/core')['syncRef']
@@ -226,6 +233,7 @@ declare global {
   const toReactive: typeof import('@vueuse/core')['toReactive']
   const toRef: typeof import('vue')['toRef']
   const toRefs: typeof import('vue')['toRefs']
+  const toReportPayload: typeof import('./src/composables/useAttendanceReport.js')['toReportPayload']
   const toValue: typeof import('vue')['toValue']
   const toast: typeof import('./src/utils/toast.js')['default']
   const todayIso: typeof import('./src/utils/formatReportDate.js')['todayIso']
@@ -259,6 +267,7 @@ declare global {
   const useArrayUnique: typeof import('@vueuse/core')['useArrayUnique']
   const useAsyncQueue: typeof import('@vueuse/core')['useAsyncQueue']
   const useAsyncState: typeof import('@vueuse/core')['useAsyncState']
+  const useAttendanceReport: typeof import('./src/composables/useAttendanceReport.js')['useAttendanceReport']
   const useAttrs: typeof import('vue')['useAttrs']
   const useAverage: typeof import('@vueuse/math')['useAverage']
   const useBase64: typeof import('@vueuse/core')['useBase64']
@@ -371,6 +380,7 @@ declare global {
   const usePrevious: typeof import('@vueuse/core')['usePrevious']
   const usePrintStyle: typeof import('./src/composables/usePrintStyle.js')['usePrintStyle']
   const useProjection: typeof import('@vueuse/math')['useProjection']
+  const usePwaInstall: typeof import('./src/composables/usePwaInstall.js')['usePwaInstall']
   const useRafFn: typeof import('@vueuse/core')['useRafFn']
   const useRefHistory: typeof import('@vueuse/core')['useRefHistory']
   const useReport: typeof import('./src/composables/useReport.js')['useReport']
@@ -476,6 +486,7 @@ declare module 'vue' {
     readonly autoResetRef: UnwrapRef<typeof import('@vueuse/core')['autoResetRef']>
     readonly avatarText: UnwrapRef<typeof import('./src/@core/utils/formatters.js')['avatarText']>
     readonly betweenValidator: UnwrapRef<typeof import('./src/@core/utils/validators.js')['betweenValidator']>
+    readonly buildPermissionName: UnwrapRef<typeof import('./src/utils/permissionName.js')['buildPermissionName']>
     readonly buildScheduleReportGrid: UnwrapRef<typeof import('./src/utils/scheduleReportGrid.js')['buildScheduleReportGrid']>
     readonly cancelAllPendingRequests: UnwrapRef<typeof import('./src/utils/api.js')['cancelAllPendingRequests']>
     readonly checkPermission: UnwrapRef<typeof import('./src/composables/useRowActions.js')['checkPermission']>
@@ -514,12 +525,15 @@ declare module 'vue' {
     readonly eagerComputed: UnwrapRef<typeof import('@vueuse/core')['eagerComputed']>
     readonly effectScope: UnwrapRef<typeof import('vue')['effectScope']>
     readonly emailValidator: UnwrapRef<typeof import('./src/@core/utils/validators.js')['emailValidator']>
+    readonly emptySummary: UnwrapRef<typeof import('./src/composables/useAttendanceReport.js')['emptySummary']>
     readonly encrypt: UnwrapRef<typeof import('./src/utils/encrypteData.js')['encrypt']>
     readonly extendRef: UnwrapRef<typeof import('@vueuse/core')['extendRef']>
     readonly extractBrandConfig: UnwrapRef<typeof import('./src/utils/reportTemplateMerge.js')['extractBrandConfig']>
     readonly extractReportConfig: UnwrapRef<typeof import('./src/utils/reportTemplateMerge.js')['extractReportConfig']>
+    readonly fetchAttendanceReport: UnwrapRef<typeof import('./src/composables/useAttendanceReport.js')['fetchAttendanceReport']>
     readonly formatDate: UnwrapRef<typeof import('./src/@core/utils/formatters.js')['formatDate']>
     readonly formatDateToMonthShort: UnwrapRef<typeof import('./src/@core/utils/formatters.js')['formatDateToMonthShort']>
+    readonly formatPermissionLabel: UnwrapRef<typeof import('./src/utils/permissionName.js')['formatPermissionLabel']>
     readonly formatReportDate: UnwrapRef<typeof import('./src/utils/formatReportDate.js')['formatReportDate']>
     readonly getAccessToken: UnwrapRef<typeof import('./src/utils/accessToken.js')['getAccessToken']>
     readonly getActivePinia: UnwrapRef<typeof import('pinia')['getActivePinia']>
@@ -534,6 +548,7 @@ declare module 'vue' {
     readonly hasPermission: UnwrapRef<typeof import('./src/utils/hasPermission.js')['default']>
     readonly hexToRgb: UnwrapRef<typeof import('./src/@core/utils/colorConverter.js')['hexToRgb']>
     readonly ignorableWatch: UnwrapRef<typeof import('@vueuse/core')['ignorableWatch']>
+    readonly initPwaInstall: UnwrapRef<typeof import('./src/composables/usePwaInstall.js')['initPwaInstall']>
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
     readonly injectLocal: UnwrapRef<typeof import('@vueuse/core')['injectLocal']>
     readonly integerValidator: UnwrapRef<typeof import('./src/@core/utils/validators.js')['integerValidator']>
@@ -546,6 +561,7 @@ declare module 'vue' {
     readonly isReactive: UnwrapRef<typeof import('vue')['isReactive']>
     readonly isReadonly: UnwrapRef<typeof import('vue')['isReadonly']>
     readonly isRef: UnwrapRef<typeof import('vue')['isRef']>
+    readonly isRequiredField: UnwrapRef<typeof import('./src/@core/utils/validators.js')['isRequiredField']>
     readonly isToday: UnwrapRef<typeof import('./src/@core/utils/helpers.js')['isToday']>
     readonly kFormatter: UnwrapRef<typeof import('./src/@core/utils/formatters.js')['kFormatter']>
     readonly lengthValidator: UnwrapRef<typeof import('./src/@core/utils/validators.js')['lengthValidator']>
@@ -620,6 +636,7 @@ declare module 'vue' {
     readonly shallowReactive: UnwrapRef<typeof import('vue')['shallowReactive']>
     readonly shallowReadonly: UnwrapRef<typeof import('vue')['shallowReadonly']>
     readonly shallowRef: UnwrapRef<typeof import('vue')['shallowRef']>
+    readonly slugifyPermission: UnwrapRef<typeof import('./src/utils/permissionName.js')['slugifyPermission']>
     readonly snapPercent: UnwrapRef<typeof import('./src/composables/useReport.js')['snapPercent']>
     readonly storeToRefs: UnwrapRef<typeof import('pinia')['storeToRefs']>
     readonly syncRef: UnwrapRef<typeof import('@vueuse/core')['syncRef']>
@@ -632,6 +649,7 @@ declare module 'vue' {
     readonly toReactive: UnwrapRef<typeof import('@vueuse/core')['toReactive']>
     readonly toRef: UnwrapRef<typeof import('vue')['toRef']>
     readonly toRefs: UnwrapRef<typeof import('vue')['toRefs']>
+    readonly toReportPayload: UnwrapRef<typeof import('./src/composables/useAttendanceReport.js')['toReportPayload']>
     readonly toValue: UnwrapRef<typeof import('vue')['toValue']>
     readonly todayIso: UnwrapRef<typeof import('./src/utils/formatReportDate.js')['todayIso']>
     readonly triggerRef: UnwrapRef<typeof import('vue')['triggerRef']>
@@ -662,6 +680,7 @@ declare module 'vue' {
     readonly useArrayUnique: UnwrapRef<typeof import('@vueuse/core')['useArrayUnique']>
     readonly useAsyncQueue: UnwrapRef<typeof import('@vueuse/core')['useAsyncQueue']>
     readonly useAsyncState: UnwrapRef<typeof import('@vueuse/core')['useAsyncState']>
+    readonly useAttendanceReport: UnwrapRef<typeof import('./src/composables/useAttendanceReport.js')['useAttendanceReport']>
     readonly useAttrs: UnwrapRef<typeof import('vue')['useAttrs']>
     readonly useAverage: UnwrapRef<typeof import('@vueuse/math')['useAverage']>
     readonly useBase64: UnwrapRef<typeof import('@vueuse/core')['useBase64']>
@@ -771,6 +790,7 @@ declare module 'vue' {
     readonly usePrevious: UnwrapRef<typeof import('@vueuse/core')['usePrevious']>
     readonly usePrintStyle: UnwrapRef<typeof import('./src/composables/usePrintStyle.js')['usePrintStyle']>
     readonly useProjection: UnwrapRef<typeof import('@vueuse/math')['useProjection']>
+    readonly usePwaInstall: UnwrapRef<typeof import('./src/composables/usePwaInstall.js')['usePwaInstall']>
     readonly useRafFn: UnwrapRef<typeof import('@vueuse/core')['useRafFn']>
     readonly useRefHistory: UnwrapRef<typeof import('@vueuse/core')['useRefHistory']>
     readonly useReport: UnwrapRef<typeof import('./src/composables/useReport.js')['useReport']>

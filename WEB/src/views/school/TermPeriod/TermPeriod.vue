@@ -148,6 +148,10 @@ const onView = (item) => {
     is-delete
     is-view
     create-dialog
+    can-create="add-term-periods"
+    can-edit="edit-term-periods"
+    can-delete="delete-term-periods"
+    can-view="view-term-periods"
     save-state
     :is-back="false"
     @on-delete="onDelete"

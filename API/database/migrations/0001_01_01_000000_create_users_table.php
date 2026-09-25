@@ -76,7 +76,7 @@ return new class extends Migration {
             $table->date('join_date')->nullable();
             $table->integer('village_code')->nullable();
 
-            $table->enum('default_part', ['loan', 'accounting', 'hr', 'admin'])->default('admin');
+            $table->enum('default_part', ['school', 'admin'])->default('school');
             $table->string('image_path')->nullable();
             $table->boolean('is_reset_password')->default(false);
 

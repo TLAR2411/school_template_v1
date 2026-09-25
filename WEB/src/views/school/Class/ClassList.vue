@@ -63,12 +63,12 @@ watch(
 );
 
 const headers = [
-  {
-    title: t("Quick Action"),
-    key: "quickaction",
-    visible: true,
-    align: "left",
-  },
+  // {
+  //   title: t("Quick Action"),
+  //   key: "quickaction",
+  //   visible: true,
+  //   align: "left",
+  // },
 
   { title: t("Class Name"), key: "className", visible: true, align: "left" },
   { title: t("Grade"), key: "gradeName", visible: true },
@@ -324,6 +324,13 @@ onMounted(async () => {
     is-disable
     is-view
     create-dialog
+    can-create="add-classes"
+    can-edit="edit-classes"
+    can-delete="delete-classes"
+    can-disable="change-active-classes"
+    can-view="view-classes"
+    can-attendance="view-attendance"
+    can-schedule="view-schedules"
     save-state
     :is-back="false"
     @on-schedule="onSchedule"
@@ -382,13 +389,13 @@ onMounted(async () => {
       </VRow>
     </template>
 
-    <template #item.quickaction="{ item }">
+    <!-- <template #item.quickaction="{ item }">
       <div class="d-flex ga-2">
         <VBtn @click="teacherAction(item)" density="comfortable">{{
           $t("Action")
         }}</VBtn>
       </div>
-    </template>
+    </template> -->
 
     <template #item.className="{ item }">
       <span v-if="locale === 'km'">

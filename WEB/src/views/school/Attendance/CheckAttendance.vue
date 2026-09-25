@@ -8,6 +8,7 @@ import { api } from "@/utils/api";
 import { getGrades, getClasses } from "@/services/dataService";
 import { useSettingStore } from "@/stores/settingStore.js";
 import formatGender from "@/utils/formater/formatGender";
+import hasPermission from "@/utils/hasPermission";
 
 const props = defineProps({
   classId: { type: [Number, String], default: null },
@@ -875,6 +876,7 @@ onMounted(async () => {
     <VRow class="mt-1">
       <VCol cols="12" class="d-flex justify-end ga-2">
         <VBtn
+          v-if="hasPermission(['add-attendance', 'edit-attendance'])"
           :class="smAndDown ? 'w-50' : 'w-auto'"
           variant="tonal"
           color="info"
@@ -884,6 +886,7 @@ onMounted(async () => {
           {{ t("Approve") }}
         </VBtn>
         <VBtn
+          v-if="hasPermission(['add-attendance', 'edit-attendance'])"
           :class="smAndDown ? 'w-50' : 'w-auto'"
           :color="isDirty ? 'warning' : 'primary'"
           :loading="isSaving"

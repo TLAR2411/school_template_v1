@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('teachers', function (Blueprint $table) {
             $table->id();
             $table->string('name_en');
-            $table->string('name_kh');
+            $table->string('name_kh')->nullable();
             $table->date('dob')->nullable();
             $table->string('gender');
             $table->integer('manage_branch')->nullable();

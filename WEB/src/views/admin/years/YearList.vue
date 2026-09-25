@@ -183,6 +183,10 @@ onMounted(() => {});
     is-delete
     is-disable
     create-dialog
+    can-create="add-years"
+    can-edit="edit-years"
+    can-delete="delete-years"
+    can-disable="change-active-years"
     save-state
     :is-back="false"
     @onEdit="onEdit"

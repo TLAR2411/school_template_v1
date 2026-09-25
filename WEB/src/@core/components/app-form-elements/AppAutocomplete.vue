@@ -5,12 +5,14 @@ import {
   watch,
   useId,
   useSlots,
+  useAttrs,
   onMounted,
   onBeforeUnmount,
   nextTick,
 } from "vue";
 import { api } from "@/utils/api";
 import { useSettingStore } from "@/stores/settingStore";
+import { isRequiredField } from "@/@core/utils/validators";
 
 defineOptions({
   name: "AppSelect",
@@ -38,6 +40,8 @@ const props = defineProps({
 const emit = defineEmits(["search", "update:menu", "update:items"]);
 const model = defineModel();
 const slots = useSlots();
+const attrs = useAttrs();
+const isRequired = computed(() => isRequiredField(attrs.rules, attrs.required));
 
 const settingStore = useSettingStore();
 const selectRef = ref(null);
@@ -408,8 +412,10 @@ watch(
       :for="elementId"
       class="mb-1 text-wrap notasans font-size-0-75 pt-2"
       style="line-height: 15px"
-      :text="$t(props.label)"
-    />
+    >
+      {{ $t(props.label) }}
+      <span v-if="isRequired" class="text-error" aria-hidden="true">*</span>
+    </VLabel>
 
     <VSelect
       v-model="model"

@@ -61,7 +61,7 @@ Route::post("positions-update", [PositionController::class, "update"])->middlewa
 Route::post("positions-delete", [PositionController::class, "delete"])->middleware(['auth:api', 'permission:delete-positions']);
 
 Route::post("permissions-all", [PermissionController::class, "all"]);
-Route::post("permissions-show", [PermissionController::class, "show"]);
+Route::post("permissions-show", [PermissionController::class, "show"])->middleware(['auth:api', 'permission:view-permissions']);
 Route::post("permissions-list", [PermissionController::class, "list"])->middleware(['auth:api', 'permission:view-permissions']);
 Route::post("permissions-store", [PermissionController::class, "store"])->middleware(['auth:api', 'permission:add-permissions']);
 Route::post("permissions-update", [PermissionController::class, "update"])->middleware(['auth:api', 'permission:edit-permissions']);

@@ -29,7 +29,14 @@ abstract class Controller
         return request()->header('X-Year-Id');
     }
 
-    public function getCur(){
+    public function getCur()
+    {
+        $assigned = Auth::user()?->assignedCurriculumId();
+
+        if ($assigned) {
+            return $assigned;
+        }
+
         return request()->header('X-Curriculum-id');
     }
 

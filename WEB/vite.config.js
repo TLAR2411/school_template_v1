@@ -54,7 +54,7 @@ export default defineConfig(({ mode }) => {
         registerType: 'autoUpdate',        // check & install updates in bg
         injectRegister: 'auto',            // injects the register code for you
         includeAssets: [`${env.VITE_BASE_COMPANY}.favicon.ico`, 'robots.txt'],
-        selfDestroying: true,
+        selfDestroying: false,
         manifest: {
           name: env.VITE_APP_TITLE_NAME || 'Mitra Manage System',
           short_name: env.VITE_APP_SHORT_NAME || 'Mitra',

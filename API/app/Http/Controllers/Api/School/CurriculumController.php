@@ -113,13 +113,16 @@ class CurriculumController extends Controller
     public function all()
     {
         try {
-            $data = Curriculum::query()
-                ->where('is_active', true)
-                ->get();
+            $query = Curriculum::query()->where('is_active', true);
+
+            $assignedCurriculumId = auth('api')->user()?->assignedCurriculumId();
+            if ($assignedCurriculumId) {
+                $query->where('id', $assignedCurriculumId);
+            }
 
             return response()->json([
                 'status' => true,
-                'data' => $data,
+                'data' => $query->get(),
             ]);
         } catch (\Throwable $th) {
             return response()->json([

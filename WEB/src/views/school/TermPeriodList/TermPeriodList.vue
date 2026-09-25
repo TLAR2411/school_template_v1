@@ -7,6 +7,7 @@ import { storeToRefs } from "pinia";
 import { useAppStore } from "@/stores/appStore";
 import { useSettingStore } from "@/stores/settingStore";
 import AddEditTermPeriodListDialog from "./AddEditTermPeriodListDialog.vue";
+import hasPermission from "@/utils/hasPermission";
 
 const props = defineProps({
   termPeriodId: {
@@ -196,12 +197,14 @@ const onUpdateGrade = async (data, callback) => {
     is-filter
     is-back
     is-edit
+    can-edit="edit-term-periods"
     save-state
     :is-back="false"
     @on-edit="onEdit"
   >
     <template #card-header>
       <VBtn
+        v-if="hasPermission('add-term-periods')"
         color="primary"
         size="small"
         class="mr-2"

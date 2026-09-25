@@ -25,7 +25,7 @@ definePage({
     layout: "report",
     subject: "Auth",
     requiresAuth: true,
-    // permissions: "view-schedules",
+    permissions: "view-schedules",
   },
 });
 

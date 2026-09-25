@@ -27,7 +27,7 @@ class SettingSeeder extends Seeder
             [
                 'name' => 'Default Password',
                 'key' => 'default_password',
-                'value' => 'dewey@123'
+                'value' => 'dewey@'
             ],
             [
                 'name' => 'Default Sub User Password',

@@ -261,7 +261,7 @@ onMounted(async () => {
       title-icon="tabler-file-check"
       :is-back="true"
       :is-filter="true"
-      :show-filters="!smAndDown"
+      :show-filters="true"
       :loading="isLoading"
     >
       <template #filter>
@@ -325,14 +325,19 @@ onMounted(async () => {
       <VTable
         v-if="students.length"
         fixed-header
-        
-  height="calc(100dvh - 280px)"
+        height="calc(100dvh - 280px)"
         density="compact"
         class="border rounded score-table"
       >
         <thead>
           <tr>
-            <th style="width: 300px;min-width: 170px;" rowspan="3" class="sticky-header">{{ t("Name") }}</th>
+            <th
+              style="width: 200px; min-width: 170px"
+              rowspan="3"
+              class="sticky-header"
+            >
+              {{ t("Name") }}
+            </th>
             <!-- <th rowspan="3">{{ t("Gender") }}</th> -->
             <th
               v-for="subject in subjects"
@@ -376,7 +381,6 @@ onMounted(async () => {
                 :model-value="cell(row, col).score"
                 class="score-input"
                 :class="{ 'score-input--over': isOverMax(row, col) }"
-                
                 density="compact"
                 hide-details
                 variant="outlined"
@@ -390,13 +394,12 @@ onMounted(async () => {
       </VTable>
 
       <VRow class="mt-1">
-        <VCol cols="4" sm="2" md="2">
+        <VCol cols="4" sm="2" md="2" v-if="formSearch.month_id">
           <VBtn @click="loadScores" color="primary" block variant="tonal">
             <VIcon icon="tabler-download" />
             {{ t("Submit") }}
           </VBtn>
         </VCol>
-        
       </VRow>
     </AppCard>
   </div>

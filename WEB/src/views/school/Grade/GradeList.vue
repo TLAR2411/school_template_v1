@@ -172,6 +172,10 @@ const onDisable = async (item) => {
       is-delete
       is-disable
       create-dialog
+      can-create="add-grades"
+      can-edit="edit-grades"
+      can-delete="delete-grades"
+      can-disable="change-active-grades"
       save-state
       :is-back="false"
       @on-delete="onDelete"

@@ -1,11 +1,11 @@
 <script setup>
-import AppImageUpload from '@/components/AppImageUpload.vue';
-import { nations } from '@/utils/formater/formatNation';
-import { api } from '@/utils/api';
-import getImageUrl from '@/utils/image/getImageUrl';
-import { ref, computed, onMounted } from 'vue';
-import { useI18n } from 'vue-i18n';
-import { useRoute, useRouter } from 'vue-router';
+import AppImageUpload from "@/components/AppImageUpload.vue";
+import { nations } from "@/utils/formater/formatNation";
+import { api } from "@/utils/api";
+import getImageUrl from "@/utils/image/getImageUrl";
+import { ref, computed, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
+import { useRoute, useRouter } from "vue-router";
 
 const { locale } = useI18n();
 const route = useRoute();
@@ -19,11 +19,11 @@ const gender = ref([
 ]);
 
 const genderTitle = computed(() => {
-  return locale.value === 'en' ? 'name_en' : 'name_kh';
+  return locale.value === "en" ? "name_en" : "name_kh";
 });
 
 const nationTitle = computed(() => {
-  return locale.value === 'en' ? 'name_en' : 'name_kh';
+  return locale.value === "en" ? "name_en" : "name_kh";
 });
 
 const formData = ref({
@@ -51,7 +51,7 @@ const toCode = (value) => (value ? Number(value) : null);
 const initData = async () => {
   try {
     isLoading.value = true;
-    const res = await api.post('students-show', { id: route.params.id });
+    const res = await api.post("students-show", { id: route.params.id });
     if (res.data.status) {
       const data = res.data.data;
       formData.value = {
@@ -85,12 +85,12 @@ onMounted(initData);
 const onSubmit = async () => {
   try {
     isLoading.value = true;
-    const res = await api.post('students-update', {
+    const res = await api.post("students-update", {
       id: route.params.id,
       ...formData.value,
     });
     if (res.data.status) {
-      router.push({ name: 'admin-students' });
+      router.push({ name: "admin-students" });
     }
   } catch (error) {
     console.error("Failed to update student:", error);
@@ -154,7 +154,6 @@ const onSubmit = async () => {
             <AppDateTimePicker
               v-model="formData.dob"
               label="Date of birth"
-              :rules="[requiredValidator]"
               :config="{
                 allowInput: true,
                 maxDate: today,
@@ -163,10 +162,7 @@ const onSubmit = async () => {
           </VCol>
 
           <VCol cols="12" lg="4" sm="6">
-            <AppTextField
-              v-model="formData.phone"
-              label="Phone"
-            />
+            <AppTextField v-model="formData.phone" label="Phone" />
           </VCol>
           <VCol cols="12" lg="4" sm="6">
             <AppTextField

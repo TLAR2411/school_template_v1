@@ -10,6 +10,7 @@ import AddFamilyMemberDialog from "./AddFamilyMemberDialog.vue";
 import PasswordDialog from "@/views/admin/users/PasswordDialog.vue";
 import UsernameDialog from "@/views/admin/users/UsernameDialog.vue";
 import { useDialog } from "@/composables/useDialog";
+import hasPermission from "@/utils/hasPermission";
 
 const { showDialog } = useDialog();
 
@@ -267,6 +268,7 @@ onMounted(() => {
       <VCardTitle class="d-flex align-center justify-space-between">
         <span>{{ $t("Members") }}</span>
         <VBtn
+          v-if="hasPermission('edit-families')"
           variant="tonal"
           density="comfortable"
           color="primary"
@@ -300,6 +302,7 @@ onMounted(() => {
       <VCardTitle class="d-flex align-center justify-space-between">
         <span>{{ $t("Students") }}</span>
         <VBtn
+          v-if="hasPermission('edit-families')"
           variant="tonal"
           density="comfortable"
           color="primary"

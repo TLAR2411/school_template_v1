@@ -7,6 +7,7 @@ import { VInput, makeVInputProps } from "vuetify/lib/components/VInput/VInput";
 import { filterInputAttrs } from "vuetify/lib/util/helpers";
 import { useConfigStore } from "@core/stores/config";
 import { Khmer } from "flatpickr/dist/l10n/km.js";
+import { isRequiredField } from "@/@core/utils/validators";
 
 const props = defineProps({
   autofocus: Boolean,
@@ -50,6 +51,9 @@ defineOptions({
 
 const configStore = useConfigStore();
 const attrs = useAttrs();
+const isRequired = computed(() =>
+  isRequiredField(props.rules || attrs.rules, props.required ?? attrs.required),
+);
 const [rootAttrs, compAttrs] = filterInputAttrs(attrs);
 const inputProps = ref(VInput.filterProps(props));
 const fieldProps = ref(VField.filterProps(props));
@@ -268,8 +272,10 @@ const elementId = computed(() => {
       class="mb-1 text-wrap notasans font-size-0-75 pt-2"
       style="line-height: 15px"
       :for="elementId"
-      :text="$t(fieldProps.label)"
-    />
+    >
+      {{ $t(fieldProps.label) }}
+      <span v-if="isRequired" class="text-error" aria-hidden="true">*</span>
+    </VLabel>
 
     <VInput
       v-bind="{ ...inputProps, ...rootAttrs }"

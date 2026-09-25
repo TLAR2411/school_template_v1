@@ -3,12 +3,47 @@ import ClassList from "@/views/school/Class/ClassList.vue";
 import GradeList from "@/views/school/Grade/GradeList.vue";
 import RoomList from "@/views/school/Room/RoomList.vue";
 import { useRoute, useRouter } from "vue-router";
-import { ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import AppCustomTap from "@/components/AppCustomTap.vue";
+import hasPermission from "@/utils/hasPermission";
+import { auth } from "@/utils/auth";
 
 const route = useRoute();
 const router = useRouter();
-const currentTab = ref(route.query.tab || "class");
+
+const allTabs = [
+  {
+    value: "class",
+    title: "Classes",
+    description: "Manage Classes",
+    icon: "tabler-home-cog",
+    permission: "view-classes",
+  },
+  {
+    value: "grade",
+    title: "Grades",
+    description: "Manage Grades",
+    icon: "tabler-chart-arrows-vertical",
+    permission: "view-grades",
+  },
+  {
+    value: "room",
+    title: "Rooms",
+    description: "Manage Rooms",
+    icon: "tabler-home",
+    permission: "view-rooms",
+  },
+];
+
+const tabs = computed(() =>
+  allTabs.filter((tab) => hasPermission(tab.permission)),
+);
+
+const currentTab = ref(
+  tabs.value.some((tab) => tab.value === route.query.tab)
+    ? route.query.tab
+    : tabs.value[0]?.value || "class",
+);
 
 watch(
   () => currentTab.value,
@@ -17,26 +52,11 @@ watch(
   },
 );
 
-const tabs = [
-  {
-    value: "class",
-    title: "Classes",
-    description: "Manage Classes",
-    icon: "tabler-home-cog",
-  },
-  {
-    value: "grade",
-    title: "Grades",
-    description: "Manage Grades",
-    icon: "tabler-chart-arrows-vertical",
-  },
-  {
-    value: "room",
-    title: "Rooms",
-    description: "Manage Rooms",
-    icon: "tabler-home",
-  },
-];
+// onMounted(() => {
+//   if (auth()?.user?.role?.name === "teacher") {
+//     router.replace({ name: "school-class-grid" });
+//   }
+// });
 
 definePage({
   meta: {
@@ -44,7 +64,7 @@ definePage({
     layout: "default",
     subject: "Auth",
     requiresAuth: true,
-    // permissions: "positions:view-page",
+    permissions: "view-classes",
     layoutWrapperClasses: "layout-content-height-fixed",
   },
 });

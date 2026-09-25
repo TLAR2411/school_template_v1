@@ -6,8 +6,8 @@ definePage({
     layout: "default",
     subject: "Auth",
     requiresAuth: true,
-    // permissions: "positions:view-page",
-    // layoutWrapperClasses: "layout-content-height-fixed",
+    permissions: "view-score-entry",
+    layoutWrapperClasses: "layout-content-height-fixed",
   },
 });
 </script>

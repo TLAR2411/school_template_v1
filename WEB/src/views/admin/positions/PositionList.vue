@@ -201,6 +201,10 @@ onMounted(async () => {
     is-delete
     is-disable
     create-dialog
+    can-create="add-positions"
+    can-edit="edit-positions"
+    can-delete="delete-positions"
+    can-disable="change-active-positions"
     save-state
     @on-delete="onDelete"
     @on-edit="onEdit"

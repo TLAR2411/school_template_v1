@@ -139,6 +139,9 @@ const onUpdate = async (data, callback) => {
     is-edit
     is-delete
     create-dialog
+    can-create="add-rooms"
+    can-edit="edit-rooms"
+    can-delete="delete-rooms"
     save-state
     :is-back="false"
     @on-delete="onDelete"

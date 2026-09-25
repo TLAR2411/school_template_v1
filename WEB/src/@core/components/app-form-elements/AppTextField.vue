@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref, watch, useAttrs, useId } from "vue";
+import { isRequiredField } from "@/@core/utils/validators";
 
 defineOptions({
   name: "AppTextField",
@@ -35,6 +36,7 @@ const props = defineProps({
 
 const emit = defineEmits(["update:modelValue"]);
 const attrs = useAttrs();
+const isRequired = computed(() => isRequiredField(attrs.rules, attrs.required));
 
 const elementId = computed(() => {
   const attrs = useAttrs();
@@ -231,8 +233,10 @@ const inputMode = computed(() => {
       :for="elementId"
       class="mb-1 text-wrap notosans font-size-0-75 pt-2"
       style="line-height: 15px"
-      :text="$t(label)"
-    />
+    >
+      {{ $t(label) }}
+      <span v-if="isRequired" class="text-error" aria-hidden="true">*</span>
+    </VLabel>
     <VTextField
       v-bind="{
         ...$attrs,
