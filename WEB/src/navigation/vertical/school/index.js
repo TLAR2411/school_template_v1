@@ -64,7 +64,7 @@ export default [
         title: "Attendance & Score Entry",
         to: { name: "school-class-grid" },
         icon: { icon: "tabler-dashboard" },
-        permission: "view-classes",
+        permission: "view-attendance-scoreentry",
     },
     {
         title: "Term Period",

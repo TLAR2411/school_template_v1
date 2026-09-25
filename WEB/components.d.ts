@@ -67,7 +67,6 @@ declare module 'vue' {
     ReportDraggable: typeof import('./src/components/report/ReportDraggable.vue')['default']
     ReportFontSelect: typeof import('./src/components/report/ReportFontSelect.vue')['default']
     ReportImage: typeof import('./src/components/report/ReportImage.vue')['default']
-    ReportPhoneFrame: typeof import('./src/components/report/ReportPhoneFrame.vue')['default']
     ReportSheet: typeof import('./src/components/report/ReportSheet.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']

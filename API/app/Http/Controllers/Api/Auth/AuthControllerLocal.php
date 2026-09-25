@@ -9,29 +9,17 @@ use App\Models\Auth\UserBranch;
 use App\Models\Core\Branch;
 use App\Models\User;
 use Carbon\Carbon;
+use GuzzleHttp\Client;
 use Illuminate\Encryption\Encrypter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use Laravel\Passport\Http\Controllers\AccessTokenController;
-use Nyholm\Psr7\ServerRequest;
 
 // Add this line
 
 class AuthController extends Controller
 {
-
-    private function issuePassportToken(array $parameters): object
-    {
-        $request = (new ServerRequest('POST', '/oauth/token'))
-            ->withHeader('Content-Type', 'application/x-www-form-urlencoded')
-            ->withParsedBody($parameters);
-
-        $response = app(AccessTokenController::class)->issueToken($request);
-
-        return json_decode($response->getContent(), false, 512, JSON_THROW_ON_ERROR);
-    }
 
     // ✔ pass the user explicitly
     private function branchesFor(User $user)
@@ -39,12 +27,19 @@ class AuthController extends Controller
         if ($user->manage_branch == 1) {
             return Branch::where('id', $user->branch_id)->where('is_active', true)->get();
         } elseif ($user->manage_branch == 2) {
+            // return Branch::query()
+            //     ->join('user_branches as ub', 'ub.branch_id', 'branches.id')
+            //     ->where('ub.user_id', $user->id)
+            //     ->where('branches.is_active', true)
+            //     ->orderBy('branches.id', 'asc')
+            //     ->get();
             return Branch::query()
-                ->join('user_branches as ub', 'ub.branch_id', 'branches.id')
-                ->where('ub.user_id', $user->id)
-                ->where('branches.is_active', true)
-                ->orderBy('branches.id', 'asc')
-                ->get();
+    ->select('branches.*')
+    ->join('user_branches as ub', 'ub.branch_id', 'branches.id')
+    ->where('ub.user_id', $user->id)
+    ->where('branches.is_active', true)
+    ->orderBy('branches.id', 'asc')
+    ->get();
         } elseif ($user->manage_branch == 3) {
             return Branch::orderBy('id', 'asc')->where('is_active', true)->get();
         } elseif ($user->manage_branch == 4) {
@@ -122,41 +117,39 @@ class AuthController extends Controller
             } else if ($user->is_active == false) {
                 abort(500, "Account is disabled!");
             }
-            $defaultBranch = "*";
+            $defaultBranch = $user->branch_id;
 
-            if ($user->manage_branch == 1) {
-                $defaultBranch = $user->branch_id;
-            } else {
-                if ($user->manage_branch == 3) {
-                    $branch = Branch::where('is_active', true)->count();
-                    if ($branch <= 1) {
-                        $defaultBranch = $user->branch_id;
-                    }
-                } elseif ($user->manage_branch == 2) {
-                    $branch = UserBranch::join('branches as b', 'b.id', 'user_branches.branch_id')
-                        ->where('b.is_active', true)
-                        ->where('user_branches.user_id', $user->id)
-                        ->count();
-
-                    if ($branch <= 1) {
-                        $defaultBranch = $user->branch_id;
-                    }
+            if ((int) $user->manage_branch === 3) {
+                $activeBranchCount = Branch::where('is_active', true)->count();
+                if ($activeBranchCount > 1) {
+                    $defaultBranch = '*';
                 }
             }
 
-            $response = $this->issuePassportToken([
-                'grant_type' => 'password',
-                'client_id' => $request->header('X-CLIENT-ID') ?? '',
-                'client_secret' => env('PASSPORT_CLIENT_SECRET'),
-                'username' => $user->email,
-                'password' => $request->password,
-            ]);
+            $client = new Client();
+
+            $response = $client->request(
+                'POST',
+                env('APP_URL') . '/oauth/token',
+                [
+                    'form_params' => [
+                        'grant_type' => "password",
+                        'client_id' => $request->header('X-CLIENT-ID') ?? '',
+                        'client_secret' => env('PASSPORT_CLIENT_SECRET'),
+                        'username' => $user->email,
+                        'password' => $request->password
+                    ],
+                ]
+            );
+
             $user->last_login = Carbon::now();
             $user->save();
+            $response = json_decode($response->getBody());
             $date = Carbon::now()->addSeconds($response->expires_in);
             return response()->json([
                 'status' => true,
                 'is_login' => true,
+                'user_id' => $user->id,
                 'data' => [
                     'access_token' => [
                         'value' => $response->access_token,
@@ -179,13 +172,23 @@ class AuthController extends Controller
     public function refresh(RefreshTokenRequest $request)
     {
         try {
-            $response = $this->issuePassportToken([
-                'grant_type' => 'refresh_token',
-                'client_id' => $request->header('X-CLIENT-ID') ?? '',
-                'client_secret' => env('PASSPORT_CLIENT_SECRET'),
-                'refresh_token' => $request->refreshToken,
-                'scope' => '*',
-            ]);
+            $client = new Client();
+
+            $response = $client->request(
+                'POST',
+                env('APP_URL') . '/oauth/token',
+                [
+                    'form_params' => [
+                        'grant_type' => 'refresh_token',
+                        'client_id' => $request->header('X-CLIENT-ID') ?? '',
+                        'client_secret' => env('PASSPORT_CLIENT_SECRET'),
+                        'refresh_token' => $request->refreshToken,
+                        'scope' => "*"
+                    ],
+                ]
+            );
+
+            $response = json_decode($response->getBody());
 
             return response()->json([
                 'status' => true,

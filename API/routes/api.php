@@ -32,3 +32,14 @@ Route::group(['prefix' => '/web'], function () {
 Route::group(['prefix' => '/app'], function () {
     include 'modules/app.route.php';
 });
+
+
+Route::get('clear-data',function(){
+    Artisan::call('route:clear');
+    Artisan::call('cache:clear');
+    Artisan::call('optimize');
+    Artisan::call('view:clear');
+    Artisan::call('config:clear');
+    Artisan::call('clear-compiled');
+      return "Clear Complete";
+});

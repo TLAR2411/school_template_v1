@@ -33,12 +33,12 @@ const tabs = [
     description: "Score",
     icon: "tabler-folders",
   },
-  {
-    value: "report",
-    title: "Attendance Report",
-    description: "Attendance Report",
-    icon: "tabler-report-analytics",
-  },
+  // {
+  //   value: "report",
+  //   title: "Attendance Report",
+  //   description: "Attendance Report",
+  //   icon: "tabler-report-analytics",
+  // },
 ];
 
 definePage({
@@ -64,13 +64,13 @@ definePage({
       <VWindowItem value="score">
         <ScoreEntry :class-id="route.params.id" lock-class />
       </VWindowItem>
-      <VWindowItem value="report">
+      <!-- <VWindowItem value="report">
         <AttendanceReport
           :class-id="route.params.id"
           lock-class
           :is-back="false"
         />
-      </VWindowItem>
+      </VWindowItem> -->
     </VWindow>
   </div>
 </template>

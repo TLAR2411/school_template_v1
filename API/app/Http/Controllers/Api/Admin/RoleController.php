@@ -122,7 +122,21 @@ class RoleController extends Controller
         }
     }
 
-    public function delete(Request $request) {}
+    public function delete(Request $request)
+    {
+        try {
+            Role::findOrFail($request->id)->delete();
+            return response()->json([
+                'status' => true,
+                'message' => 'Successful Deleted Role!',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage(),
+            ]);
+        }
+    }
 
     public function disable(Request $request) {}
 }
