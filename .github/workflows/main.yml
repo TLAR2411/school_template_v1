@@ -1,0 +1,85 @@
+name: Deploy Laravel API
+
+on:
+  workflow_dispatch:
+
+jobs:
+
+  # ==========================================
+  # 1. Prepare
+  # ==========================================
+  prepare:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Check API Structure
+        run: |
+          echo "Checking Laravel API structure..."
+
+          test -d API
+          test -f API/artisan
+          test -f API/composer.json
+
+          echo "API structure OK"
+
+
+  # ==========================================
+  # 2. Verify
+  # ==========================================
+  verify:
+    needs: prepare
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Verify Required Folders
+        run: |
+          echo "Verifying Laravel project..."
+
+          test -d API/app
+          test -d API/bootstrap
+          test -d API/config
+          test -d API/database
+          test -d API/public
+          test -d API/routes
+
+          echo "Laravel project verification OK"
+
+
+  # ==========================================
+  # 3. Deploy
+  # ==========================================
+  deploy:
+    needs: verify
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Deploy API via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+
+          local-dir: ./API/
+          server-dir: /
+
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            vendor/**
+            .env
+            .env.*
+            storage/**
+            tests/**
+            README.md
+            phpunit.xml
