@@ -9,6 +9,11 @@ import AppAddEditDrawer from "@/components/AppAddEditDrawer.vue";
 const { xs } = useDisplay();
 const { t, locale } = useI18n();
 
+const PERIOD_TYPES = [
+  { value: "subject", titleKey: "Subject" },
+  { value: "custom", titleKey: "Other" },
+];
+
 const props = defineProps({
   itemData: {
     type: Object,
@@ -69,6 +74,7 @@ const emptyForm = () => ({
   id: null,
   class_id: null,
   subject_id: null,
+  title: "",
   day_id: null,
   start: "07:00",
   end: "08:00",
@@ -76,24 +82,42 @@ const emptyForm = () => ({
 });
 
 const itemData = ref({ ...emptyForm(), ...props.itemData });
+const periodType = ref("subject");
 
-watch(
-  () => props.itemData,
-  (newData) => {
-    itemData.value = {
-      ...emptyForm(),
-      ...newData,
-      color: newData?.color || props.colorPresets[0],
-      start: newData?.start || "07:00",
-      end: newData?.end || "08:00",
-    };
-  },
-  { deep: true, immediate: true },
-);
+function syncFromProps(newData = {}) {
+  itemData.value = {
+    ...emptyForm(),
+    ...newData,
+    title: newData?.title || "",
+    color: newData?.color || props.colorPresets[0],
+    start: newData?.start || "07:00",
+    end: newData?.end || "08:00",
+  };
+  // Custom activity when title is set and no subject
+  periodType.value =
+    !newData?.subject_id && newData?.title ? "custom" : "subject";
+}
+
+watch(() => props.itemData, syncFromProps, { deep: true, immediate: true });
+
+watch(periodType, (type, prev) => {
+  if (type === prev) return;
+  if (type === "subject") {
+    itemData.value.title = "";
+    if (!itemData.value.subject_id && props.subjects[0]) {
+      itemData.value.subject_id = props.subjects[0].id;
+      itemData.value.color =
+        props.subjects[0].color || itemData.value.color || props.colorPresets[0];
+    }
+  } else {
+    itemData.value.subject_id = null;
+  }
+});
 
 watch(
   () => itemData.value.subject_id,
   (id, oldId) => {
+    if (periodType.value !== "subject") return;
     if (!id || id === oldId || itemData.value.id) return;
     const subject = props.subjects.find((s) => s.id == id);
     if (subject?.color) itemData.value.color = subject.color;
@@ -101,6 +125,13 @@ watch(
 );
 
 const isEdit = computed(() => !!itemData.value?.id);
+
+const periodTypeItems = computed(() =>
+  PERIOD_TYPES.map((item) => ({
+    value: item.value,
+    title: t(item.titleKey),
+  })),
+);
 
 const subjectTitle = computed(() =>
   locale.value === "km" ? "name_kh" : "name_en",
@@ -139,15 +170,27 @@ function toMinutes(time) {
   return h * 60 + m;
 }
 
+function buildPayload() {
+  const payload = { ...itemData.value };
+  if (periodType.value === "subject") {
+    payload.title = null;
+  } else {
+    payload.subject_id = null;
+    payload.title = String(payload.title || "").trim();
+  }
+  return payload;
+}
+
 const resetData = () => {
   itemData.value = emptyForm();
+  periodType.value = "subject";
 };
 
 const onFormSubmit = debounce(async (refForm) => {
   const { valid } = await refForm;
   if (!valid || timeInvalid.value || props.hasBreakConflict) return;
 
-  const payload = { ...itemData.value };
+  const payload = buildPayload();
   if (isEdit.value) {
     emit("onUpdate", payload, (ok) => {
       if (ok) resetData();
@@ -236,12 +279,41 @@ const selectColor = (color) => {
 
       <VRow>
         <VCol cols="12">
+          <VBtnToggle
+            v-model="periodType"
+            mandatory
+            divided
+            density="compact"
+            color="primary"
+            class="period-type-toggle"
+          >
+            <VBtn
+              v-for="item in periodTypeItems"
+              :key="item.value"
+              :value="item.value"
+            >
+              {{ item.title }}
+            </VBtn>
+          </VBtnToggle>
+        </VCol>
+
+        <VCol v-if="periodType === 'subject'" cols="12">
           <AppAutocomplete
             v-model="itemData.subject_id"
             :items="subjects"
             :item-title="subjectTitle"
             item-value="id"
             :label="t('Subject')"
+            :rules="[requiredValidator]"
+            autocomplete="off"
+          />
+        </VCol>
+
+        <VCol v-else cols="12">
+          <AppTextField
+            v-model="itemData.title"
+            :label="t('Title')"
+            :placeholder="t('e.g. Go to library')"
             :rules="[requiredValidator]"
             autocomplete="off"
           />
@@ -332,6 +404,25 @@ const selectColor = (color) => {
     >
       <VRow>
         <VCol cols="12">
+          <VBtnToggle
+            v-model="periodType"
+            mandatory
+            divided
+            density="compact"
+            color="primary"
+            class="period-type-toggle"
+          >
+            <VBtn
+              v-for="item in periodTypeItems"
+              :key="item.value"
+              :value="item.value"
+            >
+              {{ item.title }}
+            </VBtn>
+          </VBtnToggle>
+        </VCol>
+
+        <VCol v-if="periodType === 'subject'" cols="12">
           <AppAutocomplete
             v-model="itemData.subject_id"
             :items="subjects"
@@ -342,6 +433,17 @@ const selectColor = (color) => {
             autocomplete="off"
           />
         </VCol>
+
+        <VCol v-else cols="12">
+          <AppTextField
+            v-model="itemData.title"
+            :label="t('Title')"
+            :placeholder="t('e.g. Go to library')"
+            :rules="[requiredValidator]"
+            autocomplete="off"
+          />
+        </VCol>
+
         <VCol cols="12">
           <AppAutocomplete
             v-model="itemData.day_id"
@@ -400,6 +502,17 @@ const selectColor = (color) => {
 </template>
 
 <style scoped>
+.period-type-toggle {
+  width: 100%;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.period-type-toggle :deep(.v-btn) {
+  flex: 1;
+}
+
 .color-swatch {
   width: 28px;
   height: 28px;

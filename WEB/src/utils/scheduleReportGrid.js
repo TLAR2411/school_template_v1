@@ -88,8 +88,8 @@ function mergeBreakRegions(rows, mergeBreakCells) {
 }
 
 /**
- * @param {Array} schedules API rows with day_id, start, end, subject, day
- * @param {(item: object) => string} labelFor subject/day label
+ * @param {Array} schedules API rows with day_id, start, end, subject|title, day
+ * @param {(period: object) => string} labelFor period label (subject or custom title)
  * @param {typeof SCHEDULE_REPORT_CONFIG} [config]
  */
 export function buildScheduleReportGrid(
@@ -145,7 +145,7 @@ export function buildScheduleReportGrid(
     periodsByDay.get(period.day_id).push({
       startMin: timeToMinutes(period.start),
       endMin: timeToMinutes(period.end),
-      text: labelFor(period.subject),
+      text: labelFor(period),
     });
   }
 

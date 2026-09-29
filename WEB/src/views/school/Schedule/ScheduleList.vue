@@ -29,10 +29,17 @@ const settingStore = useSettingStore();
 
 const isMobile = computed(() => smAndDown.value);
 
+const SNAP_STORAGE_KEY = "schedule_snap_minutes";
+const SNAP_OPTIONS = [5, 15, 30, 60];
+
+function loadSnapMinutes() {
+  const saved = Number(localStorage.getItem(SNAP_STORAGE_KEY));
+  return SNAP_OPTIONS.includes(saved) ? saved : 15;
+}
+
 // Customize here
 const SCHEDULE_CONFIG = {
   pxPerHour: 60, // row height per hour
-  snapMinutes: 5, // drag snap (15 / 30 / 60)
   blockGap: 4, // padding around blocks
   timeGutterWidth: 64, // px — keep in sync with CSS grid
   // fallback when class has no shift
@@ -53,13 +60,21 @@ const SCHEDULE_CONFIG = {
 
 const {
   pxPerHour: PX_PER_HOUR,
-  snapMinutes: SNAP_MINUTES,
   blockGap: BLOCK_GAP,
   timeGutterWidth: TIME_GUTTER_WIDTH,
   defaultHourStart,
   defaultHourEnd,
   colorPresets,
 } = SCHEDULE_CONFIG;
+
+/** User-selectable drag snap (persisted in localStorage) */
+const snapStep = ref(loadSnapMinutes());
+
+watch(snapStep, (value) => {
+  if (SNAP_OPTIONS.includes(value)) {
+    localStorage.setItem(SNAP_STORAGE_KEY, String(value));
+  }
+});
 
 // ─────────────────────────────────────────────
 // State
@@ -318,7 +333,8 @@ function mapScheduleRow(row) {
 function buildSchedulePayload(data, { withId = false } = {}) {
   const payload = {
     class_id: formSearch.value.class_id,
-    subject_id: data.subject_id,
+    subject_id: data.subject_id || null,
+    title: data.title?.trim() || null,
     day_id: data.day_id,
     start: normalizeTime(data.start),
     end: normalizeTime(data.end),
@@ -464,6 +480,25 @@ function subjectName(subjectId) {
     : s.name_en || s.name_kh;
 }
 
+function teacherName(subjectId) {
+  const s = subjects.value.find((x) => x.id == subjectId);
+  if (!s) return "-";
+  return locale.value === "km"
+    ? s.teacher_name_kh || s.teacher_name_en || "-"
+    : s.teacher_name_en || s.teacher_name_kh || "-";
+}
+
+/** Subject name, or custom title (e.g. "Go to library") */
+function periodLabel(item) {
+  if (item?.subject_id) return subjectName(item.subject_id);
+  return item?.title || "-";
+}
+
+function periodSubLabel(item) {
+  if (item?.subject_id) return teacherName(item.subject_id);
+  return formatRangeAmPm(item?.start, item?.end);
+}
+
 function toMinutes(time) {
   if (!time) return 0;
   const [h, m] = String(time).split(":").map(Number);
@@ -489,10 +524,11 @@ function isInsideBreak(mins) {
 }
 
 function snapMinutes(mins, mode = "floor") {
+  const step = snapStep.value;
   const snapped =
     mode === "ceil"
-      ? Math.ceil(mins / SNAP_MINUTES) * SNAP_MINUTES
-      : Math.floor(mins / SNAP_MINUTES) * SNAP_MINUTES;
+      ? Math.ceil(mins / step) * step
+      : Math.floor(mins / step) * step;
   const minBound = hourStart.value * 60;
   const maxBound = hourEnd.value * 60;
   return Math.min(maxBound, Math.max(minBound, snapped));
@@ -586,13 +622,14 @@ function openCreate(dayId, start, end) {
   const subject = subjects.value[0];
   const defaultStart = padTime(hourStart.value);
   const defaultEnd = minutesToTime(
-    Math.min(hourStart.value * 60 + 60, hourEnd.value * 60),
+    Math.min(hourStart.value * 60 + snapStep.value, hourEnd.value * 60),
   );
 
   formData.value = {
     id: null,
     class_id: formSearch.value.class_id,
     subject_id: subject?.id ?? null,
+    title: "",
     day_id: dayId ?? days.value[0]?.id ?? null,
     start: start || defaultStart,
     end: end || defaultEnd,
@@ -701,7 +738,7 @@ function onPointerDown(dayId, event) {
     dayId,
     anchorMin: mins,
     startMin: mins,
-    endMin: Math.min(mins + SNAP_MINUTES, maxBound),
+    endMin: Math.min(mins + snapStep.value, maxBound),
     columnEl: column,
   };
 
@@ -719,9 +756,9 @@ function onPointerMove(event) {
   const maxBound = hourEnd.value * 60;
 
   const from = Math.min(anchor, cursorMin);
-  let to = Math.max(anchor, cursorMin) + SNAP_MINUTES;
+  let to = Math.max(anchor, cursorMin) + snapStep.value;
   to = Math.min(to, maxBound);
-  if (to <= from) to = Math.min(from + SNAP_MINUTES, maxBound);
+  if (to <= from) to = Math.min(from + snapStep.value, maxBound);
 
   dragState.value = {
     ...dragState.value,
@@ -744,20 +781,16 @@ function onPointerUp() {
   // Don't create periods that land on lunch / break
   if (overlapsBreak(from, to)) return;
 
-  if (to - from < SNAP_MINUTES) {
-    openCreate(dayId, minutesToTime(from), minutesToTime(from + SNAP_MINUTES));
+  if (to - from < snapStep.value) {
+    openCreate(
+      dayId,
+      minutesToTime(from),
+      minutesToTime(from + snapStep.value),
+    );
     return;
   }
 
   openCreate(dayId, minutesToTime(from), minutesToTime(to));
-}
-
-function teacherName(subjectId) {
-  const s = subjects.value.find((x) => x.id == subjectId);
-  if (!s) return "-";
-  return locale.value === "km"
-    ? s.teacher_name_kh || s.teacher_name_en || "-"
-    : s.teacher_name_en || s.teacher_name_kh || "-";
 }
 
 onBeforeUnmount(() => {
@@ -830,23 +863,49 @@ onBeforeUnmount(() => {
         class="d-flex justify-space-between"
         :class="{ 'ms-auto': isMobile }"
       >
-        <VBtnToggle
-          v-model="viewMode"
-          mandatory
-          rounded="xl"
-          density="compact"
-          color="primary"
-          divided
-          class="view-toggle ma-0 gap-1"
-        >
-          <VBtn value="week" rounded="xl">
-            {{ t("Week") }}
-          </VBtn>
-          <VBtn value="list" rounded="xl">
-            {{ t("List") }}
-          </VBtn>
-        </VBtnToggle>
-        <div class="d-flex gap-2">
+        <div class="d-flex ga-3">
+          <VBtnToggle
+            v-model="viewMode"
+            mandatory
+            rounded="xl"
+            density="compact"
+            color="primary"
+            divided
+            class="view-toggle ma-0 gap-1"
+          >
+            <VBtn value="week" rounded="xl">
+              {{ t("Week") }}
+            </VBtn>
+            <VBtn value="list" rounded="xl">
+              {{ t("List") }}
+            </VBtn>
+          </VBtnToggle>
+          <div v-if="!isMobile" class="d-flex align-center gap-2">
+            <!-- <span class="text-caption text-medium-emphasis text-no-wrap">
+              {{ t("Snap") }}
+            </span> -->
+            <VBtnToggle
+              v-model="snapStep"
+              mandatory
+              rounded="xl"
+              density="compact"
+              color="primary"
+              divided
+              class="snap-toggle ma-0"
+            >
+              <VBtn
+                v-for="mins in SNAP_OPTIONS"
+                :key="mins"
+                :value="mins"
+                rounded="xl"
+                size="small"
+              >
+                {{ mins }}m
+              </VBtn>
+            </VBtnToggle>
+          </div>
+        </div>
+        <div class="d-flex gap-2 align-center flex-wrap justify-end">
           <VBtn
             color="secondary"
             variant="tonal"
@@ -933,10 +992,10 @@ onBeforeUnmount(() => {
           >
             <div class="mobile-card__body">
               <div class="mobile-card__title">
-                {{ subjectName(item.subject_id) }}
+                {{ periodLabel(item) }}
               </div>
               <div class="mobile-card__time">
-                {{ teacherName(item.subject_id) }}
+                {{ periodSubLabel(item) }}
               </div>
             </div>
             <IconBtn
@@ -1010,10 +1069,14 @@ onBeforeUnmount(() => {
                 @click.stop="openEdit(item)"
               >
                 <div class="block-title">
-                  {{ subjectName(item.subject_id) }}
+                  {{ periodLabel(item) }}
                 </div>
                 <div class="block-time">
-                  ({{ teacherName(item.subject_id) }})
+                  {{
+                    item.subject_id
+                      ? `(${teacherName(item.subject_id)})`
+                      : formatRangeAmPm(item.start, item.end)
+                  }}
                 </div>
               </button>
             </div>
@@ -1034,7 +1097,7 @@ onBeforeUnmount(() => {
           <div class="text-caption text-medium-emphasis mt-3 px-1">
             {{
               t(
-                "Tip: drag down on a day column to select time (e.g. 7:00–9:00), then fill subject.",
+                "Tip: drag down on a day column to select time, then choose a subject or custom title.",
               )
             }}
           </div>
@@ -1047,7 +1110,7 @@ onBeforeUnmount(() => {
               <tr>
                 <th>{{ t("Day") }}</th>
                 <th>{{ t("Time") }}</th>
-                <th>{{ t("Subject") }}</th>
+                <th>{{ t("Period") }}</th>
                 <th class="text-end">{{ t("Action") }}</th>
               </tr>
             </thead>
@@ -1075,7 +1138,7 @@ onBeforeUnmount(() => {
                       class="color-dot"
                       :style="{ backgroundColor: row.color }"
                     />
-                    {{ subjectName(row.subject_id) }}
+                    {{ periodLabel(row) }}
                   </div>
                 </td>
                 <td class="text-end">
@@ -1094,6 +1157,12 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .view-toggle {
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.snap-toggle {
   border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   border-radius: 8px;
   overflow: hidden;

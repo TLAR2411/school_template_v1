@@ -76,7 +76,12 @@ export function useScheduleReportData() {
   const scheduleGrid = computed(() =>
     buildScheduleReportGrid(
       schedules.value,
-      (subject) => localized(subject),
+      (period) => {
+        if (period?.subject_id || period?.subject) {
+          return localized(period.subject);
+        }
+        return period?.title || "";
+      },
       SCHEDULE_REPORT_CONFIG,
     ),
   );

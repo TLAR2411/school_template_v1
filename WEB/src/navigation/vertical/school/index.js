@@ -36,6 +36,11 @@ export default [
         permission: "view-schedules",
     },
     {
+        title: "Calendar",
+        to: { name: "school-calendar" },
+        icon: { icon: "tabler-calendar-month" },
+    },
+    {
         title: "Classes",
         to: { name: "school-class" },
         icon: { icon: "tabler-home-cog" },

@@ -421,3 +421,13 @@ export const getMonths = async () => {
     }
 };
 
+export const getTerms = async () => {
+    try {
+        const response = await api.post("term-periods-all");
+        return response.data?.data ?? [];
+    } catch (error) {
+        console.error("Server error: ", error);
+        return [];
+    }
+};
+

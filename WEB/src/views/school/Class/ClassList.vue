@@ -25,7 +25,7 @@ definePage({
 
 const { t, locale } = useI18n();
 const formData = ref({});
-const formDataStudentClass = ref({});
+const formDataStudentClass = ref([]);
 const isDialogVisible = ref(false);
 const isDialogVisibleStudentClass = ref(false);
 const isLoading = ref(true);
@@ -135,19 +135,15 @@ const onCreate = async (data, callback) => {
 };
 
 const onCreateStudentClass = async (data, callback) => {
-  console.log("data oncreateStudentclass", data.student_id);
-
   const payload = {
     student_id: data.student_id || [],
     class_id: class_id.value,
   };
 
-  console.log(payload);
-
   try {
     isLoading.value = true;
 
-    const res = await api.post("students-classes-enrollment", payload);
+    const res = await api.post("student-class-store", payload);
 
     if (res.data.status) {
       dataTableRef.value.reload();
@@ -155,9 +151,10 @@ const onCreateStudentClass = async (data, callback) => {
     } else {
       console.error("Error with the response:", res.data);
     }
-    callback(res.data.status);
+    callback?.(res.data.status);
   } catch (error) {
     console.error("Failed to fetch data:", error);
+    callback?.(false);
   } finally {
     isLoading.value = false;
   }
@@ -167,11 +164,11 @@ const onAdd = async (item) => {
   isLoading.value = true;
   class_id.value = item.id;
   try {
-    const res = await api.post("students-available-enrollment", {
+    const res = await api.post("student-not-yet-enroll-class", {
       class_id: item.id,
     });
     if (res.data.status) {
-      formDataStudentClass.value = res.data.data;
+      formDataStudentClass.value = res.data.data ?? [];
       isDialogVisibleStudentClass.value = true;
       classData.value = item;
     }
@@ -315,6 +312,7 @@ onMounted(async () => {
     is-excel
     is-edit
     is-add
+    btn-add
     is-attendance
     btn-attendance
     btn-schedule
@@ -329,6 +327,7 @@ onMounted(async () => {
     can-delete="delete-classes"
     can-disable="change-active-classes"
     can-view="view-classes"
+    can-add="add-student-classes"
     can-attendance="view-attendance"
     can-schedule="view-schedules"
     save-state

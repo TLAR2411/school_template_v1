@@ -72,7 +72,13 @@ export const dataTableProps = {
         default: null,
     },
 
-
+    isAdd: Boolean,
+    btnAdd: Boolean,
+    canAdd: String,
+    addCondition: {
+        type: [Function, Boolean],
+        default: null,
+    },
 
     isScheduleForClient: Boolean,
     btnScheduleForClient: Boolean,
@@ -174,6 +180,7 @@ export const dataTableEmits = [
     "onDefault",
     "onSchedule",
     "onAttendance",
+    "onAdd",
 
     "onScheduleForClient",
     "onRestructure",
@@ -208,6 +215,7 @@ export function useRowActions(emit, props, { t, showDialog, debounce, DEBOUNCE_D
         detail: debounce((item) => emit("onDetail", item), DEBOUNCE_DELAY),
         schedule: debounce((item) => emit("onSchedule", item), DEBOUNCE_DELAY),
         attendance: debounce((item) => emit("onAttendance", item), DEBOUNCE_DELAY),
+        add: debounce((item) => emit("onAdd", item), DEBOUNCE_DELAY),
 
         scheduleForClient: debounce((item) => emit("onScheduleForClient", item), DEBOUNCE_DELAY),
         edit: debounce((item) => emit("onEdit", item), DEBOUNCE_DELAY),
@@ -413,6 +421,17 @@ export function useRowActions(emit, props, { t, showDialog, debounce, DEBOUNCE_D
             action: actionHandlers.attendance,
             btn: props?.btnAttendance,
             condition: props?.attendanceCondition || ((item) => true),
+        },
+        {
+            title: "Add Student",
+            value: "add",
+            icon: "tabler-user-plus",
+            color: "info",
+            permission: props?.canAdd,
+            show: props?.isAdd,
+            action: actionHandlers.add,
+            btn: props?.btnAdd,
+            condition: props?.addCondition || ((item) => true),
         },
 
         {

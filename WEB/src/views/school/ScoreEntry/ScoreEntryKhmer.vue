@@ -2,6 +2,7 @@
 /**
  * Khmer score sheet — no subject dropdown.
  * loadScores()     → POST score-list (class + month)
+ * saveScores()     → POST score-store (flatten cells, then reload)
  * columns          → child subjects, or parent if no children
  * cell()           → students[].by_subject[subjectId]
  * onScoreInput()   → parse score (allow over max)
@@ -12,6 +13,7 @@ import { ref, computed, watch, onMounted, nextTick } from "vue";
 import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { useDisplay } from "vuetify";
+import { debounce } from "lodash";
 import { api } from "@/utils/api";
 import { getGrades, getClasses, getMonths } from "@/services/dataService";
 import { useSettingStore } from "@/stores/settingStore.js";
@@ -30,11 +32,15 @@ const { t, locale } = useI18n();
 const { smAndDown } = useDisplay();
 
 const isLoading = ref(false);
+const isSaving = ref(false);
+const isSavingDivisor = ref(false);
+const skipDivisorSave = ref(false);
 const grades = ref([]);
 const allClasses = ref([]);
 const months = ref([]);
 const subjects = ref([]);
 const students = ref([]);
+const divisor = ref(null);
 
 const formSearch = ref({
   grade_id: null,
@@ -88,6 +94,40 @@ const pageTitle = computed(() => {
 /** Input columns: children if the parent has them, else the parent (Math). */
 const columns = computed(() =>
   subjects.value.flatMap((s) => (s.children?.length ? s.children : [s])),
+);
+
+/** Like attendance: saved cell = score_id present after store/reload. */
+function cellIsSaved(row, col) {
+  return cell(row, col).score_id != null;
+}
+
+const submitStatus = computed(() => {
+  const cols = columns.value;
+  const rows = students.value;
+  if (!rows.length || !cols.length) return "empty";
+
+  let saved = 0;
+  const total = rows.length * cols.length;
+  for (const row of rows) {
+    for (const col of cols) {
+      if (cellIsSaved(row, col)) saved += 1;
+    }
+  }
+  if (saved === 0) return "not_submitted";
+  if (saved === total) return "submitted";
+  return "partial";
+});
+
+const studentsNotYetSubmitted = computed(() => {
+  const cols = columns.value;
+  if (!cols.length) return [];
+  return students.value.filter((row) =>
+    cols.some((col) => !cellIsSaved(row, col)),
+  );
+});
+
+const notSubmittedNamesText = computed(() =>
+  studentsNotYetSubmitted.value.map((r) => studentName(r)).join(", "),
 );
 
 const gradeTitle = (item) => {
@@ -167,6 +207,10 @@ async function loadScores() {
   if (!canLoad.value) {
     subjects.value = [];
     students.value = [];
+    skipDivisorSave.value = true;
+    divisor.value = null;
+    await nextTick();
+    skipDivisorSave.value = false;
     return;
   }
 
@@ -179,18 +223,98 @@ async function loadScores() {
     if (!res.data?.status) {
       subjects.value = [];
       students.value = [];
+      skipDivisorSave.value = true;
+      divisor.value = null;
+      await nextTick();
+      skipDivisorSave.value = false;
       return;
     }
     subjects.value = res.data.data.subjects || [];
     students.value = res.data.data.students || [];
+    skipDivisorSave.value = true;
+    divisor.value =
+      res.data.data.divisor != null ? Number(res.data.data.divisor) : null;
+    await nextTick();
+    skipDivisorSave.value = false;
   } catch (e) {
     console.error("loadScores:", e);
     subjects.value = [];
     students.value = [];
+    skipDivisorSave.value = true;
+    divisor.value = null;
+    await nextTick();
+    skipDivisorSave.value = false;
   } finally {
     isLoading.value = false;
   }
 }
+
+/** POST score-store — flatten cells and save (same idea as attendance). */
+async function saveScores() {
+  if (!canLoad.value || !students.value.length) return;
+
+  const rows = [];
+  for (const student of students.value) {
+    for (const col of columns.value) {
+      const item = cell(student, col);
+      rows.push({
+        student_id: student.student_id,
+        subject_id: col.id,
+        score_id: item.score_id,
+        score: item.score,
+        grading_rule_id: item.grading_rule_id ?? col.grading_rule_id,
+        is_approved: item.is_approved ?? false,
+      });
+    }
+  }
+
+  isSaving.value = true;
+  try {
+    const res = await api.post("score-store", {
+      class_id: formSearch.value.class_id,
+      month_id: formSearch.value.month_id,
+      rows,
+    });
+
+    if (res.data?.status) {
+      await loadScores();
+    } else {
+      console.error(res.data?.message || "Save failed");
+    }
+  } catch (e) {
+    console.error("saveScores:", e);
+  } finally {
+    isSaving.value = false;
+  }
+}
+
+/** Save Khmer monthly avg divisor for selected class + month. */
+const saveDivisor = debounce(async () => {
+  if (!canLoad.value || skipDivisorSave.value) return;
+
+  isSavingDivisor.value = true;
+  try {
+    const value =
+      divisor.value === "" || divisor.value == null
+        ? null
+        : Number(divisor.value);
+
+    await api.post("score-month-header-store", {
+      class_id: formSearch.value.class_id,
+      month_id: formSearch.value.month_id,
+      divisor: Number.isFinite(value) ? value : null,
+    });
+  } catch (e) {
+    console.error("saveDivisor:", e);
+  } finally {
+    isSavingDivisor.value = false;
+  }
+}, 500);
+
+watch(divisor, () => {
+  if (skipDivisorSave.value || isLoading.value || !canLoad.value) return;
+  saveDivisor();
+});
 
 /** Opened from Teacher Action / class grid — preselect that class. */
 async function applyClassFromRoute(rawId) {
@@ -231,6 +355,7 @@ watch(
     formSearch.value.class_id = null;
     subjects.value = [];
     students.value = [];
+    divisor.value = null;
   },
 );
 
@@ -304,6 +429,7 @@ onMounted(async () => {
               hide-details
             />
           </VCol>
+
           <VCol cols="6" sm="4" md="2">
             <VBtn @click="loadScores" color="primary" variant="tonal">
               <VIcon icon="tabler-search" />
@@ -322,10 +448,43 @@ onMounted(async () => {
         {{ t("No students") }}
       </VAlert>
 
+      <VAlert
+        v-else-if="
+          submitStatus === 'not_submitted' && students.length && columns.length
+        "
+        type="warning"
+        variant="outlined"
+        density="compact"
+        class="mb-3"
+      >
+        {{ t("Score not yet submitted") }}
+      </VAlert>
+      <VAlert
+        v-else-if="submitStatus === 'submitted'"
+        type="success"
+        variant="outlined"
+        density="compact"
+        class="mb-3"
+      >
+        {{ t("Score already submitted") }}
+      </VAlert>
+      <VAlert
+        v-else-if="submitStatus === 'partial'"
+        type="warning"
+        variant="outlined"
+        density="compact"
+        class="mb-3"
+      >
+        <div class="font-weight-medium mb-1">
+          {{ t("Score not yet submitted for") }}:
+        </div>
+        <div>{{ notSubmittedNamesText }}</div>
+      </VAlert>
+
+      <!-- height="calc(100dvh - 280px)" -->
       <VTable
         v-if="students.length"
         fixed-header
-        height="calc(100dvh - 280px)"
         density="compact"
         class="border rounded score-table"
       >
@@ -393,10 +552,28 @@ onMounted(async () => {
         </tbody>
       </VTable>
 
-      <VRow class="mt-1">
+      <VRow class="mt-1 justify-end">
+        <VCol v-if="canLoad" cols="6" sm="3" md="2">
+          <AppTextField
+            v-model="divisor"
+            type="number"
+            :min="0"
+            step="1"
+            :placeholder="t('Divisor')"
+            hide-details
+            :disabled="isSavingDivisor"
+          />
+        </VCol>
         <VCol cols="4" sm="2" md="2" v-if="formSearch.month_id">
-          <VBtn @click="loadScores" color="primary" block variant="tonal">
-            <VIcon icon="tabler-download" />
+          <VBtn
+            @click="saveScores"
+            color="primary"
+            block
+            variant="tonal"
+            :loading="isSaving"
+            :disabled="!students.length || isSaving"
+          >
+            <VIcon icon="tabler-device-floppy" />
             {{ t("Submit") }}
           </VBtn>
         </VCol>

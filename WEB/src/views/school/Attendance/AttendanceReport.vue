@@ -34,9 +34,19 @@ const props = defineProps({
 const PERIODS = ["date", "range", "month"];
 
 const STATS = [
-  { key: "present", label: "Present", color: "success", icon: "tabler-circle-check" },
+  {
+    key: "present",
+    label: "Present",
+    color: "success",
+    icon: "tabler-circle-check",
+  },
   { key: "late", label: "Late", color: "warning", icon: "tabler-clock" },
-  { key: "permission", label: "Ask Permission", color: "orange", icon: "tabler-file-text" },
+  {
+    key: "permission",
+    label: "Ask Permission",
+    color: "orange",
+    icon: "tabler-file-text",
+  },
   { key: "absent", label: "Absent", color: "error", icon: "tabler-circle-x" },
   { key: "total", label: "Total", color: "primary", icon: "tabler-sum" },
 ];
@@ -51,8 +61,17 @@ const COUNT_CELLS = [
 const { t, locale } = useI18n();
 const { smAndDown } = useDisplay();
 const settingStore = useSettingStore();
-const { isLoading, error, dateFrom, dateTo, summary, students, studentsAbsent, studentsPermission, load } =
-  useAttendanceReport();
+const {
+  isLoading,
+  error,
+  dateFrom,
+  dateTo,
+  summary,
+  students,
+  studentsAbsent,
+  studentsPermission,
+  load,
+} = useAttendanceReport();
 
 const grades = ref([]);
 const allClasses = ref([]);
@@ -218,7 +237,14 @@ onMounted(async () => {
   if (props.autoLoad && canSearch()) await search();
 });
 
-defineExpose({ search, filters, summary, students, studentsAbsent, studentsPermission });
+defineExpose({
+  search,
+  filters,
+  summary,
+  students,
+  studentsAbsent,
+  studentsPermission,
+});
 </script>
 
 <template>
@@ -234,7 +260,7 @@ defineExpose({ search, filters, summary, students, studentsAbsent, studentsPermi
     <template v-if="!hideFilters" #filter>
       <div class="report-filters">
         <VRow dense class="align-end">
-          <VCol v-if="!lockClass" cols="6" sm="4" md="2">
+          <VCol v-if="!lockClass" cols="6" sm="4" md="1">
             <AppAutocomplete
               v-model="filters.grade_id"
               :items="grades"
@@ -246,7 +272,7 @@ defineExpose({ search, filters, summary, students, studentsAbsent, studentsPermi
             />
           </VCol>
 
-          <VCol v-if="!lockClass" cols="6" sm="4" md="2">
+          <VCol v-if="!lockClass" cols="6" sm="4" md="1">
             <AppAutocomplete
               v-model="filters.class_id"
               :items="filteredClasses"
@@ -258,7 +284,7 @@ defineExpose({ search, filters, summary, students, studentsAbsent, studentsPermi
             />
           </VCol>
 
-          <VCol cols="6" sm="4" md="2">
+          <VCol cols="6" sm="4" md="1">
             <AppAutocomplete
               v-model="filters.session"
               :items="sessions"
@@ -270,14 +296,16 @@ defineExpose({ search, filters, summary, students, studentsAbsent, studentsPermi
             />
           </VCol>
 
-          <VCol cols="12" sm="12" md="3">
+          <VCol cols="12" sm="12" md="2">
             <div class="period-toggle">
               <button
                 v-for="item in PERIODS"
                 :key="item"
                 type="button"
                 class="period-toggle__btn"
-                :class="{ 'period-toggle__btn--active': filters.period === item }"
+                :class="{
+                  'period-toggle__btn--active': filters.period === item,
+                }"
                 @click="filters.period = item"
               >
                 {{ periodLabel(item) }}
@@ -322,6 +350,7 @@ defineExpose({ search, filters, summary, students, studentsAbsent, studentsPermi
           <VCol cols="12" sm="6" md="2">
             <VBtn
               color="primary"
+              variant="tonal"
               class="search-btn"
               :block="smAndDown"
               :disabled="!canSearch()"
@@ -342,7 +371,10 @@ defineExpose({ search, filters, summary, students, studentsAbsent, studentsPermi
           <VIcon icon="tabler-calendar" size="18" />
           <span>{{ rangeLabel }}</span>
         </div>
-        <div v-if="studentCount" class="report-meta__count text-medium-emphasis">
+        <div
+          v-if="studentCount"
+          class="report-meta__count text-medium-emphasis"
+        >
           {{ studentCount }} {{ t("Students") }}
         </div>
       </div>
@@ -378,7 +410,9 @@ defineExpose({ search, filters, summary, students, studentsAbsent, studentsPermi
             <div class="event-panel__title">
               <VIcon icon="tabler-circle-x" size="18" />
               {{ t("Absent students") }}
-              <span class="event-panel__badge">{{ studentsAbsent.length }}</span>
+              <span class="event-panel__badge">{{
+                studentsAbsent.length
+              }}</span>
             </div>
             <div class="event-panel__list">
               <div
@@ -389,8 +423,15 @@ defineExpose({ search, filters, summary, students, studentsAbsent, studentsPermi
                 <div class="event-row__name">{{ studentName(item) }}</div>
                 <div class="event-row__meta">
                   <span>{{ item.date }}</span>
-                  <span v-if="item.session">· {{ item.session === 'AM' ? t('Morning') : t('Afternoon') }}</span>
-                  <span v-if="showClassColumn || rowClassName(item)">· {{ rowClassName(item) }}</span>
+                  <span v-if="item.session"
+                    >·
+                    {{
+                      item.session === "AM" ? t("Morning") : t("Afternoon")
+                    }}</span
+                  >
+                  <span v-if="showClassColumn || rowClassName(item)"
+                    >· {{ rowClassName(item) }}</span
+                  >
                 </div>
               </div>
             </div>
@@ -402,7 +443,9 @@ defineExpose({ search, filters, summary, students, studentsAbsent, studentsPermi
             <div class="event-panel__title">
               <VIcon icon="tabler-file-text" size="18" />
               {{ t("Permission students") }}
-              <span class="event-panel__badge">{{ studentsPermission.length }}</span>
+              <span class="event-panel__badge">{{
+                studentsPermission.length
+              }}</span>
             </div>
             <div class="event-panel__list">
               <div
@@ -413,8 +456,15 @@ defineExpose({ search, filters, summary, students, studentsAbsent, studentsPermi
                 <div class="event-row__name">{{ studentName(item) }}</div>
                 <div class="event-row__meta">
                   <span>{{ item.date }}</span>
-                  <span v-if="item.session">· {{ item.session === 'AM' ? t('Morning') : t('Afternoon') }}</span>
-                  <span v-if="showClassColumn || rowClassName(item)">· {{ rowClassName(item) }}</span>
+                  <span v-if="item.session"
+                    >·
+                    {{
+                      item.session === "AM" ? t("Morning") : t("Afternoon")
+                    }}</span
+                  >
+                  <span v-if="showClassColumn || rowClassName(item)"
+                    >· {{ rowClassName(item) }}</span
+                  >
                 </div>
               </div>
             </div>
@@ -422,11 +472,7 @@ defineExpose({ search, filters, summary, students, studentsAbsent, studentsPermi
         </VCol>
       </VRow>
 
-      <VAlert
-        v-if="!isLoading && !students.length"
-        type="info"
-        variant="tonal"
-      >
+      <VAlert v-if="!isLoading && !students.length" type="info" variant="tonal">
         {{ t("No attendance data") }}
       </VAlert>
 
@@ -490,7 +536,9 @@ defineExpose({ search, filters, summary, students, studentsAbsent, studentsPermi
             </div>
             <div class="mobile-card__who">
               <div class="mobile-card__name">
-                <span class="mobile-card__index">{{ row.sort || index + 1 }}.</span>
+                <span class="mobile-card__index"
+                  >{{ row.sort || index + 1 }}.</span
+                >
                 {{ studentName(row) }}
               </div>
               <div class="mobile-card__sub">
