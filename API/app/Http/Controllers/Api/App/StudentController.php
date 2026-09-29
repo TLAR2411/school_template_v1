@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Api\App;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\APP\StudentClassResource;
 use App\Models\School\FamilyMember;
 use App\Models\School\Student;
+use App\Models\School\StudentClass;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -46,6 +48,33 @@ class StudentController extends Controller
                 'status' => true,
                 'data' => $students,
             ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function studentClass(Request $request)
+    {
+        try {
+            $data = StudentClass::query()
+                ->where('student_id', $request->student_id)
+                ->with([
+                    'class:id,name_en,name_kh,year_id,grade_id,symbol,class_type_id,shift_id', // need id + year_id
+                    'class.year:id,name',
+                    'class.shift:id,name_en,name_kh',
+                    'class.classtype:name_en,name_kh'
+                ])
+                ->orderBy('id', 'asc')
+                ->get();
+            return response()->json(
+                [
+                    "status" => true,
+                    "data" => StudentClassResource::collection($data)
+                ]
+            );
         } catch (\Throwable $th) {
             return response()->json([
                 'status' => false,
