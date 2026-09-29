@@ -5,6 +5,7 @@ namespace App\Models\School;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Core\Branch;
 use App\Models\School\StudentClass;
 use App\Models\School\ClassType;
 use App\Models\School\Student;
@@ -64,6 +65,11 @@ class Classes extends Model
     public function year()
     {
         return $this->belongsTo(Year::class, 'year_id');
+    }
+
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class, 'branch_id');
     }
 
     public function classtype()
