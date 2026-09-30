@@ -10,17 +10,6 @@
       0 => 'Intervention\\Image\\Laravel\\ServiceProvider',
     ),
   ),
-  'irazasyed/telegram-bot-sdk' => 
-  array (
-    'aliases' => 
-    array (
-      'Telegram' => 'Telegram\\Bot\\Laravel\\Facades\\Telegram',
-    ),
-    'providers' => 
-    array (
-      0 => 'Telegram\\Bot\\Laravel\\TelegramServiceProvider',
-    ),
-  ),
   'laravel/pail' => 
   array (
     'providers' => 

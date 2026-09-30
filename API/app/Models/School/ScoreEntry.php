@@ -16,6 +16,7 @@ class ScoreEntry extends Model
         'class_id',
         'subject_id',
         'month_id',
+        'term_id',
         'year_id',
         'grading_rule_id',
         'assessment_id',

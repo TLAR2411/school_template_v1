@@ -99,6 +99,8 @@ class FamilyMemberController extends Controller
             ]);
 
             $user->code = 'FM' . "-" . str_pad($user->id, 6, '0', STR_PAD_LEFT);
+            $user->save();
+
             FamilyMember::create([
                 'family_id' => $validated['family_id'],
                 'user_id' => $user->id,
@@ -111,9 +113,11 @@ class FamilyMemberController extends Controller
                 'created_by' => $createdBy,
             ]);
             DB::commit();
+
             return response()->json([
                 'status' => true,
                 'message' => 'Family member created successfully',
+                'username' => $user->username,
             ]);
         } catch (\Throwable $th) {
             DB::rollBack();

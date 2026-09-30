@@ -38,16 +38,57 @@ class ScheduleController extends Controller
         }
     }
 
-    public function store(Request $request)
+    /** Subject lesson OR free-form title (e.g. "Go to library"). */
+    private function scheduleRules(bool $withId = false): array
     {
-        $data = $request->validate([
+        $rules = [
             'class_id' => 'required|integer|exists:classes,id',
-            'subject_id' => 'required|integer|exists:subjects,id',
+            'subject_id' => 'nullable|integer|exists:subjects,id',
+            'title' => 'nullable|string|max:255',
             'day_id' => 'required|integer|exists:days,id',
             'start' => 'required|date_format:H:i',
             'end' => 'required|date_format:H:i|after:start',
             'color' => 'nullable|string|max:20',
-        ]);
+        ];
+
+        if ($withId) {
+            $rules = ['id' => 'required|integer|exists:schedules,id'] + $rules;
+        }
+
+        return $rules;
+    }
+
+    private function normalizePeriod(array $data): array
+    {
+        $subjectId = $data['subject_id'] ?? null;
+        $title = isset($data['title']) ? trim((string) $data['title']) : '';
+
+        if ($subjectId) {
+            $data['subject_id'] = $subjectId;
+            $data['title'] = null;
+        } else {
+            $data['subject_id'] = null;
+            $data['title'] = $title !== '' ? $title : null;
+        }
+
+        return $data;
+    }
+
+    private function hasPeriodLabel(array $data): bool
+    {
+        return !empty($data['subject_id']) || !empty($data['title']);
+    }
+
+    public function store(Request $request)
+    {
+        $data = $this->normalizePeriod($request->validate($this->scheduleRules()));
+
+        if (!$this->hasPeriodLabel($data)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Please select a subject or enter a title.',
+            ], 422);
+        }
 
         try {
             if (Schedule::hasOverlap(
@@ -84,15 +125,14 @@ class ScheduleController extends Controller
 
     public function update(Request $request)
     {
-        $data = $request->validate([
-            'id' => 'required|integer|exists:schedules,id',
-            'class_id' => 'required|integer|exists:classes,id',
-            'subject_id' => 'required|integer|exists:subjects,id',
-            'day_id' => 'required|integer|exists:days,id',
-            'start' => 'required|date_format:H:i',
-            'end' => 'required|date_format:H:i|after:start',
-            'color' => 'nullable|string|max:20',
-        ]);
+        $data = $this->normalizePeriod($request->validate($this->scheduleRules(true)));
+
+        if (!$this->hasPeriodLabel($data)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Please select a subject or enter a title.',
+            ], 422);
+        }
 
         try {
             if (Schedule::hasOverlap(
@@ -112,6 +152,7 @@ class ScheduleController extends Controller
             $row->update([
                 'class_id' => $data['class_id'],
                 'subject_id' => $data['subject_id'],
+                'title' => $data['title'],
                 'day_id' => $data['day_id'],
                 'start' => $data['start'],
                 'end' => $data['end'],

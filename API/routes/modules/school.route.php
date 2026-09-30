@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\School\GradingRuleController;
 use App\Http\Controllers\Api\School\AssessmentController;
 use App\Http\Controllers\Api\School\AttendanceController;
 use App\Http\Controllers\Api\School\ScoreEntryController;
+use App\Http\Controllers\Api\School\ScoreEntryEnglishController;
 use App\Http\Controllers\Api\School\DayController;
 use App\Http\Controllers\Api\School\FamilyController;
 use App\Http\Controllers\Api\School\TeacherClassController;
@@ -35,6 +36,11 @@ Route::post('attendance-store', [AttendanceController::class, 'store'])->middlew
 Route::post('attendance-report', [AttendanceController::class, 'report'])->middleware('permission:view-attendance');
 
 Route::post('score-list', [ScoreEntryController::class, 'getScoreData'])->middleware('permission:view-score-entry|add-score-entry');
+Route::post('score-store', [ScoreEntryController::class, 'store'])->middleware('permission:add-score-entry|edit-score-entry');
+Route::post('score-month-header-store', [ScoreEntryController::class, 'saveMonthHeader'])->middleware('permission:add-score-entry|edit-score-entry');
+
+Route::post('score-english-list', [ScoreEntryEnglishController::class, 'getScoreData'])->middleware('permission:view-score-entry|add-score-entry');
+Route::post('score-english-store', [ScoreEntryEnglishController::class, 'store'])->middleware('permission:add-score-entry|edit-score-entry');
 
 Route::post('term-period-lists-store', [TermPeriodListController::class, 'store'])->middleware('permission:add-term-periods');
 Route::post('term-period-lists-update', [TermPeriodListController::class, 'update'])->middleware('permission:edit-term-periods');
@@ -99,6 +105,8 @@ Route::post("years-delete", [YearController::class, "delete"])->middleware('perm
 Route::post("student-not-yet-enroll", [StudentCurriculumController::class, "studentNotYetEnrollCurriculum"])->middleware('permission:enroll-students');
 Route::post("student-enroll-store", [StudentCurriculumController::class, "store"])->middleware('permission:enroll-students');
 Route::post("student-enroll-list", [StudentCurriculumController::class, "list"])->middleware('permission:view-students');
+Route::post("students-curriculums-disable", [StudentCurriculumController::class, "disable"]);
+
 
 Route::post("education-levels-store", [EducationLevelController::class, "store"])->middleware('permission:add-education-levels');
 Route::post("education-levels-list", [EducationLevelController::class, "list"])->middleware('permission:view-education-levels');

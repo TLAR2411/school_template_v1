@@ -229,11 +229,13 @@ class UserController extends Controller
                 }
             }
             DB::commit();
+
             return response()->json([
                 'status' => true,
                 'message' => "Successful Created User!",
                 'name' => $name,
-                'default_password' => $defaultPassword
+                'default_password' => $defaultPassword,
+                'username' => $users->username,
             ]);
         } catch (\Throwable $th) {
             DB::rollBack();

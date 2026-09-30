@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Api\School;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\DataTableResource;
+use App\Http\Resources\School\ClassDetailResource;
 use App\Http\Resources\School\ClassResource;
 use App\Models\School\Classes;
+use App\Models\School\TeacherClass;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ClassController extends Controller
 {
@@ -190,18 +192,103 @@ class ClassController extends Controller
         }
     }
 
+    /**
+     * Class detail for the General tab (identity, setup, quick stats).
+     * Request: { class_id }
+     */
     public function detail(Request $request)
     {
+        $request->validate([
+            'class_id' => 'required|integer|exists:classes,id',
+        ]);
+
         try {
-            $data = Classes::query()
-                ->with(['students:gender', 'grade:id,grade_level,name_en,name_kh'])
-                ->get();
+            $class = Classes::query()
+                ->with([
+                    'grade:id,name_en,name_kh,grade_level,edu_id',
+                    'grade.educationLevel:id,name_en,name_kh',
+                    'room:id,room_number',
+                    'year:id,name',
+                    'shift:id,name_en,name_kh',
+                    'classtype:id,name_en,name_kh',
+                ])
+                ->findOrFail($request->class_id);
+
+            $stats = $this->buildClassStats($class->id);
+            $classloadTeacher = $this->getClassloadTeacher($class->id);
+
             return response()->json([
-                "data" => $data
+                'status' => true,
+                'data' => new ClassDetailResource($class, $stats, $classloadTeacher),
             ]);
         } catch (\Throwable $th) {
             return response()->json(['status' => false, 'message' => $th->getMessage()], 500);
         }
+    }
+
+    /**
+     * Quick counts for the General tab. Keep filters here so UI stays simple.
+     */
+    private function buildClassStats(int $classId): array
+    {
+        $students = DB::table('student_class')
+            ->join('students', 'students.id', '=', 'student_class.student_id')
+            ->where('student_class.class_id', $classId)
+            ->whereNull('student_class.deleted_at')
+            ->whereNull('students.deleted_at')
+            ->where('student_class.is_active', true)
+            ->selectRaw("
+                COUNT(*) as student_total,
+                SUM(CASE WHEN LOWER(students.gender) IN ('female', 'f') THEN 1 ELSE 0 END) as student_female,
+                SUM(CASE WHEN LOWER(students.gender) IN ('male', 'm') THEN 1 ELSE 0 END) as student_male
+            ")
+            ->first();
+
+        // Distinct teachers (not assistants) vs assistants — one person can appear on many subjects
+        $teacherTotal = (int) TeacherClass::query()
+            ->where('class_id', $classId)
+            ->where('is_active', true)
+            ->where(function ($q) {
+                $q->where('is_assisstant', false)->orWhereNull('is_assisstant');
+            })
+            ->selectRaw('COUNT(DISTINCT teacher_id) as total')
+            ->value('total');
+
+        $assistantTotal = (int) TeacherClass::query()
+            ->where('class_id', $classId)
+            ->where('is_active', true)
+            ->where('is_assisstant', true)
+            ->selectRaw('COUNT(DISTINCT teacher_id) as total')
+            ->value('total');
+
+        return [
+            'student_total' => (int) ($students->student_total ?? 0),
+            'student_female' => (int) ($students->student_female ?? 0),
+            'student_male' => (int) ($students->student_male ?? 0),
+            'teacher_total' => $teacherTotal,
+            'assistant_total' => $assistantTotal,
+        ];
+    }
+
+    private function getClassloadTeacher(int $classId): ?array
+    {
+        $row = TeacherClass::query()
+            ->where('class_id', $classId)
+            ->where('is_active', true)
+            ->where('is_classload', true)
+            ->with('teacher:id,name_en,name_kh,photo_path')
+            ->first();
+
+        if (!$row?->teacher) {
+            return null;
+        }
+
+        return [
+            'id' => $row->teacher->id,
+            'name_en' => $row->teacher->name_en,
+            'name_kh' => $row->teacher->name_kh,
+            'photo_path' => $row->teacher->photo_path,
+        ];
     }
 
     public function teacherClass(Request $request)

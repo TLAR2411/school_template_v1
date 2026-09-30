@@ -12,91 +12,89 @@ use App\Http\Resources\School\StudentCurriculumResource;
 
 class StudentCurriculumController extends Controller
 {
-    public function studentNotYetEnrollCurriculum(Request $request){
+    public function studentNotYetEnrollCurriculum(Request $request)
+    {
         try {
             $curId = $this->getCur();
             $branchId = $this->getBranch();
 
             $students = Student::query()
-            ->whereBranch($request->branch_id ?? $branchId)
-    ->when($curId, function ($q) use ($curId) {
-        $q->whereDoesntHave('studentCurriculums', function ($sub) use ($curId) {
-            $sub->where('curriculum_id', $curId)
-                ->where('is_active', true);
-        });
-    })
-    ->when($request->search, function ($q) use ($request) {
-        $q->where('name_en', 'like', '%'.$request->search.'%')
-        ->orWhere('name_kh', 'like', '%'.$request->search.'%');
-    })
-    ->get();
+                ->whereBranch($request->branch_id ?? $branchId)
+                ->when($curId, function ($q) use ($curId) {
+                    $q->whereDoesntHave('studentCurriculums', function ($sub) use ($curId) {
+                        $sub->where('curriculum_id', $curId)
+                            ->where('is_active', true);
+                    });
+                })
+                ->when($request->search, function ($q) use ($request) {
+                    $q->where('name_en', 'like', '%' . $request->search . '%')
+                        ->orWhere('name_kh', 'like', '%' . $request->search . '%');
+                })
+                ->get();
 
             return response()->json([
-                "data"=>$students,
-                "status"=>true,
+                "data" => $students,
+                "status" => true,
             ], 200);
         } catch (\Throwable $th) {
             return response()->json([
-                "message"=>$th->getMessage(),
+                "message" => $th->getMessage(),
             ], 500);
         }
     }
 
-    public function store(Request $request){
+    public function store(Request $request)
+    {
         $validate = $request->validate([
-        'student_id'   => 'required|array|min:1',
-        'student_id.*' => 'required|integer|exists:students,id',
-        'start_date'   => 'nullable|date',
-        'student_card_id' => 'nullable|string|max:255',
-    ]);
+            'student_id'   => 'required|array|min:1',
+            'student_id.*' => 'required|integer|exists:students,id',
+            'start_date'   => 'nullable|date',
+            'student_card_id' => 'nullable|string|max:255',
+        ]);
 
-    $curriculumId = $this->getCur();
-    $branchId = $this->getBranch();
-    if (!$curriculumId || $curriculumId === '*') {
-        return response()->json([
-            'status' => false,
-            'message' => 'Please select a curriculum',
-        ], 422);
-    }
-    if (!$branchId || $branchId === '*') {
-        return response()->json([
-            'status' => false,
-            'message' => 'Please select a branch',
-        ], 422);
-    }
+        $curriculumId = $this->getCur();
+        $branchId = $this->getBranch();
+        if (!$curriculumId || $curriculumId === '*') {
+            return response()->json([
+                'status' => false,
+                'message' => 'Please select a curriculum',
+            ], 422);
+        }
+        if (!$branchId || $branchId === '*') {
+            return response()->json([
+                'status' => false,
+                'message' => 'Please select a branch',
+            ], 422);
+        }
 
-    try {
-        DB::beginTransaction();
+        try {
+            DB::beginTransaction();
 
-        foreach($validate['student_id'] as $studentId){
-            $student = StudentCurriculum::create([
-                'student_id' => $studentId,
-                'curriculum_id' => $curriculumId,
-                'branch_id' => $branchId,
-                'start_date' => $request->start_date ?? now()->format('Y-m-d'),
-                'student_card_id' => $request->student_card_id ?? null,
-                'description' => $request->description,
-                'is_active'       => true, // important
-                'created_by' => auth('api')->id(),
-            ]);
+            foreach ($validate['student_id'] as $studentId) {
+                $student = StudentCurriculum::create([
+                    'student_id' => $studentId,
+                    'curriculum_id' => $curriculumId,
+                    'branch_id' => $branchId,
+                    'start_date' => $request->start_date ?? now()->format('Y-m-d'),
+                    'student_card_id' => $request->student_card_id ?? null,
+                    'description' => $request->description,
+                    'is_active'       => true, // important
+                    'created_by' => auth('api')->id(),
+                ]);
             }
             DB::commit();
             return response()->json([
                 'status'  => true,
                 'message' => 'Enrollment successful',
             ]);
-
-
-    } catch (\Throwable $th) {
-        DB::rollBack();
-        return response()->json([
-            'status'  => false,
-            'message' => 'Enrollment failed',
-            'error'   => $th->getMessage(),
-        ], 500);
-    }
-
-
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return response()->json([
+                'status'  => false,
+                'message' => 'Enrollment failed',
+                'error'   => $th->getMessage(),
+            ], 500);
+        }
     }
 
     // public function list(Request $request){
@@ -125,39 +123,60 @@ class StudentCurriculumController extends Controller
     // }
 
     public function list(Request $request)
-{
-    $curId = $this->getCur();
-    $branchId = $this->getBranch();
+    {
+        $curId = $this->getCur();
+        $branchId = $this->getBranch();
 
-    $totalStudents = Student::query()
-        ->whereBranch($branchId)
-        ->count();
+        $totalStudents = Student::query()
+            ->whereBranch($branchId)
+            ->count();
 
-    $enrolled = Student::query()
-        ->whereBranch($branchId)
-        ->whereHas('studentCurriculums', function ($q) use ($curId) {
-            $q->where('curriculum_id', $curId)
-              ->where('is_active', true);
-        })
-        ->count();
+        $enrolled = Student::query()
+            ->whereBranch($branchId)
+            ->whereHas('studentCurriculums', function ($q) use ($curId) {
+                $q->where('curriculum_id', $curId)
+                    ->where('is_active', true);
+            })
+            ->count();
 
-    $data = StudentCurriculum::query()
-        ->with('student')
-        ->whereBranch($branchId)
-        ->whereCurriculum($curId)
-        ->filter($request->filter)
-        ->paginate($request->limit);
+        $data = StudentCurriculum::query()
+            ->with('student')
+            ->whereBranch($branchId)
+            ->where('is_active', true)
+            ->whereCurriculum($curId)
+            ->filter($request->filter)
+            ->paginate($request->limit);
 
-    $data = StudentCurriculumResource::collection($data)->response()->getData(true);
+        $data = StudentCurriculumResource::collection($data)->response()->getData(true);
 
-    return response()->json([
-        'status' => true,
-        'data' => $data,
-        'summary' => [
-            'total_students' => $totalStudents,
-            'enrolled' => $enrolled,
-            'not_enrolled' => $totalStudents - $enrolled,
-        ],
-    ]);
-}
+        return response()->json([
+            'status' => true,
+            'data' => $data,
+            'summary' => [
+                'total_students' => $totalStudents,
+                'enrolled' => $enrolled,
+                'not_enrolled' => $totalStudents - $enrolled,
+            ],
+        ]);
+    }
+
+    public function disable(Request $request)
+    {
+        try {
+            $data = StudentCurriculum::findOrFail($request->id);
+            $data->update([
+                'is_active' => !$data->is_active,
+                'updated_by' => auth('api')->id(),
+            ]);
+            return response()->json([
+                'status' => true,
+                'message' => 'Student disabled successfully',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage(),
+            ], 500);
+        }
+    }
 }

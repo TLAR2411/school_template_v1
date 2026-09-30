@@ -10,7 +10,6 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
-        "irazasyed/telegram-bot-sdk": "^3.15",
         "laravel/framework": "^12",
         "laravel/passport": "^12.4",
         "laravel/reverb": "^1.0",

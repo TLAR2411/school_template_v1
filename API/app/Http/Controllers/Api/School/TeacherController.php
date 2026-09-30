@@ -117,6 +117,7 @@ class TeacherController extends Controller
                 'created_by' => auth('api')->id(),
             ]);
             DB::commit();
+
             return response()->json([
                 'message' => 'Teacher created successfully',
                 'status' => true,

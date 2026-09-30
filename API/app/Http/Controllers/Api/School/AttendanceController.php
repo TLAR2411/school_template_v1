@@ -8,6 +8,7 @@ use App\Models\School\Classes;
 use App\Models\School\Schedule;
 use App\Models\School\StudentClass;
 use App\Models\School\Teacher;
+use App\Models\School\TeacherClass;
 use App\Services\School\AttendanceReportService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -86,7 +87,22 @@ class AttendanceController extends Controller
             if ($isFullDay && $session) {
                 $periods = $this->filterPeriodsBySession($periods, $session, $class->shift);
             }
+            $dayHasSchedule = $periods->isNotEmpty();
             $subjectIds = $periods->pluck('subject_id')->unique()->filter()->values()->all();
+
+            // Teachers: only subjects assigned in teacher_class for this class
+            $subjectIds = $this->filterTeacherSubjectIds($subjectIds, $classId);
+            $allowedSet = array_flip($subjectIds);
+            $periods = $periods->filter(
+                fn ($p) => isset($allowedSet[(int) $p->subject_id])
+            )->values();
+
+            if ($subjectId && empty($subjectIds)) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'You are not assigned to this subject for this class.',
+                ], 403);
+            }
 
             // 2) Students — always student_class
             $studentClass = StudentClass::query()
@@ -125,7 +141,12 @@ class AttendanceController extends Controller
                 'reason'        => null,
             ];
 
-            $idsToLoop = !empty($subjectIds) ? $subjectIds : [null];
+            // Teacher with day schedule but no assigned subject: do not fall back to "general"
+            if (empty($subjectIds) && $dayHasSchedule) {
+                $idsToLoop = [];
+            } else {
+                $idsToLoop = !empty($subjectIds) ? $subjectIds : [null];
+            }
 
             // យក Student ម្នាក់ៗមក transform ទៅជា format ថ្មី។
             $students = $studentClass->map(function ($row) use ($idsToLoop, $attendanceMap, $defaultCell) {
@@ -169,6 +190,7 @@ class AttendanceController extends Controller
                     'session_submitted' => $isFullDay
                         ? $this->sessionSubmittedMap($classId, $date)
                         : null,
+                    'day_has_schedule'  => $dayHasSchedule,
                     'periods'           => $periods,
                     'subjects'          => $subjectsForSelect,
                     'students'          => $students,
@@ -223,7 +245,7 @@ class AttendanceController extends Controller
                 ->all()
         );
 
-        // No subject = all subjects in this session (Full Day morning 4, afternoon 2, …)
+        // No subject = all allowed subjects in this session (Full Day morning 4, afternoon 2, …)
         if (!empty($data['subject_id'])) {
             $subjectIds = [(int) $data['subject_id']];
         } else {
@@ -246,6 +268,18 @@ class AttendanceController extends Controller
                     'message' => 'No schedule for this class on this day.',
                 ], 422);
             }
+        }
+
+        $dayHadSubjects = !empty($subjectIds);
+        $subjectIds = $this->filterTeacherSubjectIds($subjectIds, $classId);
+
+        if (empty($subjectIds)) {
+            return response()->json([
+                'status'  => false,
+                'message' => $dayHadSubjects
+                    ? 'No subject you teach on this day.'
+                    : 'No schedule for this class on this day.',
+            ], !empty($data['subject_id']) ? 403 : 422);
         }
 
         try {
@@ -419,6 +453,33 @@ class AttendanceController extends Controller
             return [false, false, false];
         }
         return [true, false, false];
+    }
+
+    /**
+     * Admin / other roles: all subjects.
+     * Teacher: only subjects assigned to them for this class (teacher_class).
+     */
+    private function filterTeacherSubjectIds(array $subjectIds, int $classId): array
+    {
+        $teacherId = Teacher::query()
+            ->where('user_id', auth('api')->id())
+            ->value('id');
+
+        if (!$teacherId) {
+            return array_values($subjectIds);
+        }
+
+        $allowed = TeacherClass::query()
+            ->where('class_id', $classId)
+            ->where('teacher_id', $teacherId)
+            ->pluck('subject_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        return array_values(array_intersect(
+            array_map('intval', $subjectIds),
+            $allowed
+        ));
     }
 
     /** AM / PM from class shift. FULL from clock (optional override). */

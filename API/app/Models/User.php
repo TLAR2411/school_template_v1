@@ -55,7 +55,7 @@ class User extends Authenticatable implements LaratrustUser
         'image_path',
         'parent_user_id',
         'type',
-        'last_login'
+        'last_login',
     ];
 
     /**
@@ -71,7 +71,7 @@ class User extends Authenticatable implements LaratrustUser
         'updated_at',
         'deleted_by',
         'created_by',
-        'updated_by'
+        'updated_by',
     ];
     /**
      * The attributes that should be cast to native types.

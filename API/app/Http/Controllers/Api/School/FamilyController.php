@@ -79,6 +79,7 @@ class FamilyController extends Controller
                 ]);
 
                 $user->code = 'FM' . "-" . str_pad($user->id, 6, '0', STR_PAD_LEFT);
+                $user->save();
 
                 FamilyMember::create([
                     'family_id' => $family->id,   // need this column
