@@ -1,18 +1,27 @@
 <?php
 
 use App\Http\Controllers\Api\App\AcademicController;
+use App\Http\Controllers\Api\App\FcmController;
 use App\Http\Controllers\Api\App\GeneralInfoController;
 use App\Http\Controllers\Api\App\LoginAppController;
 use App\Http\Controllers\Api\App\ListClassController;
+use App\Http\Controllers\Api\App\PermissionController;
 use App\Http\Controllers\Api\App\StudentController;
+use App\Http\Controllers\Api\App\UserDeviceTokenController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('login', [LoginAppController::class, 'login']);
 
 // Public — WebView report page (validated by access code)
 Route::post('report-student-individual', [GeneralInfoController::class, 'showReport']);
-
+Route::get('permission-request/{id}', [PermissionController::class, 'viewrequest']);
+Route::post('permission-request/{id}/{type}', [PermissionController::class, 'updaterequest']);
+Route::post('notifications/permission', [FcmController::class, 'sendNotification']);
+Route::post('notifications/attendance', [FcmController::class, 'sendNotiToAtt']);
 Route::group(['middleware' => ['auth:api']], function () {
+    Route::post('device-token', [UserDeviceTokenController::class, 'saveDeviceToken']);
+    Route::get('permissions', [PermissionController::class, 'sendPermission']);
+    Route::post('permission-request', [PermissionController::class, 'requestpermission']);
     Route::get('students-list', [StudentController::class, 'list']);
     Route::get('classes-list', [StudentController::class, 'studentClass']);
     Route::get('curriculums-list', [GeneralInfoController::class, 'curriculum_list']);
