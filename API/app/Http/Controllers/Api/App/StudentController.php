@@ -58,27 +58,62 @@ class StudentController extends Controller
 
     public function studentClass(Request $request)
     {
-        try {
-            $data = StudentClass::query()
-                ->where('student_id', $request->student_id)
+         try {
+            $familyIds = FamilyMember::query()
+                ->where('user_id', Auth::id())
+                ->where('is_active', true)
+                ->pluck('family_id');
+
+            if ($familyIds->isEmpty()) {
+                return response()->json([
+                    'status' => true,
+                    'data' => [],
+                ]);
+            }
+
+            $classes = StudentClass::query()
                 ->with([
-                    'class:id,name_en,name_kh,year_id,grade_id,symbol,class_type_id,shift_id', // need id + year_id
-                    'class.year:id,name',
-                    'class.shift:id,name_en,name_kh',
-                    'class.classtype:name_en,name_kh'
+                    'student:id,name_en,name_kh,photo_path,gender,dob',
+                    'class.grade',
+                    'class.room',
+                    'class.shift',
+                    'class.year',
+                    'class.classtype',
+                    'class.branch:id,name_en,name_kh',
                 ])
-                ->orderBy('id', 'asc')
+                ->whereIn('student_id', function ($query) use ($familyIds) {
+                    $query->select('student_id')
+                        ->from('family_students')
+                        ->whereIn('family_id', $familyIds)
+                        ->where('is_active', true);
+                })
+                ->where('is_active', true)
+                ->whereHas('class', function ($query) {
+                    $query->where('is_active', true);
+                })
+                ->orderBy('sort')
                 ->get();
-            return response()->json(
-                [
-                    "status" => true,
-                    "data" => StudentClassResource::collection($data)
-                ]
-            );
+
+            $classes->each(function (StudentClass $studentClass) {
+                if ($studentClass->class) {
+                    $studentClass->class->setAttribute(
+                        'branch_name',
+                        $studentClass->class->branch?->name_en
+                            ?: $studentClass->class->branch?->name_kh
+                    );
+                    $studentClass->class->unsetRelation('branch');
+                }
+            });
+
+            return response()->json([
+                'status' => true,
+                'data' => $classes,
+            ]);
         } catch (\Throwable $th) {
             return response()->json([
                 'status' => false,
-                'message' => $th->getMessage(),
+                'message' => 'Failed to get classes for student',
+                'error' => $th->getMessage(),
             ], 500);
         }
     }
