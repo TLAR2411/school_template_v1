@@ -280,13 +280,18 @@ const canLoad = computed(
 );
 
 const hasSchedule = computed(() => allPeriods.value.length > 0);
+const dayHasSchedule = ref(false);
 
 const emptyMessage = computed(() => {
   if (!formSearch.value.grade_id && CONFIG.requireGradeBeforeClass)
     return t("Grade");
   if (!formSearch.value.class_id) return t("Class");
   if (!formSearch.value.date) return t("Select date");
-  if (!hasSchedule.value) return t("No schedule for this day");
+  if (!hasSchedule.value) {
+    return dayHasSchedule.value
+      ? t("No subject you teach on this day")
+      : t("No schedule for this day");
+  }
   if (!editableRows.value.length) return t("No students");
   return "";
 });
@@ -391,6 +396,7 @@ async function loadAttendance() {
     rowCache.value = {};
     rowSnapshot.value = null;
     apiSession.value = null;
+    dayHasSchedule.value = false;
     return;
   }
 
@@ -411,6 +417,7 @@ async function loadAttendance() {
       allPeriods.value = [];
       editableRows.value = [];
       rowSnapshot.value = null;
+      dayHasSchedule.value = false;
       return;
     }
 
@@ -423,6 +430,7 @@ async function loadAttendance() {
     rowCache.value = {};
     apiSession.value = data.session ?? null;
     sessionSubmitted.value = data.session_submitted ?? { AM: false, PM: false };
+    dayHasSchedule.value = Boolean(data.day_has_schedule);
 
     pickDefaultActiveSubject();
     applyEditableRowsForSubject(activeSubjectId.value);
@@ -435,6 +443,7 @@ async function loadAttendance() {
     sheetStudents.value = [];
     editableRows.value = [];
     rowSnapshot.value = null;
+    dayHasSchedule.value = false;
   } finally {
     isLoading.value = false;
   }

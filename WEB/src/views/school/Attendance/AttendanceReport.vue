@@ -166,6 +166,16 @@ function studentInitial(row) {
   return name.trim().charAt(0).toUpperCase();
 }
 
+/** 0 → blank, any count → ✓ */
+function markCell(n) {
+  return Number(n) > 0 ? "✓" : "";
+}
+
+function countOrEmpty(n) {
+  const v = Number(n);
+  return v > 0 ? v : "";
+}
+
 function periodLabel(period) {
   if (period === "date") return t("Date");
   if (period === "range") return t("Date range");
@@ -260,7 +270,7 @@ defineExpose({
     <template v-if="!hideFilters" #filter>
       <div class="report-filters">
         <VRow dense class="align-end">
-          <VCol v-if="!lockClass" cols="6" sm="4" md="1">
+          <VCol v-if="!lockClass" cols="6" sm="4" md="2">
             <AppAutocomplete
               v-model="filters.grade_id"
               :items="grades"
@@ -272,7 +282,7 @@ defineExpose({
             />
           </VCol>
 
-          <VCol v-if="!lockClass" cols="6" sm="4" md="1">
+          <VCol v-if="!lockClass" cols="6" sm="4" md="2">
             <AppAutocomplete
               v-model="filters.class_id"
               :items="filteredClasses"
@@ -284,7 +294,7 @@ defineExpose({
             />
           </VCol>
 
-          <VCol cols="6" sm="4" md="1">
+          <VCol cols="6" sm="4" md="2">
             <AppAutocomplete
               v-model="filters.session"
               :items="sessions"
@@ -296,7 +306,7 @@ defineExpose({
             />
           </VCol>
 
-          <VCol cols="12" sm="12" md="2">
+          <VCol cols="12" sm="12" md="5">
             <div class="period-toggle">
               <button
                 v-for="item in PERIODS"
@@ -312,7 +322,14 @@ defineExpose({
               </button>
             </div>
           </VCol>
+        </VRow>
+      </div>
+    </template>
 
+    <div class="report-body">
+      <!-- Date + result hint -->
+      <div v-if="rangeLabel || studentCount" class="report-meta">
+        <VRow>
           <VCol v-if="filters.period === 'date'" cols="12" sm="6" md="2">
             <AppDateTimePicker
               v-model="filters.date"
@@ -348,25 +365,20 @@ defineExpose({
           </VCol>
 
           <VCol cols="12" sm="6" md="2">
-            <VBtn
+            <VIcon
               color="primary"
               variant="tonal"
               class="search-btn"
               :block="smAndDown"
               :disabled="!canSearch()"
               @click="search"
+              icon="tabler-search"
             >
-              <VIcon icon="tabler-search" start />
-              {{ t("Search") }}
-            </VBtn>
+              <!-- <VIcon icon="tabler-search" start />
+              {{ t("Search") }} -->
+            </VIcon>
           </VCol>
         </VRow>
-      </div>
-    </template>
-
-    <div class="report-body">
-      <!-- Date + result hint -->
-      <div v-if="rangeLabel || studentCount" class="report-meta">
         <div v-if="rangeLabel" class="report-meta__date">
           <VIcon icon="tabler-calendar" size="18" />
           <span>{{ rangeLabel }}</span>
@@ -506,18 +518,20 @@ defineExpose({
               <td v-if="showClassColumn">{{ rowClassName(row) }}</td>
               <td>{{ formatGender(row.gender) }}</td>
               <td class="text-center text-success font-weight-medium">
-                {{ row.present }}
+                {{ markCell(row.present) }}
               </td>
               <td class="text-center text-warning font-weight-medium">
-                {{ row.late }}
+                {{ markCell(row.late) }}
               </td>
               <td class="text-center font-weight-medium">
-                {{ row.permission }}
+                {{ markCell(row.permission) }}
               </td>
               <td class="text-center text-error font-weight-medium">
-                {{ row.absent }}
+                {{ markCell(row.absent) }}
               </td>
-              <td class="text-center font-weight-bold">{{ row.total }}</td>
+              <td class="text-center font-weight-bold">
+                {{ countOrEmpty(row.total) }}
+              </td>
             </tr>
           </tbody>
         </VTable>
@@ -549,7 +563,9 @@ defineExpose({
               </div>
             </div>
             <div class="mobile-card__total">
-              <span class="mobile-card__total-num">{{ row.total }}</span>
+              <span class="mobile-card__total-num">{{
+                countOrEmpty(row.total)
+              }}</span>
               <span class="mobile-card__total-label">{{ t("Total") }}</span>
             </div>
           </div>
@@ -561,7 +577,7 @@ defineExpose({
               class="count-pill"
               :class="`count-pill--${cell.color}`"
             >
-              <span class="count-pill__num">{{ row[cell.key] }}</span>
+              <span class="count-pill__num">{{ markCell(row[cell.key]) }}</span>
               <span class="count-pill__label">{{ t(cell.label) }}</span>
             </div>
           </div>
@@ -623,6 +639,7 @@ defineExpose({
 
 .search-btn {
   min-height: 40px;
+  cursor: pointer;
 }
 
 /* Summary cards */
@@ -638,7 +655,7 @@ defineExpose({
   justify-content: space-between;
   gap: 8px;
   padding: 12px 14px;
-  border-radius: 12px;
+  border-radius: 5px;
   min-height: 72px;
 }
 
@@ -685,7 +702,7 @@ defineExpose({
 /* Desktop table */
 .table-wrap {
   border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 12px;
+  border-radius: 5px;
   overflow: hidden;
 }
 
