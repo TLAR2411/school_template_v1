@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api\App;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\APP\StudentClassResource;
+use App\Http\Resources\App\StudentClassResource;
 use App\Models\School\FamilyMember;
 use App\Models\School\Student;
 use App\Models\School\StudentClass;
