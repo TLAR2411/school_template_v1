@@ -487,7 +487,7 @@ class TelegramConnectionController extends Controller
         $payload = $this->connectPayload($token);
 
         return response()->json([
-            'status' => (bool) ($telegram?->telegram_chat_id || $telegram?->telegram_group_chat_id),
+            'connected' => (bool) ($telegram?->telegram_chat_id || $telegram?->telegram_group_chat_id),
             'personal_connected' => (bool) $telegram?->telegram_chat_id,
             'group_linked' => (bool) $telegram?->telegram_group_chat_id,
             'group_title' => $telegram?->telegram_group_title,
@@ -505,7 +505,9 @@ class TelegramConnectionController extends Controller
             ->delete();
 
         return response()->json([
-            'status' => $deleted ? true : false,
+            // 'status' => $deleted ? true : false,
+            'success' => true,
+    'disconnected' => (bool) $deleted,
         ]);
     }
 
