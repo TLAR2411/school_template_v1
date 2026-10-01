@@ -190,6 +190,7 @@ class TeacherController extends Controller
     {
         try {
             $teacher = Teacher::query()
+                ->withTelegramStatus()
                 ->whereBranch($this->getBranch())
                 ->whereCur($this->getCur())
                 ->filter($request->filter)

@@ -106,7 +106,40 @@ class Teacher extends Model
                     ->orWhere('name_en', 'like', '%' . $filters['search'] . '%')
                     ->orWhere('phone', 'like', '%' . $filters['search'] . '%');
             });
-        });
+        })->when(
+            isset($filters['telegram']) && $filters['telegram'] !== '' && $filters['telegram'] !== null,
+            function ($q) use ($filters) {
+                $connectedSql = '(EXISTS (
+                    SELECT 1 FROM telegram_users tu
+                    WHERE tu.user_id = teachers.user_id
+                      AND (
+                        (tu.telegram_chat_id IS NOT NULL AND tu.telegram_chat_id != \'\')
+                        OR (tu.telegram_group_chat_id IS NOT NULL AND tu.telegram_group_chat_id != \'\')
+                      )
+                ))';
+
+                if ($filters['telegram'] === 'connected') {
+                    $q->whereRaw($connectedSql);
+                } elseif ($filters['telegram'] === 'not_connected') {
+                    $q->whereRaw('NOT '.$connectedSql);
+                }
+            }
+        );
+    }
+
+    #[Scope]
+    public function withTelegramStatus($query)
+    {
+        return $query->selectRaw(
+            'teachers.*, (EXISTS (
+                SELECT 1 FROM telegram_users tu
+                WHERE tu.user_id = teachers.user_id
+                  AND (
+                    (tu.telegram_chat_id IS NOT NULL AND tu.telegram_chat_id != \'\')
+                    OR (tu.telegram_group_chat_id IS NOT NULL AND tu.telegram_group_chat_id != \'\')
+                  )
+            )) as telegram_connected'
+        );
     }
 
     #[Scope]
