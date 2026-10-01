@@ -8,7 +8,9 @@ use App\Http\Requests\AppLoginRequest;
 use App\Models\User;
 use Carbon\Carbon;
 use Laravel\Passport\Passport;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class LoginAppController extends Controller
 {
@@ -61,6 +63,52 @@ class LoginAppController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => $th->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function logout(Request $request)
+    {
+        $validated = $request->validate([
+            'device_token' => ['nullable', 'string', 'max:4096'],
+        ]);
+
+        try {
+            $user = $request->user();
+
+            $deletedDeviceTokens = DB::transaction(function () use ($user, $validated) {
+                $deleted = 0;
+
+                if (! empty($validated['device_token'])) {
+                    $deleted = DB::table('tbl_user_devices')
+                        ->where('user_id', $user->getAuthIdentifier())
+                        ->where('device_token', $validated['device_token'])
+                        ->delete();
+                }
+
+                $accessToken = $user->token();
+
+                if ($accessToken) {
+                    $accessToken->revoke();
+                }
+
+                return $deleted;
+            });
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Logged out successfully',
+                'deleted_device_tokens' => $deletedDeviceTokens,
+            ]);
+        } catch (\Throwable $exception) {
+            Log::error('App logout failed', [
+                'user_id' => $request->user()?->getAuthIdentifier(),
+                'exception' => $exception,
+            ]);
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Unable to log out',
             ], 500);
         }
     }

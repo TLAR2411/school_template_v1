@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\App\ListClassController;
 use App\Http\Controllers\Api\App\PermissionController;
 use App\Http\Controllers\Api\App\StudentController;
 use App\Http\Controllers\Api\App\TelegramController;
+use App\Http\Controllers\Api\App\TelegramConnectionController;
 use App\Http\Controllers\Api\App\UserDeviceTokenController;
 use Illuminate\Support\Facades\Route;
 
@@ -20,7 +21,13 @@ Route::post('permission-request/{id}/{type}', [PermissionController::class, 'upd
 Route::post('notifications/permission', [FcmController::class, 'sendNotification']);
 Route::post('notifications/attendance', [FcmController::class, 'sendNotiToAtt']);
 Route::post('telegram/webhook', [TelegramController::class, 'webhook']);
+Route::post('telegram-connection/webhook', [TelegramConnectionController::class, 'webhook']);
 Route::group(['middleware' => ['auth:api']], function () {
+    Route::get('telegram-connection/link', [TelegramConnectionController::class, 'getTelegramConnectLink']);
+    Route::get('telegram-connection/status', [TelegramConnectionController::class, 'checkConnectTelegram']);
+    Route::post('telegram-connection/disconnect', [TelegramConnectionController::class, 'disConnectBot']);
+    Route::post('telegram-connection/unlink-group', [TelegramConnectionController::class, 'unlinkTelegramGroup']);
+    Route::post('logout', [LoginAppController::class, 'logout']);
     Route::post('telegram/permission-request', [TelegramController::class, 'sendPermissionRequest']);
     Route::post('device-token', [UserDeviceTokenController::class, 'saveDeviceToken']);
     Route::get('permissions', [PermissionController::class, 'sendPermission']);
