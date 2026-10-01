@@ -25,6 +25,8 @@ Route::post('telegram-connection/webhook', [TelegramConnectionController::class,
 Route::group(['middleware' => ['auth:api']], function () {
     Route::get('telegram-connection/link', [TelegramConnectionController::class, 'getTelegramConnectLink']);
     Route::get('telegram-connection/status', [TelegramConnectionController::class, 'checkConnectTelegram']);
+    Route::post('telegram-connection/send-message', [TelegramConnectionController::class, 'sendMessageToChat'])
+        ->middleware('permission:view-teachers');
     Route::post('telegram-connection/disconnect', [TelegramConnectionController::class, 'disConnectBot']);
     Route::post('telegram-connection/unlink-group', [TelegramConnectionController::class, 'unlinkTelegramGroup']);
     Route::post('logout', [LoginAppController::class, 'logout']);

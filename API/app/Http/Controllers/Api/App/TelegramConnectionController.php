@@ -193,7 +193,7 @@ class TelegramConnectionController extends Controller
 
         $this->sendMessage(
             $chatId,
-            '✅ Personal chat connected. To print to a shop group, open CamTool Settings → Telegram → Add bot to group.'
+            '✅ សូមអរគុណសម្រាប់ការតភ្ជាប់ DIS Notification សម្រាប់ផ្តល់ដំណឹងជូនព័ត៍មានថ្មីៗពីសាលា។'
         );
 
         return response()->json(['ok' => true]);
@@ -348,81 +348,46 @@ class TelegramConnectionController extends Controller
     public function sendMessageToChat(Request $request)
     {
         $validated = $request->validate([
-            'comment_id' => ['required', 'integer'],
-            'text' => ['nullable', 'string', 'max:4096'],
+            'teacher_id' => ['required', 'integer', 'exists:teachers,id'],
+            'message' => ['required', 'string', 'max:4096'],
         ]);
 
-        $userData = DB::table('telegram_users')
-            ->where('user_id', $this->userId())
-            ->first();
+        $teacher = DB::table('teachers')
+            ->where('id', $validated['teacher_id'])
+            ->where('is_active', true)
+            ->whereNull('deleted_at')
+            ->first(['id', 'user_id']);
 
-        if (! $userData) {
+        if (! $teacher) {
             return response()->json([
                 'success' => false,
-                'message' => 'Telegram chat is not connected',
+                'message' => 'Active teacher not found',
             ], 404);
         }
 
-        $targetChatId = $userData->telegram_group_chat_id ?: $userData->telegram_chat_id;
-
-        if (! $targetChatId) {
+        if (! $teacher->user_id) {
             return response()->json([
                 'success' => false,
-                'message' => 'No Telegram print destination. Connect personal chat or link a group.',
-            ], 404);
+                'message' => 'Teacher does not have a user account',
+            ], 422);
         }
 
-        $comment = DB::table('facebook_comments')
-            ->where('id', $validated['comment_id'])
-            ->first();
+        $sent = $this->notifyUserPrintDestination(
+            (int) $teacher->user_id,
+            $this->escapeTelegramHtml($validated['message'])
+        );
 
-        if (! $comment) {
+        if (! $sent) {
             return response()->json([
                 'success' => false,
-                'message' => 'Comment not found',
-            ], 404);
+                'message' => 'Teacher has not connected Telegram or the message could not be sent',
+            ], 422);
         }
-
-        $commentDate = $comment->comment_created_time
-            ?? $comment->created_at
-            ?? now()->format('Y-m-d H:i:s');
-
-        $note = $validated['text'] ?? $comment->note ?? '-';
-
-        $telegramMessage = implode("\n", [
-            '<b>ការបញ្ជាទិញ និង Print Draft</b>',
-            '',
-            '#️⃣ កូដបញ្ជាទិញ : '.$comment->id,
-            '📅 ថ្ងៃទីបញ្ជាទិញ : '.$commentDate,
-            '👤 ឈ្មោះអ្នកបញ្ជាទិញ : <code>'.$this->escapeTelegramHtml($comment->from_name ?? '-').'</code>',
-            '✅ កូដ ឬ Comment : '.$this->escapeTelegramHtml($comment->message ?? '-'),
-            '✍️ Note : '.$this->escapeTelegramHtml($note),
-        ]);
-
-        $result = $this->sendTelegramRequest('sendMessage', [
-            'chat_id' => $targetChatId,
-            'text' => $telegramMessage,
-            'parse_mode' => 'HTML',
-        ]);
-
-        if (($result['ok'] ?? false) !== true) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Telegram send failed',
-                'telegram_error' => $result,
-            ], 500);
-        }
-
-        DB::table('facebook_comments')
-            ->where('id', $validated['comment_id'])
-            ->update([
-                'is_draft_print' => 1,
-            ]);
 
         return response()->json([
             'success' => true,
-            'destination' => $userData->telegram_group_chat_id ? 'group' : 'personal',
-            'group_title' => $userData->telegram_group_title,
+            'message' => 'Message sent to teacher successfully',
+            'teacher_id' => $teacher->id,
         ]);
     }
 
