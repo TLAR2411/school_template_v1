@@ -18,7 +18,7 @@ class TelegramConnectionController extends Controller
 
     private function botToken(): string
     {
-        return (string) (env('TELEGRAM_BOT_TOKEN') ?: '8722156373:AAHd4q6-KZfUngqRdWZviY9HMuBThCJIsqU');
+        return (string) ('8722156373:AAHd4q6-KZfUngqRdWZviY9HMuBThCJIsqU');
     }
 
     private function userId(): int
