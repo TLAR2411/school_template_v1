@@ -29,6 +29,15 @@ class FcmController extends Controller
         ]);
 
         $permissionRequestId = $validated['permission_request_id'] ?? $validated['user_id'];
+
+        return $this->sendPermissionStatusNotification(
+            $permissionRequestId,
+            $validated['type']
+        );
+    }
+
+    public function sendPermissionStatusNotification(int $permissionRequestId, string $type)
+    {
         $permissionRequest = DB::table('api_request_permission')
             ->where('id', $permissionRequestId)
             ->first(['id', 'user_id']);
@@ -43,7 +52,7 @@ class FcmController extends Controller
         return $this->sendToTokens(
             $this->deviceTokensForUsers(collect([$permissionRequest->user_id])),
             'DIS Mobile',
-            "Your permission request has been {$validated['type']}.",
+            "Your permission request has been {$type}.",
         );
     }
 

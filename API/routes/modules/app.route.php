@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\App\LoginAppController;
 use App\Http\Controllers\Api\App\ListClassController;
 use App\Http\Controllers\Api\App\PermissionController;
 use App\Http\Controllers\Api\App\StudentController;
+use App\Http\Controllers\Api\App\TelegramController;
 use App\Http\Controllers\Api\App\UserDeviceTokenController;
 use Illuminate\Support\Facades\Route;
 
@@ -18,7 +19,9 @@ Route::get('permission-request/{id}', [PermissionController::class, 'viewrequest
 Route::post('permission-request/{id}/{type}', [PermissionController::class, 'updaterequest']);
 Route::post('notifications/permission', [FcmController::class, 'sendNotification']);
 Route::post('notifications/attendance', [FcmController::class, 'sendNotiToAtt']);
+Route::post('telegram/webhook', [TelegramController::class, 'webhook']);
 Route::group(['middleware' => ['auth:api']], function () {
+    Route::post('telegram/permission-request', [TelegramController::class, 'sendPermissionRequest']);
     Route::post('device-token', [UserDeviceTokenController::class, 'saveDeviceToken']);
     Route::get('permissions', [PermissionController::class, 'sendPermission']);
     Route::post('permission-request', [PermissionController::class, 'requestpermission']);
