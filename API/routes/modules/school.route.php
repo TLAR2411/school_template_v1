@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\Api\App\LoginAppController;
+use App\Http\Controllers\Api\App\TelegramConnectionController;
+use App\Http\Controllers\Api\App\TelegramController;
 use App\Http\Controllers\Api\School\StudentController;
 use Illuminate\Support\Facades\Route;
 
@@ -20,6 +23,8 @@ use App\Http\Controllers\Api\School\AssessmentController;
 use App\Http\Controllers\Api\School\AttendanceController;
 use App\Http\Controllers\Api\School\ScoreEntryController;
 use App\Http\Controllers\Api\School\ScoreEntryEnglishController;
+use App\Http\Controllers\Api\School\ScoreEntryStatusController;
+use App\Http\Controllers\Api\School\GradeSubjectOrderController;
 use App\Http\Controllers\Api\School\DayController;
 use App\Http\Controllers\Api\School\FamilyController;
 use App\Http\Controllers\Api\School\TeacherClassController;
@@ -30,6 +35,9 @@ use App\Http\Controllers\Api\School\ShiftController;
 use App\Http\Controllers\Api\School\ScheduleController;
 use App\Http\Controllers\Api\School\TermPeriodController;
 use App\Http\Controllers\Api\School\TermPeriodListController;
+use App\Http\Controllers\Api\School\DashboardController;
+
+Route::post('school-dashboard', [DashboardController::class, 'summary']);
 
 Route::post('attendance-list', [AttendanceController::class, 'getAttendanceData'])->middleware('permission:view-attendance|add-attendance');
 Route::post('attendance-store', [AttendanceController::class, 'store'])->middleware('permission:add-attendance|edit-attendance');
@@ -38,6 +46,13 @@ Route::post('attendance-report', [AttendanceController::class, 'report'])->middl
 Route::post('score-list', [ScoreEntryController::class, 'getScoreData'])->middleware('permission:view-score-entry|add-score-entry');
 Route::post('score-store', [ScoreEntryController::class, 'store'])->middleware('permission:add-score-entry|edit-score-entry');
 Route::post('score-month-header-store', [ScoreEntryController::class, 'saveMonthHeader'])->middleware('permission:add-score-entry|edit-score-entry');
+
+Route::post('score-entry-setting-show', [ScoreEntryStatusController::class, 'showSetting'])->middleware('permission:view-score-entry|approve-score-entry');
+Route::post('score-entry-setting-store', [ScoreEntryStatusController::class, 'storeSetting'])->middleware('permission:approve-score-entry|edit-score-entry');
+Route::post('score-entry-status-list', [ScoreEntryStatusController::class, 'statusList'])->middleware('permission:view-score-entry|approve-score-entry');
+
+Route::post('grade-subject-order-show', [GradeSubjectOrderController::class, 'show'])->middleware('permission:view-score-entry|add-score-entry');
+Route::post('grade-subject-order-store', [GradeSubjectOrderController::class, 'store'])->middleware('permission:add-score-entry|edit-score-entry');
 
 Route::post('score-english-list', [ScoreEntryEnglishController::class, 'getScoreData'])->middleware('permission:view-score-entry|add-score-entry');
 Route::post('score-english-store', [ScoreEntryEnglishController::class, 'store'])->middleware('permission:add-score-entry|edit-score-entry');
@@ -188,3 +203,13 @@ Route::post('schedules-delete', [ScheduleController::class, 'delete'])->middlewa
 Route::post('days-all', [DayController::class, 'all']);
 Route::post('shift-all', [ShiftController::class, 'all']);
 Route::post('months-all', [MonthController::class, 'all']);
+Route::post('telegram/webhook', [TelegramController::class, 'webhook']);
+Route::post('telegram-connection/webhook', [TelegramConnectionController::class, 'webhook']);
+Route::get('telegram-connection/link', [TelegramConnectionController::class, 'getTelegramConnectLink']);
+Route::get('telegram-connection/status', [TelegramConnectionController::class, 'checkConnectTelegram']);
+Route::post('telegram-connection/send-message', [TelegramConnectionController::class, 'sendMessageToChat'])
+    ->middleware('permission:view-teachers');
+Route::post('telegram-connection/disconnect', [TelegramConnectionController::class, 'disConnectBot']);
+Route::post('telegram-connection/unlink-group', [TelegramConnectionController::class, 'unlinkTelegramGroup']);
+Route::post('logout', [LoginAppController::class, 'logout']);
+Route::post('telegram/permission-request', [TelegramController::class, 'sendPermissionRequest']);
