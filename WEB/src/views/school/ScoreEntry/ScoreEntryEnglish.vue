@@ -226,13 +226,50 @@ function cell(row, col) {
   return item;
 }
 
+/** Keep digits + one decimal only (block letters). Over max is allowed — cell turns red. */
+function sanitizeScoreInput(value) {
+  let s = String(value).replace(/[^\d.]/g, "");
+  const dot = s.indexOf(".");
+  if (dot !== -1) {
+    s = s.slice(0, dot + 1) + s.slice(dot + 1).replace(/\./g, "");
+  }
+  return s;
+}
+
+/** Block letter keys; allow digits, decimal, and navigation/edit keys. */
+function onScoreKeydown(e) {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const allowed = [
+    "Backspace",
+    "Delete",
+    "Tab",
+    "Escape",
+    "Enter",
+    "ArrowLeft",
+    "ArrowRight",
+    "ArrowUp",
+    "ArrowDown",
+    "Home",
+    "End",
+  ];
+  if (allowed.includes(e.key)) return;
+  if (e.key.length === 1 && !/[0-9.]/.test(e.key)) {
+    e.preventDefault();
+  }
+}
+
 function onScoreInput(row, col, value) {
   const item = cell(row, col);
   if (value === "" || value == null) {
     item.score = null;
     return;
   }
-  const n = Number(value);
+  const cleaned = sanitizeScoreInput(value);
+  if (cleaned === "" || cleaned === ".") {
+    item.score = null;
+    return;
+  }
+  const n = Number(cleaned);
   item.score = Number.isNaN(n) ? null : n;
 }
 
@@ -741,9 +778,11 @@ onMounted(async () => {
                     density="compact"
                     hide-details
                     variant="outlined"
+                    inputmode="decimal"
                     :color="isOverMax(row, col) ? 'error' : 'primary'"
                     :min="0"
                     @update:model-value="onScoreInput(row, col, $event)"
+                    @keydown="onScoreKeydown"
                   />
                 </td>
                 <td v-if="section.show_total" class="text-center computed-cell">

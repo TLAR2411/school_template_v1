@@ -50,6 +50,11 @@ class Teacher extends Model
         return $this->hasMany(TeacherBranch::class, 'teacher_id', 'id');
     }
 
+    public function teacherClasses()
+    {
+        return $this->hasMany(TeacherClass::class, 'teacher_id', 'id');
+    }
+
     #[Scope]
     public function whereBranch($query, string $branchId)
     {

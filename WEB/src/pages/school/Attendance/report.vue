@@ -14,5 +14,6 @@ definePage({
 </script>
 
 <template>
-  <AttendanceReport />
+  <!-- Month only — must pick grade, class, month, subject -->
+  <AttendanceReport variant="report" />
 </template>

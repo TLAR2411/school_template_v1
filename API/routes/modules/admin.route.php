@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\BranchController;
 use App\Http\Controllers\Api\CurrencyController;
 use App\Http\Controllers\Api\ReportTemplateController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\App\TelegramConnectionController;
 use Illuminate\Support\Facades\Route;
 
 Route::post("admin-dashboards", [AdminDashboardController::class, "index"]);
@@ -69,3 +70,8 @@ Route::post("permissions-delete", [PermissionController::class, "delete"])->midd
 
 Route::post("report-templates-show", [ReportTemplateController::class, "show"]);
 Route::post("report-templates-save", [ReportTemplateController::class, "save"]);
+
+Route::get('telegram-connection/status', [TelegramConnectionController::class, 'checkConnectTelegram']);
+Route::get('telegram-connection/link', [TelegramConnectionController::class, 'getTelegramConnectLink']);
+Route::post('telegram-connection/disconnect', [TelegramConnectionController::class, 'disConnectBot']);
+Route::post('telegram-connection/unlink-group', [TelegramConnectionController::class, 'unlinkTelegramGroup']);

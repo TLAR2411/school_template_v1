@@ -85,9 +85,6 @@ class SubjectSeeder extends Seeder
                 'cur_id' => 2,
                 "edu_id" => 3,
             ],
-         
-         
-
             [
                 'name_en' => "Language Art",
                 'name_kh' => 'ភាសា',

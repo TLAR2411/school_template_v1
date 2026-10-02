@@ -1,7 +1,11 @@
 # Attendance report
 
-Optional filters: **class**, **one date**, **date range**, **month**, **session**.  
-Counts **present / late / permission / absent** (one mark per student + day + session).
+Optional filters depend on **page variant**:
+
+| Page | Variant | Period | Required | Detail |
+|------|---------|--------|----------|--------|
+| Attendance Report | `report` | **Month only** | Grade, class, month, subject | Full table + lists |
+| School Dashboard | `dashboard` | **Today** (changeable) | Date (grade/class optional) | 3 cards: Present / Permission / Absent (no table) |
 
 ---
 
@@ -207,7 +211,7 @@ await load({ class_id: 12, date: "2026-09-24" });
 
 | Want to change | File | Edit this |
 |----------------|------|-----------|
-| Present / late / absent rules | `API/app/Services/School/AttendanceReportService.php` | `statusOf()` |
+| Present / late / absent rules | `API/app/Services/School/AttendanceReportService.php` | `statusOf()` (subject) / `statusCame()` (day/month) |
 | Extra filters (teacher, approved…) | same | `sessionQuery()` |
 | Month + academic year | same | `resolveDates()` / `monthRange()` |
 | API request fields | `AttendanceController::report()` | `$request->validate([...])` |
@@ -217,8 +221,12 @@ await load({ class_id: 12, date: "2026-09-24" });
 | Menu link | `WEB/src/navigation/vertical/school/index.js` | Attendance Report item |
 | i18n labels | `WEB/src/plugins/i18n/locales/en.json` + `km.json` | `"Attendance Report"`, … |
 
-Count rule today: **permission → late → absent → present**.  
-If any subject that session is absent → session counts as absent (`MIN(is_present)`).
+Count rules:
+
+| Filter | Rule |
+|--------|------|
+| **No subject** (day / month) | Student **came** if any subject is present. On-time present → present; else late → late; else permission → permission; else absent. Example: Present + Absent → **Present**. |
+| **Subject selected** | That subject only: **permission → late → absent → present**. Absent on that subject → **Absent**. |
 
 ---
 

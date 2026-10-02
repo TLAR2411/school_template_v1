@@ -402,6 +402,32 @@ export const getSubjectClass = async (classId) => {
     }
 };
 
+/** Distinct subjects on a class schedule. Pass dayId (1=Mon…7=Sun) to match that weekday only. */
+export const getSubjectsFromSchedule = async (classId, dayId = null) => {
+    if (!classId) return [];
+    try {
+        const response = await api.post("schedules-list", { class_id: classId });
+        const rows = response.data?.data ?? [];
+        const byId = new Map();
+        for (const row of rows) {
+            if (dayId != null && Number(row.day_id) !== Number(dayId)) continue;
+            const subject = row.subject;
+            const sid = row.subject_id ?? subject?.id;
+            if (!sid || byId.has(Number(sid))) continue;
+            byId.set(Number(sid), {
+                id: Number(sid),
+                name_en: subject?.name_en ?? row.subject_name_en ?? "",
+                name_kh: subject?.name_kh ?? row.subject_name_kh ?? "",
+                symbol: subject?.symbol ?? null,
+            });
+        }
+        return [...byId.values()];
+    } catch (error) {
+        console.error("Server error: ", error);
+        return [];
+    }
+};
+
 export const getShifts = async () => {
     try {
         const response = await api.post("shift-all");
@@ -418,6 +444,20 @@ export const getMonths = async () => {
     } catch (error) {
         console.error("Server error: ", error);
         return [];
+    }
+};
+
+/** School dashboard overview counts (students, teachers, classes, grades, edu levels). */
+export const getSchoolDashboard = async () => {
+    try {
+        const response = await api.post("school-dashboard");
+        if (!response.data?.status) {
+            throw new Error(response.data?.message || "Dashboard failed");
+        }
+        return response.data.data;
+    } catch (error) {
+        console.error("Server error: ", error);
+        throw error;
     }
 };
 

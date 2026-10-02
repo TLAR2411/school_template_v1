@@ -4,17 +4,23 @@ namespace App\Http\Controllers\Api\School;
 
 use App\Http\Controllers\Controller;
 use App\Models\School\Classes;
+use App\Models\School\GradeSubjectOrder;
 use App\Models\School\ScoreEntry;
 use App\Models\School\ScoreMonthHeader;
 use App\Models\School\StudentClass;
 use App\Models\School\Subject;
 use App\Models\School\Teacher;
 use App\Models\School\TeacherClass;
+use App\Services\School\ScoreEntryDeadlineService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class ScoreEntryController extends Controller
 {
+    public function __construct(
+        private ScoreEntryDeadlineService $deadlineService,
+    ) {}
+
     /** Load sheet: subjects + students. Empty scores → blank cells. */
     public function getScoreData(Request $request)
     {
@@ -105,6 +111,14 @@ class ScoreEntryController extends Controller
                 ];
             })->values();
 
+            $window = $this->deadlineService->windowForMonth(
+                $monthId,
+                $yearId,
+                $curId,
+                $this->resolveBranchId(),
+                $this->deadlineService->userCanOverride(auth('api')->user())
+            );
+
             return response()->json([
                 'status' => true,
                 'data'   => [
@@ -115,6 +129,8 @@ class ScoreEntryController extends Controller
                     'divisor'  => $header?->divisor,
                     'subjects' => $subjects,
                     'students' => $students,
+                    'can_edit' => !$window['locked'] || $window['can_override'],
+                    'window'   => $window,
                 ],
             ]);
         } catch (\Throwable $th) {
@@ -150,6 +166,25 @@ class ScoreEntryController extends Controller
         $branchId  = $this->resolveBranchId();
         $userId    = auth('api')->id();
         $teacherId = Teacher::query()->where('user_id', $userId)->value('id');
+
+        $lock = $this->deadlineService->shouldBlockSave(
+            $monthId,
+            $yearId,
+            $curId,
+            $branchId,
+            auth('api')->user()
+        );
+        if ($lock['block']) {
+            $close = $lock['window']['close_date'] ?? null;
+
+            return response()->json([
+                'status'  => false,
+                'message' => $close
+                    ? "Score entry closed after {$close}. Teachers cannot save this month anymore."
+                    : 'Score entry is locked for this month.',
+                'window'  => $lock['window'],
+            ], 403);
+        }
 
         // Only students enrolled in this class
         $allowedStudents = StudentClass::query()
@@ -273,6 +308,25 @@ class ScoreEntryController extends Controller
                 ? (float) $data['divisor']
                 : null;
 
+            $lock = $this->deadlineService->shouldBlockSave(
+                $monthId,
+                $yearId,
+                $curId,
+                $this->resolveBranchId(),
+                auth('api')->user()
+            );
+            if ($lock['block']) {
+                $close = $lock['window']['close_date'] ?? null;
+
+                return response()->json([
+                    'status'  => false,
+                    'message' => $close
+                        ? "Score entry closed after {$close}. Teachers cannot save this month anymore."
+                        : 'Score entry is locked for this month.',
+                    'window'  => $lock['window'],
+                ], 403);
+            }
+
             $header = ScoreMonthHeader::query()
                 ->where('class_id', $classId)
                 ->where('month_id', $monthId)
@@ -360,7 +414,45 @@ class ScoreEntryController extends Controller
             ->filter(fn ($s) => $s['has_grading'] || collect($s['children'])->isNotEmpty())
             ->values();
 
-        return $this->filterTeacherSubjects($subjects, $class->id);
+        $subjects = $this->filterTeacherSubjects($subjects, $class->id);
+
+        return $this->applyGradeSubjectOrder($subjects, (int) $class->grade_id);
+    }
+
+    /**
+     * Reorder parent subjects + children using grade_subject_orders.
+     * Missing ids keep relative API order at the end.
+     */
+    private function applyGradeSubjectOrder($subjects, int $gradeId)
+    {
+        $curId = $this->resolveCurId();
+
+        $sortMap = GradeSubjectOrder::query()
+            ->where('grade_id', $gradeId)
+            ->when(
+                $curId,
+                fn ($q) => $q->where('cur_id', $curId),
+                fn ($q) => $q->whereNull('cur_id')
+            )
+            ->pluck('sort', 'subject_id');
+
+        if ($sortMap->isEmpty()) {
+            return $subjects;
+        }
+
+        $sorted = collect($subjects)
+            ->map(function ($subject) use ($sortMap) {
+                $children = collect($subject['children'] ?? [])
+                    ->sortBy(fn ($c) => $sortMap[$c['id']] ?? PHP_INT_MAX)
+                    ->values()
+                    ->all();
+                $subject['children'] = $children;
+                return $subject;
+            })
+            ->sortBy(fn ($s) => $sortMap[$s['id']] ?? PHP_INT_MAX)
+            ->values();
+
+        return $sorted;
     }
 
     /** One subject → JSON for the page. */

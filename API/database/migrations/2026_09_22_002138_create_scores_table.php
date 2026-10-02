@@ -17,6 +17,7 @@ return new class extends Migration
             $table->integer('class_id');
             $table->integer('subject_id');          // the column they type into
             $table->integer('month_id');
+            
             $table->integer('year_id')->nullable();
             $table->integer('grading_rule_id')->nullable(); // max_score + activity (Exam/Homework)
             $table->integer('assessment_id')->nullable();   // English only; Khmer = null

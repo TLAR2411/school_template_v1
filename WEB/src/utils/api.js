@@ -24,6 +24,8 @@ const NON_CANCELLABLE_ENDPOINTS = [
   'permissions-delete',
   'students-delete',
   'students-delete-many',
+  'score-entry-setting-store',
+  'score-entry-setting-show',
 ];
 
 /**

@@ -15,6 +15,7 @@ import NavbarYear from "./NavbarYear.vue";
 import { VerticalNavLayout } from "@layouts";
 import { usePartStore } from "@/stores/partStore";
 import NavbarClearAppDataButton from "./NavbarClearAppDataButton.vue";
+import NavbarTelegramConnect from "./NavbarTelegramConnect.vue";
 
 const loanNavItems = useLoanNavigation();
 const configStore = useLayoutConfigStore();
@@ -76,6 +77,7 @@ onUnmounted(() => {
           <NavbarCurriculum v-if="setting.system_part === 'school'" />
           <NavbarBranches />
         </div>
+        <NavbarTelegramConnect />
 
         <NavBarI18n
           style="margin-right: -12px"
@@ -85,6 +87,7 @@ onUnmounted(() => {
           "
           :languages="themeConfig.app.i18n.langConfig"
         />
+
         <NavbarClearAppDataButton
           style="margin-right: -12px; margin-left: 6px"
         />

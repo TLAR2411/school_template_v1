@@ -11,13 +11,19 @@ use App\Models\School\Year;
 use Carbon\Carbon;
 
 /**
- * Attendance report: optional class / date / range / month.
- * Counts one mark per student + class + date + session (subjects are merged).
+ * Attendance report: optional class / date / range / month / subject.
+ * Counts one mark per student + class + date + session.
+ *
+ * No subject filter — “did they come?” across subjects that session:
+ *   any on-time present → present; else any late → late;
+ *   else any permission → permission; else absent.
+ *
+ * With subject_id — that subject’s exact marks (permission → late → absent → present).
  *
  * Only students who have rows in `attendances` are returned (no empty enroll padding).
  *
  * Short customize map (see docs/attendance-report.md):
- *   statusOf()     — present / late / permission / absent rules
+ *   statusOf() / statusCame() — present / late / permission / absent rules
  *   sessionQuery() — add extra filters (teacher, approved, …)
  *   resolveDates() — change date / month / year logic
  *
@@ -28,6 +34,7 @@ class AttendanceReportService
     public function run(array $filters, $branchId = null, $curId = null, $yearId = null): array
     {
         [$dateFrom, $dateTo] = $this->resolveDates($filters, $yearId);
+        $bySubject = !empty($filters['subject_id']);
 
         $sessions = $this->sessionQuery($filters, $dateFrom, $dateTo, $branchId, $curId)
             ->get();
@@ -38,11 +45,18 @@ class AttendanceReportService
         $permissionEvents = [];
 
         foreach ($sessions as $row) {
-            $status = self::statusOf(
-                (bool) $row->is_permission,
-                (bool) $row->is_late,
-                (bool) $row->is_present
-            );
+            $status = $bySubject
+                ? self::statusOf(
+                    (bool) $row->is_permission,
+                    (bool) $row->is_late,
+                    (bool) $row->is_present
+                )
+                : self::statusCame(
+                    (bool) $row->is_permission,
+                    (bool) $row->is_late,
+                    (bool) $row->is_present,
+                    (bool) ($row->is_on_time ?? false)
+                );
             self::bump($summary, $status);
 
             $sid = (int) $row->student_id;
@@ -84,7 +98,7 @@ class AttendanceReportService
         ];
     }
 
-    /** permission → late → absent → present */
+    /** Subject mode: permission → late → absent → present */
     public static function statusOf(bool $isPermission, bool $isLate, bool $isPresent): string
     {
         if ($isPermission) {
@@ -98,6 +112,29 @@ class AttendanceReportService
         }
 
         return 'present';
+    }
+
+    /**
+     * Day/month mode (no subject): student “came” if any subject is present.
+     * on-time present → present; else late → late; else permission → permission; else absent.
+     */
+    public static function statusCame(
+        bool $isPermission,
+        bool $isLate,
+        bool $isPresent,
+        bool $isOnTime = false
+    ): string {
+        if ($isOnTime || ($isPresent && !$isLate)) {
+            return 'present';
+        }
+        if ($isPresent) {
+            return 'late';
+        }
+        if ($isPermission) {
+            return 'permission';
+        }
+
+        return 'absent';
     }
 
     public static function emptyCounts(): array
@@ -177,20 +214,27 @@ class AttendanceReportService
      * One row per student + class + date + session.
      * Scope by class branch/curriculum (not only attendances.cur_id) so older
      * rows with null cur_id/branch_id still appear in a date range.
+     *
+     * No subject: MAX(present) — any subject present means they came.
+     * With subject: MIN(present) — that subject’s absence stays absent.
      */
     private function sessionQuery(array $filters, string $dateFrom, string $dateTo, $branchId, $curId)
     {
+        $bySubject = !empty($filters['subject_id']);
+        $presentAgg = $bySubject ? 'MIN' : 'MAX';
+
         return Attendance::query()
             ->from('attendances')
-            ->selectRaw('
+            ->selectRaw("
                 attendances.student_id,
                 attendances.class_id,
                 attendances.date,
                 attendances.session,
                 MAX(CASE WHEN attendances.is_permission = 1 THEN 1 ELSE 0 END) as is_permission,
                 MAX(CASE WHEN attendances.is_late = 1 THEN 1 ELSE 0 END) as is_late,
-                MIN(CASE WHEN attendances.is_present = 1 THEN 1 ELSE 0 END) as is_present
-            ')
+                {$presentAgg}(CASE WHEN attendances.is_present = 1 THEN 1 ELSE 0 END) as is_present,
+                MAX(CASE WHEN attendances.is_present = 1 AND attendances.is_late = 0 AND attendances.is_permission = 0 THEN 1 ELSE 0 END) as is_on_time
+            ")
             ->when($branchId && $branchId !== '*', function ($q) use ($branchId) {
                 $q->where(function ($inner) use ($branchId) {
                     $inner->where('attendances.branch_id', $branchId)

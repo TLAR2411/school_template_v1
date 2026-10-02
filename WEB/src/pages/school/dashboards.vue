@@ -2,6 +2,8 @@
 import { onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { auth } from "@/utils/auth";
+import SchoolDashboardOverview from "@/views/school/Dashboard/SchoolDashboardOverview.vue";
+import AttendanceReport from "@/views/school/Attendance/AttendanceReport.vue";
 
 definePage({
   meta: {
@@ -22,7 +24,14 @@ onMounted(() => {
 </script>
 
 <template>
-  <div>
-    hello world
+  <div class="school-dashboard">
+    <SchoolDashboardOverview />
+
+    <!-- Attendance overview for today -->
+    <AttendanceReport
+      variant="dashboard"
+      :is-back="false"
+      :auto-load="true"
+    />
   </div>
 </template>

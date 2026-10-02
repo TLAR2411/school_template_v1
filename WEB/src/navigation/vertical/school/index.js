@@ -30,6 +30,13 @@ export default [
         permission: "view-score-entry",
     },
     {
+        title: "Score Entry Status",
+        to: { name: "school-score-entry-status" },
+        icon: { icon: "tabler-clipboard-list" },
+        permission: "view-score-entry",
+        hideForRoles: ["teacher"],
+    },
+    {
         title: "Schedule",
         to: { name: "school-schedule" },
         icon: { icon: "tabler-calendar" },

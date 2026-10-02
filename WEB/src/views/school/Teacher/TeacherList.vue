@@ -42,9 +42,14 @@ const headers = computed(() => {
     },
 
     { title: t("Nation"), key: "nation", visible: true },
-    { title: t("email"), key: "email", visible: true },
+    // { title: t("email"), key: "email", visible: true },
     { title: t("phone"), key: "phone", visible: true },
     { title: t("Teaching"), key: "is_teaching", visible: true },
+    {
+      title: t("Telegram"),
+      key: "telegram_connected",
+      visible: true,
+    },
     {
       title: t("Status"),
       key: "is_active",
@@ -97,11 +102,17 @@ const onEdit = async (item) => {
 };
 
 const onView = async (item) => {
-  router.push({ name: "global-teachers-detail-id", params: { id: item.id } });
+  router.push({ name: "school-teacher-detail-id", params: { id: item.id } });
 };
 
-const filter = ref({ search: null });
+const filter = ref({ search: null, telegram: null });
 const isImportDialogVisible = ref(false);
+
+const telegramFilterItems = computed(() => [
+  { title: t("All"), value: null },
+  { title: t("Connected"), value: "connected" },
+  { title: t("Not connected"), value: "not_connected" },
+]);
 
 const onImported = () => {
   dataTableRef.value?.reload();
@@ -169,6 +180,19 @@ onMounted(() => {});
             clear-icon="tabler-x"
           />
         </VCol>
+        <VCol cols="12" sm="6" md="4" lg="2">
+          <AppAutocomplete
+            v-model="filter.telegram"
+            :items="telegramFilterItems"
+            item-title="title"
+            item-value="value"
+            :placeholder="t('Telegram')"
+            prepend-inner-icon="tabler-brand-telegram"
+            clearable
+            hide-details
+            clear-icon="tabler-x"
+          />
+        </VCol>
       </VRow>
     </template>
 
@@ -186,6 +210,15 @@ onMounted(() => {});
       <AppStatusChip
         :color="item.is_teaching == true ? 'success' : 'error'"
         :label="item.is_teaching == true ? t('Teaching') : t('Not Teaching')"
+      />
+    </template>
+
+    <template #[`item.telegram_connected`]="{ item }">
+      <AppStatusChip
+        :color="Number(item.telegram_connected) ? 'success' : 'warning'"
+        :label="
+          Number(item.telegram_connected) ? t('Connected') : t('Not connected')
+        "
       />
     </template>
 

@@ -164,6 +164,7 @@ Route::post("teachers-import", [TeacherController::class, "import"])->middleware
 Route::post("teachers-import-template", [TeacherController::class, "importTemplate"])->middleware('permission:import-teachers');
 Route::post("teachers-list", [TeacherController::class, "list"])->middleware('permission:view-teachers');
 Route::post("teachers-show", [TeacherController::class, "show"]);
+Route::post("teachers-detail", [TeacherController::class, "detail"])->middleware('permission:view-teachers');
 Route::post("teachers-update", [TeacherController::class, "update"])->middleware('permission:edit-teachers');
 Route::post("teachers-all", [TeacherController::class, "all"]);
 Route::post("teachers-disable", [TeacherController::class, "disable"])->middleware('permission:change-active-teachers');

@@ -5,10 +5,14 @@ namespace App\Http\Controllers\Api\School;
 use App\Http\Controllers\Controller;
 use App\Models\School\Teacher;
 use App\Models\School\TeacherBranch;
+use App\Models\School\TeacherClass;
+use App\Models\School\Year;
+use App\Models\Core\Branch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Exports\TeacherImportTemplateExport;
 use App\Http\Resources\DataTableResource;
+use App\Http\Resources\School\TeacherDetailResource;
 use App\Models\Auth\Role;
 use App\Models\Auth\UserBranch;
 use App\Services\School\TeacherImportService;
@@ -190,7 +194,7 @@ class TeacherController extends Controller
     {
         try {
             $teacher = Teacher::query()
-                ->withTelegramStatus()
+                // ->withTelegramStatus()
                 ->whereBranch($this->getBranch())
                 ->whereCur($this->getCur())
                 ->filter($request->filter)
@@ -248,6 +252,173 @@ class TeacherController extends Controller
                 'status' => false,
             ], 500);
         }
+    }
+
+    /**
+     * Teacher profile + year-scoped class/subject assignments and branch coverage.
+     */
+    public function detail(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|integer|exists:teachers,id',
+        ]);
+
+        try {
+            $yearId = $this->getYear();
+            $teacher = Teacher::query()
+                ->with(['user.branch:id,name_en,name_kh,abbr'])
+                ->findOrFail($request->id);
+
+            $branches = $this->resolveTeacherBranches($teacher);
+            $classes = $this->buildTeacherClasses($teacher->id, $yearId);
+
+            $classBranchIds = collect($classes)->pluck('branch_id')->filter()->unique()->values();
+            $stats = [
+                'class_total' => count($classes),
+                'subject_total' => collect($classes)->sum(fn ($c) => count($c['subjects'] ?? [])),
+                'branch_total' => max(count($branches), $classBranchIds->count()),
+                'classload_total' => collect($classes)->where('is_classload', true)->count(),
+                'assistant_total' => collect($classes)->where('is_assisstant', true)->count(),
+            ];
+
+            $year = null;
+            if ($yearId && $yearId !== '*') {
+                $yearModel = Year::query()->select('id', 'name')->find($yearId);
+                if ($yearModel) {
+                    $year = ['id' => $yearModel->id, 'name' => $yearModel->name];
+                }
+            }
+
+            return response()->json([
+                'status' => true,
+                'data' => new TeacherDetailResource($teacher, $branches, $classes, $stats, $year),
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Branches the teacher belongs to (single user.branch or multi user_branches).
+     */
+    private function resolveTeacherBranches(Teacher $teacher): array
+    {
+        $user = $teacher->user;
+        if (!$user) {
+            return [];
+        }
+
+        if ((int) $teacher->manage_branch === 2) {
+            $branchIds = UserBranch::where('user_id', $user->id)->pluck('branch_id');
+
+            return Branch::query()
+                ->whereIn('id', $branchIds)
+                ->select('id', 'name_en', 'name_kh', 'abbr')
+                ->orderBy('name_en')
+                ->get()
+                ->map(fn ($b) => [
+                    'id' => $b->id,
+                    'name_en' => $b->name_en,
+                    'name_kh' => $b->name_kh,
+                    'abbr' => $b->abbr,
+                ])
+                ->values()
+                ->all();
+        }
+
+        if ($user->branch) {
+            return [[
+                'id' => $user->branch->id,
+                'name_en' => $user->branch->name_en,
+                'name_kh' => $user->branch->name_kh,
+                'abbr' => $user->branch->abbr,
+            ]];
+        }
+
+        if ($user->branch_id) {
+            $branch = Branch::query()
+                ->select('id', 'name_en', 'name_kh', 'abbr')
+                ->find($user->branch_id);
+
+            if ($branch) {
+                return [[
+                    'id' => $branch->id,
+                    'name_en' => $branch->name_en,
+                    'name_kh' => $branch->name_kh,
+                    'abbr' => $branch->abbr,
+                ]];
+            }
+        }
+
+        return [];
+    }
+
+    /**
+     * Group teacher_class rows by class for the selected academic year.
+     */
+    private function buildTeacherClasses(int $teacherId, $yearId): array
+    {
+        $rows = TeacherClass::query()
+            ->where('teacher_id', $teacherId)
+            ->where('is_active', true)
+            ->whereHas('class', function ($q) use ($yearId) {
+                $q->where('is_active', true)
+                    ->when($yearId && $yearId !== '*', fn ($qq) => $qq->where('year_id', $yearId));
+            })
+            ->with([
+                'subject:id,name_en,name_kh,symbol',
+                'class:id,name_en,name_kh,symbol,grade_id,year_id,branch_id,room_id,shift_id,is_active',
+                'class.grade:id,name_en,name_kh,grade_level',
+                'class.branch:id,name_en,name_kh,abbr',
+                'class.room:id,room_number',
+                'class.shift:id,name_en,name_kh',
+                'class.year:id,name',
+            ])
+            ->orderBy('class_id')
+            ->get();
+
+        return $rows
+            ->groupBy('class_id')
+            ->map(function ($items) {
+                $first = $items->first();
+                $class = $first->class;
+
+                return [
+                    'class_id' => $first->class_id,
+                    'name_en' => $class?->name_en,
+                    'name_kh' => $class?->name_kh,
+                    'symbol' => $class?->symbol,
+                    'year_id' => $class?->year_id,
+                    'year_name' => $class?->year?->name,
+                    'branch_id' => $class?->branch_id,
+                    'branch_name_en' => $class?->branch?->name_en,
+                    'branch_name_kh' => $class?->branch?->name_kh,
+                    'branch_abbr' => $class?->branch?->abbr,
+                    'grade_level' => $class?->grade?->grade_level,
+                    'grade_name_en' => $class?->grade?->name_en,
+                    'grade_name_kh' => $class?->grade?->name_kh,
+                    'room_number' => $class?->room?->room_number,
+                    'shift_name_en' => $class?->shift?->name_en,
+                    'shift_name_kh' => $class?->shift?->name_kh,
+                    'is_classload' => (bool) $items->contains('is_classload', true),
+                    'is_assisstant' => (bool) $items->contains('is_assisstant', true),
+                    'subjects' => $items->map(fn ($row) => [
+                        'id' => $row->id,
+                        'subject_id' => $row->subject_id,
+                        'name_en' => $row->subject?->name_en,
+                        'name_kh' => $row->subject?->name_kh,
+                        'symbol' => $row->subject?->symbol,
+                        'is_classload' => (bool) $row->is_classload,
+                        'is_assisstant' => (bool) $row->is_assisstant,
+                    ])->values()->all(),
+                ];
+            })
+            ->sortBy(fn ($c) => $c['name_en'] ?? $c['name_kh'] ?? '')
+            ->values()
+            ->all();
     }
 
 

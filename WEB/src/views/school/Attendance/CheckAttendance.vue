@@ -172,7 +172,13 @@ function defaultRowCell() {
 }
 
 function togglePresent(row) {
-  if (row.is_permission) return;
+  // From permission → switch to present (one click)
+  if (row.is_permission) {
+    row.is_permission = false;
+    row.is_present = true;
+    row.is_late = false;
+    return;
+  }
   row.is_present = !row.is_present;
   if (!row.is_present) row.is_late = false;
 }
@@ -189,7 +195,8 @@ function togglePermission(row) {
     row.is_present = false;
     row.is_late = false;
   } else {
-    row.is_present = CONFIG.defaultPresent;
+    // Unselect permission → leave as absent; user can click Present if needed
+    row.is_present = false;
     row.is_late = false;
   }
 }
@@ -228,8 +235,8 @@ function approveCellStyle(row) {
   return { background: CONFIG.colors.empty };
 }
 
-function canClickPresent(row) {
-  return !row.is_permission;
+function canClickPresent() {
+  return true;
 }
 function canClickLate(row) {
   return !row.is_permission && row.is_present;
@@ -377,10 +384,27 @@ function selectSession(code) {
 }
 
 function pickDefaultActiveSubject() {
+  const subjectsList = subjectsForDay.value;
+  const currentId = formSearch.value.subject_id;
+
+  // Drop stale selection if that subject is not on today's list
+  if (
+    currentId != null &&
+    !subjectsList.some((s) => Number(s.id) === Number(currentId))
+  ) {
+    formSearch.value.subject_id = null;
+  }
+
+  // Exactly one subject → auto-select so teachers don't forget
+  if (!formSearch.value.subject_id && subjectsList.length === 1) {
+    formSearch.value.subject_id = Number(subjectsList[0].id);
+  }
+
   if (formSearch.value.subject_id) {
     activeTabSubjectId.value = Number(formSearch.value.subject_id);
     return;
   }
+
   const list = periods.value.length ? periods.value : allPeriods.value;
   activeTabSubjectId.value = list.length ? Number(list[0].subject_id) : null;
 }
@@ -529,6 +553,7 @@ watch(
 watch(
   () => formSearch.value.subject_id,
   (newSub) => {
+    if (syncingFromApi) return;
     if (newSub) {
       loadAttendance();
     }
@@ -538,6 +563,7 @@ watch(
 watch(
   () => formSearch.value.subject_id,
   (sid) => {
+    if (syncingFromApi) return;
     if (sid != null) {
       persistActiveTabToCache();
       activeTabSubjectId.value = Number(sid);
@@ -843,7 +869,7 @@ onMounted(async () => {
               >
                 {{
                   !row.is_permission && !row.is_present
-                    ? t("Did not come")
+                    ? t("Don't come")
                     : t("Present")
                 }}
               </button>

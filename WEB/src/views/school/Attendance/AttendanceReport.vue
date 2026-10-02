@@ -2,9 +2,11 @@
 /**
  * Drop-in attendance report
  * -------------------------
- * <AttendanceReport />
- * <AttendanceReport :class-id="12" lock-class :is-back="false" />
- * <AttendanceReport period="month" :month-id="9" />
+ * Report page (month only, required filters):
+ *   <AttendanceReport variant="report" />
+ *
+ * Dashboard (summary only — grade/class + today, changeable):
+ *   <AttendanceReport variant="dashboard" :is-back="false" :auto-load="true" />
  *
  * Parent can call:  reportRef.value?.search()
  */
@@ -13,25 +15,50 @@ import { useI18n } from "vue-i18n";
 import { useDisplay } from "vuetify";
 import AppCard from "@/components/AppCard.vue";
 import { useAttendanceReport } from "@/composables/useAttendanceReport";
-import { getClasses, getGrades, getMonths } from "@/services/dataService";
+import {
+  getClasses,
+  getGrades,
+  getMonths,
+  getSubjectsFromSchedule,
+} from "@/services/dataService";
 import { useSettingStore } from "@/stores/settingStore";
 import formatGender from "@/utils/formater/formatGender";
 
 const props = defineProps({
+  /** report = month detail; dashboard = today summary (grade/class + date) */
+  variant: {
+    type: String,
+    default: "report",
+    validator: (v) => ["report", "dashboard"].includes(v),
+  },
   classId: { type: [Number, String], default: null },
   lockClass: { type: Boolean, default: false },
-  period: { type: String, default: "date" }, // date | range | month
+  period: { type: String, default: null }, // date | range | month
   date: { type: String, default: null },
   dateFrom: { type: String, default: null },
   dateTo: { type: String, default: null },
   monthId: { type: [Number, String], default: null },
   session: { type: String, default: null },
+  subjectId: { type: [Number, String], default: null },
   hideFilters: { type: Boolean, default: false },
-  autoLoad: { type: Boolean, default: true },
+  autoLoad: { type: Boolean, default: false },
   isBack: { type: Boolean, default: true },
 });
 
-const PERIODS = ["date", "range", "month"];
+const isReportMode = computed(() => props.variant === "report");
+const isDashboardMode = computed(() => props.variant === "dashboard");
+
+/** Periods allowed for this page variant */
+const allowedPeriods = computed(() =>
+  isReportMode.value ? ["month"] : ["date"],
+);
+
+function defaultPeriod() {
+  if (props.period && allowedPeriods.value.includes(props.period)) {
+    return props.period;
+  }
+  return isReportMode.value ? "month" : "date";
+}
 
 const STATS = [
   {
@@ -52,10 +79,15 @@ const STATS = [
 ];
 
 const COUNT_CELLS = [
-  { key: "present", label: "Present", color: "success" },
-  { key: "late", label: "Late", color: "warning" },
-  { key: "permission", label: "Ask Permission", color: "orange" },
-  { key: "absent", label: "Absent", color: "error" },
+  { key: "present", label: "Present", color: "success", pill: "success" },
+  { key: "late", label: "Late", color: "warning", pill: "warning" },
+  {
+    key: "permission",
+    label: "Ask Permission",
+    color: "#ef6c00",
+    pill: "orange",
+  },
+  { key: "absent", label: "Absent", color: "error", pill: "error" },
 ];
 
 const { t, locale } = useI18n();
@@ -76,16 +108,22 @@ const {
 const grades = ref([]);
 const allClasses = ref([]);
 const months = ref([]);
+const subjects = ref([]);
+/** Avoid filter watchers firing search/subject load before first mount finishes. */
+const ready = ref(false);
+/** Snapshot of last searched payload — used to show “click Search” when dirty. */
+const lastSearchedKey = ref("");
 
 const filters = ref({
   grade_id: null,
   class_id: props.classId ? Number(props.classId) : null,
-  period: PERIODS.includes(props.period) ? props.period : "date",
+  period: defaultPeriod(),
   date: props.date || today(),
   date_from: props.dateFrom || null,
   date_to: props.dateTo || null,
   month_id: props.monthId ? Number(props.monthId) : null,
   session: props.session || null,
+  subject_id: props.subjectId ? Number(props.subjectId) : null,
 });
 
 const sessions = computed(() => [
@@ -99,7 +137,10 @@ const classTitle = computed(() =>
 );
 
 const filteredClasses = computed(() => {
-  if (!filters.value.grade_id) return allClasses.value;
+  if (!filters.value.grade_id) {
+    // Report: force grade first; dashboard: show all classes
+    return isReportMode.value ? [] : allClasses.value;
+  }
   return allClasses.value.filter((c) => c.grade_id == filters.value.grade_id);
 });
 
@@ -108,7 +149,7 @@ const selectedClass = computed(() =>
 );
 
 const pageTitle = computed(() => {
-  const base = t("Attendance Report");
+  const base = isDashboardMode.value ? t("Attendance") : t("Attendance Report");
   const name = className(selectedClass.value);
   return name ? `${base} — ${name}` : base;
 });
@@ -124,13 +165,270 @@ const showClassColumn = computed(
   () => !props.lockClass && !filters.value.class_id,
 );
 
-const studentCount = computed(() => students.value.length);
+const studentCount = computed(() => filteredStudents.value.length);
+
+/** Dashboard / report: filter student list by status */
+const statusFilter = ref("all");
+
+const STATUS_FILTERS = computed(() => [
+  { value: "all", label: t("All"), color: "primary" },
+  { value: "present", label: t("Present"), color: "success" },
+  { value: "permission", label: t("Ask Permission"), color: "orange" },
+  { value: "absent", label: t("Absent"), color: "error" },
+]);
+
+/** Come = present or late; permission; stop/absent */
+const filteredStudents = computed(() => {
+  const list = students.value;
+  const f = statusFilter.value;
+  if (f === "all") return list;
+  if (f === "present") {
+    return list.filter((r) => Number(r.present) > 0 || Number(r.late) > 0);
+  }
+  if (f === "permission") {
+    return list.filter((r) => Number(r.permission) > 0);
+  }
+  if (f === "absent") {
+    return list.filter((r) => Number(r.absent) > 0);
+  }
+  return list;
+});
+
+function setStatusFilter(value) {
+  statusFilter.value = statusFilter.value === value ? "all" : value;
+}
+
+/** Dashboard cards: present / permission / absent (same layout as design) */
+const dashboardPresent = computed(() => {
+  const date = dateFrom.value || filters.value.date;
+  return students.value
+    .filter((r) => Number(r.present) > 0 || Number(r.late) > 0)
+    .map((r) => ({
+      ...r,
+      date,
+      session: filters.value.session || null,
+    }));
+});
+
+const dashboardPanels = computed(() => [
+  {
+    key: "present",
+    title: t("Present students"),
+    icon: "tabler-circle-check",
+    tone: "present",
+    items: dashboardPresent.value,
+  },
+  {
+    key: "permission",
+    title: t("Permission students"),
+    icon: "tabler-file-text",
+    tone: "permission",
+    items: studentsPermission.value,
+  },
+  {
+    key: "absent",
+    title: t("Absent students"),
+    icon: "tabler-circle-x",
+    tone: "absent",
+    items: studentsAbsent.value,
+  },
+]);
+
+/** All = 3 cards; Present/Permission/Absent = that card only */
+const visibleDashboardPanels = computed(() => {
+  if (statusFilter.value === "all") return dashboardPanels.value;
+  return dashboardPanels.value.filter((p) => p.key === statusFilter.value);
+});
+
+const dashboardPanelCols = computed(() =>
+  statusFilter.value === "all" ? 4 : 12,
+);
+
+/** Mutually exclusive day status → percentages (class or whole school). */
+const dashboardRate = computed(() => {
+  let come = 0;
+  let permission = 0;
+  let absent = 0;
+
+  for (const row of students.value) {
+    if (Number(row.present) > 0 || Number(row.late) > 0) come++;
+    else if (Number(row.permission) > 0) permission++;
+    else if (Number(row.absent) > 0) absent++;
+  }
+
+  const total = come + permission + absent;
+  const pct = (n) => (total > 0 ? Math.round((n / total) * 1000) / 10 : 0);
+
+  return {
+    come,
+    permission,
+    absent,
+    total,
+    comePct: pct(come),
+    permissionPct: pct(permission),
+    absentPct: pct(absent),
+  };
+});
+
+const dashboardScopeLabel = computed(() => {
+  if (filters.value.class_id && selectedClass.value) {
+    return className(selectedClass.value);
+  }
+  return t("Whole school");
+});
+
+const dashboardChartSeries = computed(() => {
+  const r = dashboardRate.value;
+  return [r.come, r.permission, r.absent];
+});
+
+const dashboardChartOptions = computed(() => ({
+  labels: [t("Present"), t("Ask Permission"), t("Absent")],
+  colors: ["#28C76F", "#EF6C00", "#EA5455"],
+  chart: {
+    type: "donut",
+    fontFamily: "inherit",
+  },
+  legend: {
+    position: "bottom",
+    fontSize: "13px",
+    fontWeight: 600,
+  },
+  dataLabels: {
+    enabled: true,
+    formatter: (val) => `${Math.round(val)}%`,
+    style: { fontSize: "12px", fontWeight: 700 },
+    dropShadow: { enabled: false },
+  },
+  plotOptions: {
+    pie: {
+      donut: {
+        size: "62%",
+        labels: {
+          show: true,
+          name: {
+            show: true,
+            fontSize: "13px",
+            fontWeight: 600,
+            offsetY: -4,
+          },
+          value: {
+            show: true,
+            fontSize: "22px",
+            fontWeight: 800,
+            offsetY: 4,
+            formatter: () => String(dashboardRate.value.total),
+          },
+          total: {
+            show: true,
+            label: t("Students"),
+            fontSize: "12px",
+            fontWeight: 600,
+            formatter: () => String(dashboardRate.value.total),
+          },
+        },
+      },
+    },
+  },
+  stroke: { width: 2 },
+  tooltip: {
+    y: {
+      formatter: (val, opts) => {
+        const total = dashboardRate.value.total || 1;
+        const p = Math.round((Number(val) / total) * 1000) / 10;
+        return `${val} (${p}%)`;
+      },
+    },
+  },
+  responsive: [
+    {
+      breakpoint: 600,
+      options: {
+        chart: { height: 260 },
+        legend: { position: "bottom" },
+      },
+    },
+  ],
+}));
+
+const dashboardRateCards = computed(() => {
+  const r = dashboardRate.value;
+  return [
+    {
+      key: "present",
+      label: t("Present"),
+      count: r.come,
+      pct: r.comePct,
+      tone: "present",
+      icon: "tabler-circle-check",
+    },
+    {
+      key: "permission",
+      label: t("Ask Permission"),
+      count: r.permission,
+      pct: r.permissionPct,
+      tone: "permission",
+      icon: "tabler-file-text",
+    },
+    {
+      key: "absent",
+      label: t("Absent"),
+      count: r.absent,
+      pct: r.absentPct,
+      tone: "absent",
+      icon: "tabler-circle-x",
+    },
+  ];
+});
+
+function sessionLabel(session) {
+  if (session === "AM") return t("Morning");
+  if (session === "PM") return t("Afternoon");
+  return "";
+}
 
 function today() {
   const d = new Date();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${d.getFullYear()}-${m}-${day}`;
+}
+
+/** Parse Y-m-d / d-m-Y / d/m/Y without UTC shift. */
+function parseLocalDate(value) {
+  if (!value) return null;
+  const raw = String(value).trim();
+  let m = raw.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+  if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  m = raw.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})/);
+  if (m) return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+  const d = new Date(raw);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/** ISO weekday: 1=Mon … 7=Sun (matches schedules.day_id). */
+function isoWeekday(date) {
+  const d = parseLocalDate(date);
+  if (!d) return null;
+  const w = d.getDay();
+  return w === 0 ? 7 : w;
+}
+
+/** Subject needs class; single date also needs a date (day schedule). */
+const canSelectSubject = computed(() => {
+  if (!filters.value.class_id) return false;
+  if (filters.value.period === "date") return !!filters.value.date;
+  return true;
+});
+
+/** Filters changed since last Search — remind user to click Search. */
+const filtersDirty = computed(() => {
+  if (!lastSearchedKey.value || !canSearch()) return false;
+  return searchKey(payload()) !== lastSearchedKey.value;
+});
+
+function searchKey(body) {
+  return JSON.stringify(body);
 }
 
 function pickLabel(item, enKey = "name_en", khKey = "name_kh") {
@@ -166,9 +464,9 @@ function studentInitial(row) {
   return name.trim().charAt(0).toUpperCase();
 }
 
-/** 0 → blank, any count → ✓ */
+/** 0 → blank, any count → truthy mark for status button */
 function markCell(n) {
-  return Number(n) > 0 ? "✓" : "";
+  return Number(n) > 0;
 }
 
 function countOrEmpty(n) {
@@ -187,6 +485,7 @@ function payload() {
   const body = {
     class_id: f.class_id || null,
     session: f.session || null,
+    subject_id: f.subject_id || null,
   };
 
   if (f.period === "date") body.date = f.date;
@@ -201,21 +500,77 @@ function payload() {
 
 function canSearch() {
   const f = filters.value;
-  if (f.period === "date") return !!f.date;
-  if (f.period === "range") return !!(f.date_from && f.date_to);
-  if (f.period === "month") return !!f.month_id;
-  return false;
+
+  // Report page: grade + class + month + subject required
+  if (isReportMode.value) {
+    return !!(f.grade_id && f.class_id && f.month_id && f.subject_id);
+  }
+
+  // Dashboard: today (or chosen day) — class optional
+  return !!f.date;
 }
 
+/**
+ * Search rule:
+ * - Report: click Search after filters
+ * - Dashboard: auto on open / when date·class·grade change
+ */
 async function search() {
   if (!canSearch()) return;
-  await load(payload());
+  const body = payload();
+  // Dashboard summary: never filter by subject
+  if (isDashboardMode.value) body.subject_id = null;
+  await load(body);
+  lastSearchedKey.value = searchKey(body);
+  statusFilter.value = "all";
 }
 
 async function loadOptions() {
   grades.value = (await getGrades()) || [];
   allClasses.value = (await getClasses()) || [];
   months.value = (await getMonths()) || [];
+}
+
+/**
+ * Date → subjects for that weekday only (like Check Attendance).
+ * Range / month → all subjects on the class schedule.
+ */
+async function loadScheduleSubjects() {
+  const classId = filters.value.class_id;
+  if (!classId) {
+    subjects.value = [];
+    if (!props.subjectId) filters.value.subject_id = null;
+    return;
+  }
+
+  let dayId = null;
+  if (filters.value.period === "date") {
+    dayId = isoWeekday(filters.value.date);
+    if (!dayId) {
+      subjects.value = [];
+      if (!props.subjectId) filters.value.subject_id = null;
+      return;
+    }
+  }
+
+  subjects.value = (await getSubjectsFromSchedule(classId, dayId)) || [];
+
+  const selected = filters.value.subject_id;
+  if (
+    selected &&
+    !subjects.value.some((s) => Number(s.id) === Number(selected))
+  ) {
+    filters.value.subject_id = null;
+  }
+
+  // Single-date + exactly one subject → auto-select
+  if (
+    filters.value.period === "date" &&
+    !filters.value.subject_id &&
+    subjects.value.length === 1
+  ) {
+    filters.value.subject_id = Number(subjects.value[0].id);
+  }
 }
 
 watch(
@@ -225,25 +580,59 @@ watch(
     settingStore.curriculum_id,
   ],
   async () => {
+    if (!ready.value) return;
     await loadOptions();
     if (props.lockClass && props.classId) {
       filters.value.class_id = Number(props.classId);
     }
-    if (props.autoLoad && canSearch()) await search();
+    await loadScheduleSubjects();
+    // Context changed → refresh once
+    if ((props.autoLoad || isDashboardMode.value) && canSearch())
+      await search();
   },
 );
 
 watch(
   () => filters.value.grade_id,
-  () => {
+  async () => {
     if (props.lockClass) return;
     filters.value.class_id = null;
+    filters.value.subject_id = null;
+    if (isDashboardMode.value && ready.value && canSearch()) await search();
+  },
+);
+
+watch(
+  () => filters.value.class_id,
+  async () => {
+    if (!ready.value) return;
+    if (!props.subjectId) filters.value.subject_id = null;
+    if (isReportMode.value) await loadScheduleSubjects();
+    if (isDashboardMode.value && canSearch()) await search();
+  },
+);
+
+watch(
+  () => [filters.value.date, filters.value.period],
+  async ([date, period], [prevDate, prevPeriod]) => {
+    if (!ready.value) return;
+    if (isReportMode.value) {
+      if (!props.subjectId && (date !== prevDate || period !== prevPeriod)) {
+        filters.value.subject_id = null;
+      }
+      await loadScheduleSubjects();
+      return;
+    }
+    // Dashboard: changing day refreshes summary
+    if (isDashboardMode.value && canSearch()) await search();
   },
 );
 
 onMounted(async () => {
   await loadOptions();
   if (props.classId) filters.value.class_id = Number(props.classId);
+  if (isReportMode.value) await loadScheduleSubjects();
+  ready.value = true;
   if (props.autoLoad && canSearch()) await search();
 });
 
@@ -277,7 +666,7 @@ defineExpose({
               :item-title="gradeTitle"
               item-value="id"
               :placeholder="t('Grade')"
-              clearable
+              :clearable="!isReportMode"
               hide-details
             />
           </VCol>
@@ -289,105 +678,69 @@ defineExpose({
               :item-title="classTitle"
               item-value="id"
               :placeholder="t('Class')"
-              clearable
+              :clearable="!isReportMode"
               hide-details
+              :disabled="isReportMode && !filters.grade_id"
             />
           </VCol>
 
-          <VCol cols="6" sm="4" md="2">
-            <AppAutocomplete
-              v-model="filters.session"
-              :items="sessions"
-              item-title="title"
-              item-value="value"
-              :placeholder="t('Session')"
-              clearable
-              hide-details
-            />
-          </VCol>
-
-          <VCol cols="12" sm="12" md="5">
-            <div class="period-toggle">
-              <button
-                v-for="item in PERIODS"
-                :key="item"
-                type="button"
-                class="period-toggle__btn"
-                :class="{
-                  'period-toggle__btn--active': filters.period === item,
-                }"
-                @click="filters.period = item"
-              >
-                {{ periodLabel(item) }}
-              </button>
-            </div>
-          </VCol>
-        </VRow>
-      </div>
-    </template>
-
-    <div class="report-body">
-      <!-- Date + result hint -->
-      <div v-if="rangeLabel || studentCount" class="report-meta">
-        <VRow>
-          <VCol v-if="filters.period === 'date'" cols="12" sm="6" md="2">
-            <AppDateTimePicker
-              v-model="filters.date"
-              :placeholder="t('Date')"
-            />
-          </VCol>
-
-          <template v-if="filters.period === 'range'">
-            <VCol cols="6" sm="3" md="2">
-              <AppDateTimePicker
-                v-model="filters.date_from"
-                :placeholder="t('From date')"
-              />
-            </VCol>
-            <VCol cols="6" sm="3" md="2">
-              <AppDateTimePicker
-                v-model="filters.date_to"
-                :placeholder="t('To date')"
-              />
-            </VCol>
-          </template>
-
-          <VCol v-if="filters.period === 'month'" cols="12" sm="6" md="2">
+          <!-- Report: month + subject required in filter bar -->
+          <VCol v-if="isReportMode" cols="6" sm="4" md="2">
             <AppAutocomplete
               v-model="filters.month_id"
               :items="months"
               :item-title="(m) => pickLabel(m)"
               item-value="id"
               :placeholder="t('Month')"
-              clearable
               hide-details
             />
           </VCol>
 
-          <VCol cols="12" sm="6" md="2">
-            <VIcon
+          <VCol v-if="isReportMode" cols="6" sm="4" md="2">
+            <AppAutocomplete
+              v-model="filters.subject_id"
+              :items="subjects"
+              :item-title="(s) => pickLabel(s)"
+              item-value="id"
+              :placeholder="t('Subject')"
+              hide-details
+              :disabled="!canSelectSubject || !subjects.length"
+            />
+          </VCol>
+
+          <VCol v-if="isDashboardMode" cols="6" sm="4" md="2">
+            <AppDateTimePicker
+              v-model="filters.date"
+              :placeholder="t('Date')"
+            />
+          </VCol>
+
+          <VCol v-if="isReportMode" cols="12" sm="4" md="2">
+            <VBtn
               color="primary"
-              variant="tonal"
+              :variant="filtersDirty ? 'flat' : 'tonal'"
               class="search-btn"
               :block="smAndDown"
-              :disabled="!canSearch()"
+              :disabled="!canSearch() || isLoading"
+              :loading="isLoading"
               @click="search"
-              icon="tabler-search"
             >
-              <!-- <VIcon icon="tabler-search" start />
-              {{ t("Search") }} -->
-            </VIcon>
+              <VIcon icon="tabler-search" start />
+              {{ t("Search") }}
+            </VBtn>
           </VCol>
         </VRow>
-        <div v-if="rangeLabel" class="report-meta__date">
-          <VIcon icon="tabler-calendar" size="18" />
-          <span>{{ rangeLabel }}</span>
-        </div>
-        <div
-          v-if="studentCount"
-          class="report-meta__count text-medium-emphasis"
-        >
-          {{ studentCount }} {{ t("Students") }}
+      </div>
+    </template>
+
+    <div class="report-body">
+      <!-- Dashboard: date footer + status cards (no table) -->
+      <div v-if="isDashboardMode" class="report-meta">
+        <div class="report-meta__footer">
+          <div v-if="rangeLabel" class="report-meta__date">
+            <VIcon icon="tabler-calendar" size="18" />
+            <span>{{ rangeLabel }}</span>
+          </div>
         </div>
       </div>
 
@@ -395,24 +748,229 @@ defineExpose({
         {{ error }}
       </VAlert>
 
-      <!-- Summary cards -->
-      <div class="stat-grid mb-4">
-        <div
-          v-for="stat in STATS"
-          :key="stat.key"
-          class="stat-card"
-          :class="`stat-card--${stat.color}`"
+      <template v-if="isDashboardMode">
+        <VAlert
+          v-if="!isLoading && lastSearchedKey && !students.length"
+          type="info"
+          variant="tonal"
+          class="mb-3"
         >
-          <div class="stat-card__text">
-            <div class="stat-card__label">{{ t(stat.label) }}</div>
-            <div class="stat-card__value">{{ summary[stat.key] }}</div>
-          </div>
-          <VIcon :icon="stat.icon" class="stat-card__icon" size="26" />
-        </div>
-      </div>
+          {{ t("No attendance data") }}
+        </VAlert>
 
-      <!-- Quick lists: who was absent / had permission -->
-      <VRow
+        <template
+          v-else-if="
+            students.length ||
+            studentsAbsent.length ||
+            studentsPermission.length
+          "
+        >
+          <!-- Percentages + donut (class or whole school) -->
+          <div class="dashboard-rate mb-4">
+            <div class="dashboard-rate__head">
+              <div>
+                <!-- <div class="dashboard-rate__title">
+                  {{ t("Attendance rate") }}
+                </div> -->
+                <!-- <div class="dashboard-rate__scope text-medium-emphasis">
+                  {{ dashboardScopeLabel }}
+                  <span v-if="rangeLabel"> · {{ rangeLabel }}</span>
+                </div> -->
+              </div>
+            </div>
+
+            <VRow dense class="align-center">
+              <VCol cols="12" md="9">
+                <div class="status-filters mb-3">
+                  <button
+                    v-for="item in STATUS_FILTERS"
+                    :key="item.value"
+                    type="button"
+                    class="status-chip"
+                    :class="[
+                      `status-chip--${item.color}`,
+                      { 'status-chip--active': statusFilter === item.value },
+                    ]"
+                    @click="statusFilter = item.value"
+                  >
+                    {{ item.label }}
+                  </button>
+                </div>
+
+                <VRow dense class="dashboard-attendance d-flex justify-end">
+                  <VCol
+                    v-for="panel in visibleDashboardPanels"
+                    :key="panel.key"
+                    cols="12"
+                    :md="dashboardPanelCols"
+                  >
+                    <div
+                      class="event-panel"
+                      :class="`event-panel--${panel.tone}`"
+                    >
+                      <div class="event-panel__title">
+                        <VIcon :icon="panel.icon" size="18" />
+                        {{ panel.title }}
+                        <span class="event-panel__badge">{{
+                          panel.items.length
+                        }}</span>
+                      </div>
+                      <div class="event-panel__list">
+                        <div
+                          v-if="!panel.items.length"
+                          class="event-row event-row--empty text-medium-emphasis"
+                        >
+                          {{ t("No students") }}
+                        </div>
+                        <div
+                          v-for="(item, i) in panel.items"
+                          :key="`${panel.key}-${item.student_id}-${item.date}-${item.session}-${i}`"
+                          class="event-row"
+                        >
+                          <div class="event-row__name">
+                            {{ studentName(item) }}
+                          </div>
+                          <div class="event-row__meta">
+                            <span v-if="item.date">{{ item.date }}</span>
+                            <span v-if="sessionLabel(item.session)">
+                              · {{ sessionLabel(item.session) }}
+                            </span>
+                            <span v-if="rowClassName(item)">
+                              · {{ rowClassName(item) }}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </VCol>
+                </VRow>
+              </VCol>
+
+              <VCol cols="12" md="3" class="d-flex justify-center">
+                <VueApexCharts
+                  type="donut"
+                  height="280"
+                  :options="dashboardChartOptions"
+                  :series="dashboardChartSeries"
+                />
+              </VCol>
+
+              <!-- <VCol cols="12" md="7">
+                <div class="dashboard-rate__cards">
+                  <button
+                    v-for="card in dashboardRateCards"
+                    :key="card.key"
+                    type="button"
+                    class="rate-card"
+                    :class="[
+                      `rate-card--${card.tone}`,
+                      { 'rate-card--active': statusFilter === card.key },
+                    ]"
+                    @click="statusFilter = card.key"
+                  >
+                    <div class="rate-card__top">
+                      <VIcon :icon="card.icon" size="18" />
+                      <span>{{ card.label }}</span>
+                    </div>
+                    <div class="rate-card__pct">{{ card.pct }}%</div>
+                    <div class="rate-card__count">
+                      {{ card.count }} / {{ dashboardRate.total }}
+                      {{ t("Students") }}
+                    </div>
+                  </button>
+                </div>
+              </VCol> -->
+            </VRow>
+          </div>
+        </template>
+      </template>
+
+      <!-- Report page: stats + table detail -->
+      <template v-if="isReportMode">
+        <!-- Report: hint when required filters missing -->
+        <div class="report-meta">
+          <div v-if="filtersDirty" class="report-meta__hint text-warning">
+            <VIcon icon="tabler-info-circle" size="16" />
+            <span>{{ t("Filters changed — click Search") }}</span>
+          </div>
+          <VAlert
+            v-else-if="!canSearch()"
+            type="info"
+            variant="tonal"
+            density="compact"
+            class="mb-0"
+          >
+            {{ t("Select grade, class, month and subject") }}
+          </VAlert>
+          <div class="report-meta__footer">
+            <div v-if="rangeLabel" class="report-meta__date">
+              <VIcon icon="tabler-calendar" size="18" />
+              <span>{{ rangeLabel }}</span>
+            </div>
+            <div
+              v-if="studentCount"
+              class="report-meta__count text-medium-emphasis"
+            >
+              {{ studentCount }} {{ t("Students") }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Summary cards (click to filter students) -->
+        <div class="stat-grid mb-4">
+          <div
+            v-for="stat in STATS"
+            :key="stat.key"
+            class="stat-card"
+            :class="[
+              `stat-card--${stat.color}`,
+              {
+                'stat-card--clickable': [
+                  'present',
+                  'permission',
+                  'absent',
+                  'total',
+                ].includes(stat.key),
+                'stat-card--active':
+                  (stat.key === 'total' && statusFilter === 'all') ||
+                  statusFilter === stat.key,
+              },
+            ]"
+            @click="
+              stat.key === 'total'
+                ? (statusFilter = 'all')
+                : ['present', 'permission', 'absent'].includes(stat.key)
+                  ? setStatusFilter(stat.key)
+                  : null
+            "
+          >
+            <div class="stat-card__text">
+              <div class="stat-card__label">{{ t(stat.label) }}</div>
+              <div class="stat-card__value">{{ summary[stat.key] }}</div>
+            </div>
+            <VIcon :icon="stat.icon" class="stat-card__icon" size="26" />
+          </div>
+        </div>
+
+        <!-- Status filter chips -->
+        <div v-if="students.length" class="status-filters mb-3">
+          <button
+            v-for="item in STATUS_FILTERS"
+            :key="item.value"
+            type="button"
+            class="status-chip"
+            :class="[
+              `status-chip--${item.color}`,
+              { 'status-chip--active': statusFilter === item.value },
+            ]"
+            @click="statusFilter = item.value"
+          >
+            {{ item.label }}
+          </button>
+        </div>
+
+        <!-- Quick lists: who was absent / had permission -->
+        <!-- <VRow
         v-if="studentsAbsent.length || studentsPermission.length"
         class="mb-4"
         dense
@@ -482,107 +1040,151 @@ defineExpose({
             </div>
           </div>
         </VCol>
-      </VRow>
+      </VRow> -->
 
-      <VAlert v-if="!isLoading && !students.length" type="info" variant="tonal">
-        {{ t("No attendance data") }}
-      </VAlert>
-
-      <!-- Desktop table -->
-      <div v-if="students.length && !smAndDown" class="table-wrap">
-        <VTable
-          fixed-header
-          height="calc(100dvh - 380px)"
-          density="comfortable"
-          class="report-table"
+        <VAlert
+          v-if="!isLoading && lastSearchedKey && !students.length"
+          type="info"
+          variant="tonal"
         >
-          <thead>
-            <tr>
-              <th class="text-center" style="width: 48px">#</th>
-              <th>{{ t("Name") }}</th>
-              <th v-if="showClassColumn">{{ t("Class") }}</th>
-              <th>{{ t("Gender") }}</th>
-              <th class="text-center">{{ t("Present") }}</th>
-              <th class="text-center">{{ t("Late") }}</th>
-              <th class="text-center">{{ t("Ask Permission") }}</th>
-              <th class="text-center">{{ t("Absent") }}</th>
-              <th class="text-center">{{ t("Total") }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(row, index) in students" :key="row.student_id">
-              <td class="text-center text-medium-emphasis">
-                {{ row.sort || index + 1 }}
-              </td>
-              <td class="font-weight-medium">{{ studentName(row) }}</td>
-              <td v-if="showClassColumn">{{ rowClassName(row) }}</td>
-              <td>{{ formatGender(row.gender) }}</td>
-              <td class="text-center text-success font-weight-medium">
-                {{ markCell(row.present) }}
-              </td>
-              <td class="text-center text-warning font-weight-medium">
-                {{ markCell(row.late) }}
-              </td>
-              <td class="text-center font-weight-medium">
-                {{ markCell(row.permission) }}
-              </td>
-              <td class="text-center text-error font-weight-medium">
-                {{ markCell(row.absent) }}
-              </td>
-              <td class="text-center font-weight-bold">
-                {{ countOrEmpty(row.total) }}
-              </td>
-            </tr>
-          </tbody>
-        </VTable>
-      </div>
+          {{ t("No attendance data") }}
+        </VAlert>
 
-      <!-- Phone cards -->
-      <div v-if="students.length && smAndDown" class="mobile-list">
-        <div
-          v-for="(row, index) in students"
-          :key="row.student_id"
-          class="mobile-card"
+        <VAlert
+          v-else-if="!isLoading && students.length && !filteredStudents.length"
+          type="info"
+          variant="tonal"
         >
-          <div class="mobile-card__head">
-            <div class="mobile-card__avatar">
-              {{ studentInitial(row) }}
-            </div>
-            <div class="mobile-card__who">
-              <div class="mobile-card__name">
-                <span class="mobile-card__index"
-                  >{{ row.sort || index + 1 }}.</span
-                >
-                {{ studentName(row) }}
-              </div>
-              <div class="mobile-card__sub">
-                <span>{{ formatGender(row.gender) }}</span>
-                <span v-if="showClassColumn || rowClassName(row)">
-                  · {{ rowClassName(row) }}
-                </span>
-              </div>
-            </div>
-            <div class="mobile-card__total">
-              <span class="mobile-card__total-num">{{
-                countOrEmpty(row.total)
-              }}</span>
-              <span class="mobile-card__total-label">{{ t("Total") }}</span>
-            </div>
-          </div>
+          {{ t("No students match this filter") }}
+        </VAlert>
 
-          <div class="mobile-card__counts">
-            <div
-              v-for="cell in COUNT_CELLS"
-              :key="cell.key"
-              class="count-pill"
-              :class="`count-pill--${cell.color}`"
-            >
-              <span class="count-pill__num">{{ markCell(row[cell.key]) }}</span>
-              <span class="count-pill__label">{{ t(cell.label) }}</span>
+        <!-- Desktop table -->
+        <div v-if="filteredStudents.length && !smAndDown" class="table-wrap">
+          <VTable
+            fixed-header
+            height="calc(100dvh - 380px)"
+            density="comfortable"
+            class="report-table"
+          >
+            <thead>
+              <tr>
+                <th class="text-center" style="width: 48px">#</th>
+                <th>{{ t("Name") }}</th>
+                <th v-if="showClassColumn">{{ t("Class") }}</th>
+                <th>{{ t("Gender") }}</th>
+                <th class="text-center">{{ t("Present") }}</th>
+                <th class="text-center">{{ t("Late") }}</th>
+                <th class="text-center">{{ t("Ask Permission") }}</th>
+                <th class="text-center">{{ t("Absent") }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="(row, index) in filteredStudents"
+                :key="`${row.student_id}-${row.class_id}`"
+              >
+                <td class="text-center text-medium-emphasis">
+                  {{ row.sort || index + 1 }}
+                </td>
+                <td class="font-weight-medium">{{ studentName(row) }}</td>
+                <td v-if="showClassColumn">{{ rowClassName(row) }}</td>
+                <td>{{ formatGender(row.gender) }}</td>
+                <td class="text-center">
+                  <VBtn
+                    v-if="markCell(row.present)"
+                    color="success"
+                    size="x-small"
+                    variant="flat"
+                    class="status-dot"
+                  />
+                </td>
+                <td class="text-center">
+                  <VBtn
+                    v-if="markCell(row.late)"
+                    color="warning"
+                    size="x-small"
+                    variant="flat"
+                    class="status-dot"
+                  />
+                </td>
+                <td class="text-center">
+                  <VBtn
+                    v-if="markCell(row.permission)"
+                    color="#ef6c00"
+                    size="x-small"
+                    variant="flat"
+                    class="status-dot"
+                  />
+                </td>
+                <td class="text-center">
+                  <VBtn
+                    v-if="markCell(row.absent)"
+                    color="error"
+                    size="x-small"
+                    variant="flat"
+                    class="status-dot"
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </VTable>
+        </div>
+
+        <!-- Phone cards -->
+        <div v-if="filteredStudents.length && smAndDown" class="mobile-list">
+          <div
+            v-for="(row, index) in filteredStudents"
+            :key="`${row.student_id}-${row.class_id}`"
+            class="mobile-card"
+          >
+            <div class="mobile-card__head">
+              <div class="mobile-card__avatar">
+                {{ studentInitial(row) }}
+              </div>
+              <div class="mobile-card__who">
+                <div class="mobile-card__name">
+                  <span class="mobile-card__index"
+                    >{{ row.sort || index + 1 }}.</span
+                  >
+                  {{ studentName(row) }}
+                </div>
+                <div class="mobile-card__sub">
+                  <span>{{ formatGender(row.gender) }}</span>
+                  <span v-if="showClassColumn || rowClassName(row)">
+                    · {{ rowClassName(row) }}
+                  </span>
+                </div>
+              </div>
+              <div class="mobile-card__total">
+                <span class="mobile-card__total-num">{{
+                  countOrEmpty(row.total)
+                }}</span>
+                <span class="mobile-card__total-label">{{ t("Total") }}</span>
+              </div>
+            </div>
+
+            <div class="mobile-card__counts">
+              <div
+                v-for="cell in COUNT_CELLS"
+                :key="cell.key"
+                class="count-pill"
+                :class="`count-pill--${cell.pill}`"
+              >
+                <VBtn
+                  v-if="markCell(row[cell.key])"
+                  :color="cell.color"
+                  size="x-small"
+                  icon
+                  variant="flat"
+                  class="status-dot"
+                />
+                <span v-else class="count-pill__num">&nbsp;</span>
+                <span class="count-pill__label">{{ t(cell.label) }}</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </template>
     </div>
   </AppCard>
 </template>
@@ -594,11 +1196,25 @@ defineExpose({
 
 .report-meta {
   display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.report-meta__footer {
+  display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 12px;
   flex-wrap: wrap;
+}
+
+.report-meta__hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
 }
 
 .report-meta__date {
@@ -639,7 +1255,14 @@ defineExpose({
 
 .search-btn {
   min-height: 40px;
-  cursor: pointer;
+  width: 100%;
+}
+
+.status-dot {
+  pointer-events: none;
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
 }
 
 /* Summary cards */
@@ -676,6 +1299,63 @@ defineExpose({
 .stat-card__icon {
   opacity: 0.85;
   flex: none;
+}
+
+.stat-card--clickable {
+  cursor: pointer;
+  transition:
+    outline 0.15s ease,
+    transform 0.15s ease;
+}
+
+.stat-card--clickable:hover {
+  transform: translateY(-1px);
+}
+
+.stat-card--active {
+  outline: 2px solid currentColor;
+  outline-offset: 1px;
+}
+
+.status-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.status-chip {
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  background: transparent;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: rgba(var(--v-theme-on-surface), 0.7);
+}
+
+.status-chip--active.status-chip--primary {
+  background: rgba(var(--v-theme-primary), 0.16);
+  color: rgb(var(--v-theme-primary));
+  border-color: rgba(var(--v-theme-primary), 0.35);
+}
+
+.status-chip--active.status-chip--success {
+  background: rgba(var(--v-theme-success), 0.16);
+  color: rgb(var(--v-theme-success));
+  border-color: rgba(var(--v-theme-success), 0.35);
+}
+
+.status-chip--active.status-chip--orange {
+  background: rgba(255, 152, 0, 0.16);
+  color: #ef6c00;
+  border-color: rgba(239, 108, 0, 0.35);
+}
+
+.status-chip--active.status-chip--error {
+  background: rgba(var(--v-theme-error), 0.14);
+  color: rgb(var(--v-theme-error));
+  border-color: rgba(var(--v-theme-error), 0.35);
 }
 
 .stat-card--success {
@@ -866,6 +1546,11 @@ defineExpose({
   border-color: rgba(255, 152, 0, 0.25);
 }
 
+.event-panel--present {
+  background: rgba(var(--v-theme-success), 0.06);
+  border-color: rgba(var(--v-theme-success), 0.25);
+}
+
 .event-panel__title {
   display: flex;
   align-items: center;
@@ -881,6 +1566,101 @@ defineExpose({
 
 .event-panel--permission .event-panel__title {
   color: #ef6c00;
+}
+
+.event-panel--present .event-panel__title {
+  color: rgb(var(--v-theme-success));
+}
+
+.event-row--empty {
+  text-align: center;
+  font-size: 0.85rem;
+  padding: 12px 10px;
+}
+
+.dashboard-attendance {
+  margin-top: 4px;
+}
+
+.dashboard-rate {
+  padding: 14px;
+  border-radius: 6px;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  /* background: rgba(var(--v-theme-on-surface), 0.01); */
+}
+
+.dashboard-rate__title {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.dashboard-rate__scope {
+  font-size: 0.82rem;
+  margin-top: 2px;
+}
+
+.dashboard-rate__cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.rate-card {
+  text-align: start;
+  border-radius: 6px;
+  padding: 12px 14px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  background: rgb(var(--v-theme-surface));
+}
+
+.rate-card__top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 0.82rem;
+}
+
+.rate-card__pct {
+  margin-top: 6px;
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.rate-card__count {
+  margin-top: 4px;
+  font-size: 0.75rem;
+  opacity: 0.7;
+  font-weight: 600;
+}
+
+.rate-card--present {
+  background: rgba(var(--v-theme-success), 0.08);
+  color: rgb(var(--v-theme-success));
+  border-color: rgba(var(--v-theme-success), 0.25);
+}
+.rate-card--permission {
+  background: rgba(255, 152, 0, 0.1);
+  color: #ef6c00;
+  border-color: rgba(239, 108, 0, 0.3);
+}
+.rate-card--absent {
+  background: rgba(var(--v-theme-error), 0.08);
+  color: rgb(var(--v-theme-error));
+  border-color: rgba(var(--v-theme-error), 0.25);
+}
+
+.rate-card--active {
+  outline: 2px solid currentColor;
+  outline-offset: 1px;
+}
+
+@media (max-width: 700px) {
+  .dashboard-rate__cards {
+    grid-template-columns: 1fr;
+  }
 }
 
 .event-panel__badge {

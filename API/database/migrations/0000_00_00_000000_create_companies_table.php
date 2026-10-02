@@ -14,6 +14,7 @@ return new class extends Migration {
             $table->tinyIncrements('id');
             $table->string('name_kh')->unique();
             $table->string('name_en')->nullable()->unique();
+            $table->string('testing')->nullable();
             $table->timestamps();
         });
     }
