@@ -16,11 +16,9 @@ import { getBranches } from "@/services/dataService";
 const branches = ref([]);
 
 const filter = ref({
-    search:"",
-    branch_id:null,
-}
-)
-
+  search: "",
+  branch_id: null,
+});
 
 const { xs } = useDisplay();
 
@@ -75,7 +73,6 @@ const getAllStudents = async () => {
 const debouncedGetStudents = debounce(() => {
   getAllStudents();
 }, 400);
-
 
 watch(
   () => filter.value.branch_id,
@@ -140,6 +137,7 @@ const headers = computed(() => [
     key: "name_en",
     visible: true,
   },
+
   {
     title: xs.value ? t("Gender") : t("Gender"),
     key: "gender",
@@ -155,7 +153,7 @@ const headers = computed(() => [
 ]);
 
 onMounted(async () => {
-//   getAllStudents();
+  //   getAllStudents();
   branches.value = await getBranches();
 });
 
@@ -186,21 +184,18 @@ watch(
     @on-submit="onFormSubmit"
   >
     <VRow>
-        <VCol  cols="12" md="6">
-            <VSelect
-                :label="t('Branch')"
-                :items="branches"
-                item-title="name_en"
-                item-value="id"
-                v-model="filter.branch_id"
-            />
-        </VCol>
-        <VCol  cols="12" md="6">
-            <VTextField
-                v-model="filter.search"
-                :label="t('Search')"
-            />
-        </VCol>
+      <VCol cols="12" md="6">
+        <VSelect
+          :label="t('Branch')"
+          :items="branches"
+          item-title="name_en"
+          item-value="id"
+          v-model="filter.branch_id"
+        />
+      </VCol>
+      <VCol cols="12" md="6">
+        <VTextField v-model="filter.search" :label="t('Search')" />
+      </VCol>
       <VCol id="page-tour-student-curriculum-select" cols="12" md="12">
         <VDataTable
           :loading="loadingtable"
@@ -209,7 +204,17 @@ watch(
           :headers="headers"
           :items="students"
           show-select
-        />
+        >
+          <template #[`item.name_en`]="{ item }">
+            <div class="d-flex flex-row pt-2 pb-2">
+              <AppName
+                :title="item.name_kh"
+                :sub-title="item.name_en"
+                :image="item.photo_path"
+              />
+            </div>
+          </template>
+        </VDataTable>
       </VCol>
     </VRow>
   </AppAddEditDialog>
@@ -236,7 +241,8 @@ watch(
           :items="students"
           show-select
         >
-          <template #[`item.name_en`]="{ item }">
+          <template #[`item.photo_path`]="{ item }">
+            {{ item.name_en }}
             <div class="d-flex flex-row pt-2 pb-2">
               <AppName
                 :title="item.name_kh"

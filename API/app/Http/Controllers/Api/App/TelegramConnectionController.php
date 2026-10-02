@@ -66,11 +66,11 @@ class TelegramConnectionController extends Controller
         return [
             'success' => true,
             'token' => $token,
-            'link' => 'https://t.me/'.self::BOT_USERNAME.'?start='.$token,
+            'link' => 'https://t.me/' . self::BOT_USERNAME . '?start=' . $token,
             // Opens Telegram "Add to group", then sends /start TOKEN into that group.
-            'group_add_link' => 'https://t.me/'.self::BOT_USERNAME.'?startgroup='.$token,
+            'group_add_link' => 'https://t.me/' . self::BOT_USERNAME . '?startgroup=' . $token,
             // @bot required when Group Privacy is ON, otherwise Telegram hides the message.
-            'group_link_command' => '/link@'.self::BOT_USERNAME.' '.$token,
+            'group_link_command' => '/link@' . self::BOT_USERNAME . ' ' . $token,
         ];
     }
 
@@ -135,8 +135,7 @@ class TelegramConnectionController extends Controller
                     $username
                 );
             }
-        }
-        catch (\Throwable $e) {
+        } catch (\Throwable $e) {
             Log::error('Telegram webhook failed', [
                 'error' => $e->getMessage(),
             ]);
@@ -193,7 +192,7 @@ class TelegramConnectionController extends Controller
 
         $this->sendMessage(
             $chatId,
-            '✅ សូមអរគុណសម្រាប់ការតភ្ជាប់ DIS Notification សម្រាប់ផ្តល់ដំណឹងជូនព័ត៍មានថ្មីៗពីសាលា។'
+            'សូមអរគុណសម្រាប់ការតភ្ជាប់ DIS Notification សម្រាប់ផ្តល់ជូនព័ត៍មានថ្មីៗអំពីសាលា។'
         );
 
         return response()->json(['ok' => true]);
@@ -216,7 +215,7 @@ class TelegramConnectionController extends Controller
         if ($token === '') {
             $this->sendMessage(
                 $chatId,
-                '❌ Missing token. Use “Add bot to group” from CamTool Settings → Telegram (recommended), or send /link@'.self::BOT_USERNAME.' YOUR_TOKEN'
+                '❌ Missing token. Use “Add bot to group” from CamTool Settings → Telegram (recommended), or send /link@' . self::BOT_USERNAME . ' YOUR_TOKEN'
             );
 
             return response()->json(['ok' => true]);
@@ -279,15 +278,13 @@ class TelegramConnectionController extends Controller
                 DB::table('telegram_users')
                     ->where('user_id', $data->user_id)
                     ->update($payload);
-            }
-            else {
+            } else {
                 DB::table('telegram_users')->insert(array_merge([
                     'user_id' => $data->user_id,
                     'created_at' => now(),
                 ], $payload));
             }
-        }
-        catch (\Throwable $e) {
+        } catch (\Throwable $e) {
             Log::error('Telegram group link failed', [
                 'user_id' => $data->user_id,
                 'chat_id' => $chatId,
@@ -419,8 +416,7 @@ class TelegramConnectionController extends Controller
             $result = $this->sendMessage($chatId, $htmlMessage, 'HTML');
 
             return ($result['ok'] ?? false) === true;
-        }
-        catch (\Throwable $e) {
+        } catch (\Throwable $e) {
             Log::error('Telegram notifyUserPrintDestination failed', [
                 'user_id' => $userId,
                 'chat_id' => $chatId,
@@ -507,7 +503,7 @@ class TelegramConnectionController extends Controller
         return response()->json([
             // 'status' => $deleted ? true : false,
             'success' => true,
-    'disconnected' => (bool) $deleted,
+            'disconnected' => (bool) $deleted,
         ]);
     }
 

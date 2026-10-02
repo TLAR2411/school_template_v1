@@ -24329,3 +24329,96 @@ Did you mean one of these?
 #10 /Users/teangtela/Desktop/freelance/school_template/API/artisan(13): Illuminate\\Foundation\\Application->handleCommand(Object(Symfony\\Component\\Console\\Input\\ArgvInput))
 #11 {main}
 "} 
+[2026-10-02 09:06:35] local.ERROR: Allowed memory size of 134217728 bytes exhausted (tried to allocate 20480 bytes) {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Allowed memory size of 134217728 bytes exhausted (tried to allocate 20480 bytes) at /Users/teangtela/Desktop/freelance/school_template/API/vendor/intervention/image/src/Drivers/Gd/Decoders/BinaryImageDecoder.php:43)
+[stacktrace]
+#0 {main}
+"} 
+[2026-10-02 09:06:38] local.ERROR: Allowed memory size of 134217728 bytes exhausted (tried to allocate 20480 bytes) {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Allowed memory size of 134217728 bytes exhausted (tried to allocate 20480 bytes) at /Users/teangtela/Desktop/freelance/school_template/API/vendor/intervention/image/src/Drivers/Gd/Decoders/BinaryImageDecoder.php:43)
+[stacktrace]
+#0 {main}
+"} 
+[2026-10-02 09:06:38] local.ERROR: Allowed memory size of 134217728 bytes exhausted (tried to allocate 20480 bytes) {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Allowed memory size of 134217728 bytes exhausted (tried to allocate 20480 bytes) at /Users/teangtela/Desktop/freelance/school_template/API/vendor/intervention/image/src/Drivers/Gd/Decoders/BinaryImageDecoder.php:43)
+[stacktrace]
+#0 {main}
+"} 
+[2026-10-02 09:06:38] local.ERROR: Allowed memory size of 134217728 bytes exhausted (tried to allocate 20480 bytes) {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Allowed memory size of 134217728 bytes exhausted (tried to allocate 20480 bytes) at /Users/teangtela/Desktop/freelance/school_template/API/vendor/intervention/image/src/Drivers/Gd/Decoders/BinaryImageDecoder.php:43)
+[stacktrace]
+#0 {main}
+"} 
+[2026-10-02 09:06:38] local.ERROR: Allowed memory size of 134217728 bytes exhausted (tried to allocate 16384 bytes) {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Allowed memory size of 134217728 bytes exhausted (tried to allocate 16384 bytes) at /Users/teangtela/Desktop/freelance/school_template/API/vendor/intervention/image/src/Drivers/Gd/Decoders/BinaryImageDecoder.php:43)
+[stacktrace]
+#0 {main}
+"} 
+[2026-10-02 09:06:38] local.ERROR: Allowed memory size of 134217728 bytes exhausted (tried to allocate 16384 bytes) {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Allowed memory size of 134217728 bytes exhausted (tried to allocate 16384 bytes) at /Users/teangtela/Desktop/freelance/school_template/API/vendor/intervention/image/src/Drivers/Gd/Decoders/BinaryImageDecoder.php:43)
+[stacktrace]
+#0 {main}
+"} 
+[2026-10-02 09:06:39] local.ERROR: Allowed memory size of 134217728 bytes exhausted (tried to allocate 16384 bytes) {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Allowed memory size of 134217728 bytes exhausted (tried to allocate 16384 bytes) at /Users/teangtela/Desktop/freelance/school_template/API/vendor/intervention/image/src/Drivers/Gd/Decoders/BinaryImageDecoder.php:43)
+[stacktrace]
+#0 {main}
+"} 
+[2026-10-02 09:06:39] local.ERROR: Allowed memory size of 134217728 bytes exhausted (tried to allocate 16384 bytes) {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Allowed memory size of 134217728 bytes exhausted (tried to allocate 16384 bytes) at /Users/teangtela/Desktop/freelance/school_template/API/vendor/intervention/image/src/Drivers/Gd/Decoders/BinaryImageDecoder.php:43)
+[stacktrace]
+#0 {main}
+"} 
+[2026-10-02 09:06:39] local.ERROR: Allowed memory size of 134217728 bytes exhausted (tried to allocate 16384 bytes) {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Allowed memory size of 134217728 bytes exhausted (tried to allocate 16384 bytes) at /Users/teangtela/Desktop/freelance/school_template/API/vendor/intervention/image/src/Drivers/Gd/Decoders/BinaryImageDecoder.php:43)
+[stacktrace]
+#0 {main}
+"} 
+[2026-10-02 09:06:39] local.ERROR: Allowed memory size of 134217728 bytes exhausted (tried to allocate 20480 bytes) {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Allowed memory size of 134217728 bytes exhausted (tried to allocate 20480 bytes) at /Users/teangtela/Desktop/freelance/school_template/API/vendor/intervention/image/src/Drivers/Gd/Decoders/BinaryImageDecoder.php:43)
+[stacktrace]
+#0 {main}
+"} 
+[2026-10-02 09:06:39] local.ERROR: Allowed memory size of 134217728 bytes exhausted (tried to allocate 20480 bytes) {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Allowed memory size of 134217728 bytes exhausted (tried to allocate 20480 bytes) at /Users/teangtela/Desktop/freelance/school_template/API/vendor/intervention/image/src/Drivers/Gd/Decoders/BinaryImageDecoder.php:43)
+[stacktrace]
+#0 {main}
+"} 
+[2026-10-02 09:06:40] local.ERROR: Allowed memory size of 134217728 bytes exhausted (tried to allocate 20480 bytes) {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Allowed memory size of 134217728 bytes exhausted (tried to allocate 20480 bytes) at /Users/teangtela/Desktop/freelance/school_template/API/vendor/intervention/image/src/Drivers/Gd/Decoders/BinaryImageDecoder.php:43)
+[stacktrace]
+#0 {main}
+"} 
+[2026-10-02 09:08:06] local.ERROR: Allowed memory size of 134217728 bytes exhausted (tried to allocate 20480 bytes) {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Allowed memory size of 134217728 bytes exhausted (tried to allocate 20480 bytes) at /Users/teangtela/Desktop/freelance/school_template/API/vendor/intervention/image/src/Drivers/Gd/Decoders/BinaryImageDecoder.php:43)
+[stacktrace]
+#0 {main}
+"} 
+[2026-10-02 09:16:55] local.ERROR: Allowed memory size of 134217728 bytes exhausted (tried to allocate 20480 bytes) {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Allowed memory size of 134217728 bytes exhausted (tried to allocate 20480 bytes) at /Users/teangtela/Desktop/freelance/school_template/API/vendor/intervention/image/src/Drivers/Gd/Decoders/BinaryImageDecoder.php:43)
+[stacktrace]
+#0 {main}
+"} 
+[2026-10-02 09:16:55] local.ERROR: Allowed memory size of 134217728 bytes exhausted (tried to allocate 20480 bytes) {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Allowed memory size of 134217728 bytes exhausted (tried to allocate 20480 bytes) at /Users/teangtela/Desktop/freelance/school_template/API/vendor/intervention/image/src/Drivers/Gd/Decoders/BinaryImageDecoder.php:43)
+[stacktrace]
+#0 {main}
+"} 
+[2026-10-02 09:17:24] local.ERROR: Allowed memory size of 134217728 bytes exhausted (tried to allocate 20480 bytes) {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Allowed memory size of 134217728 bytes exhausted (tried to allocate 20480 bytes) at /Users/teangtela/Desktop/freelance/school_template/API/vendor/intervention/image/src/Drivers/Gd/Decoders/BinaryImageDecoder.php:43)
+[stacktrace]
+#0 {main}
+"} 
+[2026-10-02 09:17:24] local.ERROR: Allowed memory size of 134217728 bytes exhausted (tried to allocate 20480 bytes) {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Allowed memory size of 134217728 bytes exhausted (tried to allocate 20480 bytes) at /Users/teangtela/Desktop/freelance/school_template/API/vendor/intervention/image/src/Drivers/Gd/Decoders/BinaryImageDecoder.php:43)
+[stacktrace]
+#0 {main}
+"} 
+[2026-10-02 09:17:25] local.ERROR: Allowed memory size of 134217728 bytes exhausted (tried to allocate 20480 bytes) {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Allowed memory size of 134217728 bytes exhausted (tried to allocate 20480 bytes) at /Users/teangtela/Desktop/freelance/school_template/API/vendor/intervention/image/src/Drivers/Gd/Decoders/BinaryImageDecoder.php:43)
+[stacktrace]
+#0 {main}
+"} 
+[2026-10-02 09:17:25] local.ERROR: Allowed memory size of 134217728 bytes exhausted (tried to allocate 20480 bytes) {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Allowed memory size of 134217728 bytes exhausted (tried to allocate 20480 bytes) at /Users/teangtela/Desktop/freelance/school_template/API/vendor/intervention/image/src/Drivers/Gd/Decoders/BinaryImageDecoder.php:43)
+[stacktrace]
+#0 {main}
+"} 
+[2026-10-02 09:20:17] local.ERROR: Command "add" is not defined.
+
+Did you mean one of these?
+    laratrust:add-trait
+    sail:add {"exception":"[object] (Symfony\\Component\\Console\\Exception\\CommandNotFoundException(code: 0): Command \"add\" is not defined.
+
+Did you mean one of these?
+    laratrust:add-trait
+    sail:add at /Users/teangtela/Desktop/freelance/school_template/API/vendor/symfony/console/Application.php:743)
+[stacktrace]
+#0 /Users/teangtela/Desktop/freelance/school_template/API/vendor/symfony/console/Application.php(301): Symfony\\Component\\Console\\Application->find('add')
+#1 /Users/teangtela/Desktop/freelance/school_template/API/vendor/symfony/console/Application.php(194): Symfony\\Component\\Console\\Application->doRun(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#2 /Users/teangtela/Desktop/freelance/school_template/API/vendor/laravel/framework/src/Illuminate/Foundation/Console/Kernel.php(197): Symfony\\Component\\Console\\Application->run(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#3 /Users/teangtela/Desktop/freelance/school_template/API/vendor/laravel/framework/src/Illuminate/Foundation/Application.php(1235): Illuminate\\Foundation\\Console\\Kernel->handle(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#4 /Users/teangtela/Desktop/freelance/school_template/API/artisan(13): Illuminate\\Foundation\\Application->handleCommand(Object(Symfony\\Component\\Console\\Input\\ArgvInput))
+#5 {main}
+"} 
