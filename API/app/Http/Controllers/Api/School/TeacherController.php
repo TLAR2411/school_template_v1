@@ -194,7 +194,7 @@ class TeacherController extends Controller
     {
         try {
             $teacher = Teacher::query()
-                // ->withTelegramStatus()
+                ->withTelegramStatus()
                 ->whereBranch($this->getBranch())
                 ->whereCur($this->getCur())
                 ->filter($request->filter)
@@ -275,7 +275,7 @@ class TeacherController extends Controller
             $classBranchIds = collect($classes)->pluck('branch_id')->filter()->unique()->values();
             $stats = [
                 'class_total' => count($classes),
-                'subject_total' => collect($classes)->sum(fn ($c) => count($c['subjects'] ?? [])),
+                'subject_total' => collect($classes)->sum(fn($c) => count($c['subjects'] ?? [])),
                 'branch_total' => max(count($branches), $classBranchIds->count()),
                 'classload_total' => collect($classes)->where('is_classload', true)->count(),
                 'assistant_total' => collect($classes)->where('is_assisstant', true)->count(),
@@ -319,7 +319,7 @@ class TeacherController extends Controller
                 ->select('id', 'name_en', 'name_kh', 'abbr')
                 ->orderBy('name_en')
                 ->get()
-                ->map(fn ($b) => [
+                ->map(fn($b) => [
                     'id' => $b->id,
                     'name_en' => $b->name_en,
                     'name_kh' => $b->name_kh,
@@ -366,7 +366,7 @@ class TeacherController extends Controller
             ->where('is_active', true)
             ->whereHas('class', function ($q) use ($yearId) {
                 $q->where('is_active', true)
-                    ->when($yearId && $yearId !== '*', fn ($qq) => $qq->where('year_id', $yearId));
+                    ->when($yearId && $yearId !== '*', fn($qq) => $qq->where('year_id', $yearId));
             })
             ->with([
                 'subject:id,name_en,name_kh,symbol',
@@ -405,7 +405,7 @@ class TeacherController extends Controller
                     'shift_name_kh' => $class?->shift?->name_kh,
                     'is_classload' => (bool) $items->contains('is_classload', true),
                     'is_assisstant' => (bool) $items->contains('is_assisstant', true),
-                    'subjects' => $items->map(fn ($row) => [
+                    'subjects' => $items->map(fn($row) => [
                         'id' => $row->id,
                         'subject_id' => $row->subject_id,
                         'name_en' => $row->subject?->name_en,
@@ -416,7 +416,7 @@ class TeacherController extends Controller
                     ])->values()->all(),
                 ];
             })
-            ->sortBy(fn ($c) => $c['name_en'] ?? $c['name_kh'] ?? '')
+            ->sortBy(fn($c) => $c['name_en'] ?? $c['name_kh'] ?? '')
             ->values()
             ->all();
     }
