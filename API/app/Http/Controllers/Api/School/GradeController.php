@@ -21,7 +21,7 @@ class GradeController extends Controller
             'description' => 'nullable|string|max:255',
         ]);
 
-        $curId = $validate['cur_id'] ?? $this->getCur();
+        $curId = $this->resolveCur($validate['cur_id'] ?? null);
         if (!$curId || $curId === '*') {
             return response()->json([
                 'status' => false,
@@ -70,7 +70,7 @@ class GradeController extends Controller
             'description' => 'nullable|string|max:255',
         ]);
 
-        $curId = $validate['cur_id'] ?? $this->getCur();
+        $curId = $this->resolveCur($validate['cur_id'] ?? null);
         if (!$curId || $curId === '*') {
             return response()->json([
                 'status' => false,

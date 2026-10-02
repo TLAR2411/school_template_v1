@@ -26,6 +26,7 @@ class StoreUserRequest extends FormRequest
             'name_en' => 'required|string',
             // 'dob' => 'required|date',
             'gender' => 'required|string',
+            'cur_id' => 'nullable|integer|exists:curriculums,id',
             // 'national_id_number' => 'unique:users,national_id_number',
         ];
     }

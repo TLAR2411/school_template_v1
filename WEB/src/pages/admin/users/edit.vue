@@ -9,6 +9,7 @@ import { api } from "@/utils/api";
 import { app } from "@/utils/app";
 import {
   getBranches,
+  getCurriculums,
   getPositions,
   getRoles,
   getUsers,
@@ -66,6 +67,7 @@ const branches = ref([]);
 const roles = ref([]);
 const users = ref([]);
 const positions = ref([]);
+const curriculums = ref([]);
 const provinces = ref([...app().provinces]);
 const districts = ref([]);
 const communes = ref([]);
@@ -108,6 +110,9 @@ const handleGeoError = (err) => {
       return "An unknown error occurred.";
   }
 };
+const curriculumTitle = (item) =>
+  item.symbol ? `${item.name_kh} (${item.symbol})` : item.name_kh;
+
 const onSubmit = async () => {
   try {
     isLoading.value = true;
@@ -145,6 +150,7 @@ const initData = async () => {
       formData.value.national_id_issue_date = data?.national_id_issue_date;
       formData.value.join_date = data?.join_date;
       formData.value.choose_branch_id = data.branch_id;
+      formData.value.cur_id = data.cur_id ? Number(data.cur_id) : null;
       formData.value._branch_id = (
         data._branch_id ||
         data.user_branch ||
@@ -161,15 +167,18 @@ const initData = async () => {
 };
 
 onMounted(async () => {
-  const [dataBranches, dataRoles, dataPositions] = await Promise.all([
-    getBranches(),
-    getRoles(),
-    getPositions(),
-  ]);
+  const [dataBranches, dataRoles, dataPositions, dataCurriculums] =
+    await Promise.all([
+      getBranches(),
+      getRoles(),
+      getPositions(),
+      getCurriculums(),
+    ]);
 
   branches.value = dataBranches || [];
   roles.value = dataRoles || [];
   positions.value = dataPositions || [];
+  curriculums.value = dataCurriculums || [];
   await initData();
 });
 
@@ -416,6 +425,20 @@ const initializeAddressFields = async (data) => {
           :items="roles"
           item-title="display_name"
           item-value="id"
+          autocomplete="off"
+        />
+      </VCol>
+      <VCol cols="12" lg="3" md="4" sm="6">
+        <AppAutocomplete
+          v-model="formData.cur_id"
+          label="Curriculum"
+          :items="curriculums"
+          :item-title="curriculumTitle"
+          item-value="id"
+          clearable
+          :placeholder="$t('All curriculums')"
+          :hint="$t('Leave empty to manage all curriculums')"
+          persistent-hint
           autocomplete="off"
         />
       </VCol>

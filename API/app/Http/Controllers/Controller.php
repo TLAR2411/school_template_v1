@@ -40,6 +40,21 @@ abstract class Controller
         return request()->header('X-Curriculum-id');
     }
 
+    /**
+     * Resolve the curriculum to work on, letting the request pick one only when
+     * the user is not locked to a single curriculum.
+     */
+    public function resolveCur($requestedCurId = null)
+    {
+        $assigned = Auth::user()?->assignedCurriculumId();
+
+        if ($assigned) {
+            return $assigned;
+        }
+
+        return $requestedCurId ?: request()->header('X-Curriculum-id');
+    }
+
     public function getBranchAbbr()
     {
         // Use header() as a method and pass the default as the second argument

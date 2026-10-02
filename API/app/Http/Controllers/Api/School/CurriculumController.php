@@ -75,7 +75,10 @@ class CurriculumController extends Controller
     public function list(Request $request)
     {
         try {
+            $assignedCurriculumId = auth('api')->user()?->assignedCurriculumId();
+
             $data = Curriculum::query()
+                ->when($assignedCurriculumId, fn ($q) => $q->where('id', $assignedCurriculumId))
                 ->filter($request->filter)
                 ->paginate($request->limit);
 

@@ -42,6 +42,7 @@ class User extends Authenticatable implements LaratrustUser
         'under_user_id',
         'manage_branch',
         'branch_id',
+        'cur_id',
         'role_id',
         'position_id',
         'gender',
@@ -231,13 +232,14 @@ class User extends Authenticatable implements LaratrustUser
         return $this->hasRole('teacher') || $this->role?->name === 'teacher';
     }
 
+    /**
+     * Curriculum this user is locked to, or null when they may switch freely.
+     */
     public function assignedCurriculumId(): ?int
     {
-        if (!$this->isTeacher()) {
-            return null;
-        }
-
-        $curId = $this->teacher?->cur_id;
+        $curId = $this->isTeacher()
+            ? ($this->teacher?->cur_id ?? $this->cur_id)
+            : $this->cur_id;
 
         return $curId ? (int) $curId : null;
     }

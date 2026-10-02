@@ -17,25 +17,14 @@ export default [
         icon: { icon: "tabler-file-check" },
         permission: "view-attendance",
     },
-    {
-        title: "Attendance Report",
-        to: { name: "school-attendance-report" },
-        icon: { icon: "tabler-report-analytics" },
-        permission: "view-attendance",
-    },
+
     {
         title: "Score Entry",
         to: { name: "school-score-entry" },
         icon: { icon: "tabler-file-check" },
         permission: "view-score-entry",
     },
-    {
-        title: "Score Entry Status",
-        to: { name: "school-score-entry-status" },
-        icon: { icon: "tabler-clipboard-list" },
-        permission: "view-score-entry",
-        hideForRoles: ["teacher"],
-    },
+
     {
         title: "Schedule",
         to: { name: "school-schedule" },
@@ -84,4 +73,19 @@ export default [
         icon: { icon: "tabler-calendar-time" },
         permission: "view-term-periods",
     },
+    {
+        title: "Attendance Report",
+        to: { name: "school-attendance-report" },
+        icon: { icon: "tabler-report-analytics" },
+        permission: "view-attendance",
+    },
+
+    {
+        title: "Score Entry Status",
+        to: { name: "school-score-entry-status" },
+        icon: { icon: "tabler-clipboard-list" },
+        permission: "view-score-entry",
+        hideForRoles: ["teacher"],
+    },
+
 ];

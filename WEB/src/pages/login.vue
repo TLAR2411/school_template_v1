@@ -26,10 +26,10 @@ const company = import.meta.env.VITE_BASE_COMPANY;
 const MainLogo = logos[`/src/assets/images/logo/${company}/logo.png`];
 
 const form = ref({
-  username: import.meta.env.VITE_LOGIN_USERNAME || null,
-  password: import.meta.env.VITE_LOGIN_PASSWORD || null,
-  // username: null,
-  // password: null,
+  // username: import.meta.env.VITE_LOGIN_USERNAME || null,
+  // password: import.meta.env.VITE_LOGIN_PASSWORD || null,
+  username: null,
+  password: null,
   remember: false,
 });
 

@@ -34,7 +34,7 @@ class TermPeriodController extends Controller
             return response()->json(['status' => false, 'message' => 'Please select a year'], 422);
         }
 
-        $curId = $data['cur_id'] ?? $this->getCur();
+        $curId = $this->resolveCur($data['cur_id'] ?? null);
         if (!$curId || $curId === '*') {
             return response()->json(['status' => false, 'message' => 'Please select a curriculum'], 422);
         }
@@ -98,7 +98,7 @@ class TermPeriodController extends Controller
     {
         try {
             $yearId = $request->year_id ?? $this->getYear();
-            $curId = $request->cur_id ?? $this->getCur();
+            $curId = $this->resolveCur($request->cur_id);
             $branchId = $this->getBranch();
 
             $filters = array_merge($request->filter ?? [], [
@@ -207,7 +207,7 @@ class TermPeriodController extends Controller
     {
         try {
             $yearId = $request->year_id ?? $this->getYear();
-            $curId = $request->cur_id ?? $this->getCur();
+            $curId = $this->resolveCur($request->cur_id);
             $branchId = $this->getBranch();
 
             $data = TermPeriod::query()

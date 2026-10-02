@@ -200,6 +200,7 @@ class UserController extends Controller
             $userData['password'] = Hash::make($defaultPassword);
             $userData['username'] = 'default';
             $userData['branch_id'] = $request->choose_branch_id;
+            $userData['cur_id'] = $request->cur_id ?: null;
 
             $users = User::create($userData);
             $branch = Branch::findOrFail($request->choose_branch_id);
@@ -248,12 +249,17 @@ class UserController extends Controller
 
     public function update(Request $request)
     {
+        $request->validate([
+            'cur_id' => 'nullable|integer|exists:curriculums,id',
+        ]);
+
         DB::beginTransaction();
         try {
             $users = User::findOrFail($request->id);
 
             $users->update([
                 'branch_id' => $request->choose_branch_id,
+                'cur_id' => $request->cur_id ?: null,
                 'name_kh' => $request->name_kh,
                 'name_en' => Str::upper($request->name_en),
                 'manage_branch' => $request->manage_branch,

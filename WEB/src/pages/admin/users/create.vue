@@ -10,6 +10,7 @@ import { app } from "@/utils/app";
 import {
   getBranches,
   getCurrencies,
+  getCurriculums,
   getPositions,
   getRoles,
   // getUnderUsers,
@@ -67,11 +68,15 @@ const branches = ref([]);
 const roles = ref([]);
 const users = ref([]);
 const positions = ref([]);
+const curriculums = ref([]);
 const provinces = ref([...app().provinces]);
 const districts = ref([]);
 const communes = ref([]);
 const villages = ref([]);
 const currencies = ref([]);
+
+const curriculumTitle = (item) =>
+  item.symbol ? `${item.name_kh} (${item.symbol})` : item.name_kh;
 
 const onSubmit = async () => {
   try {
@@ -88,18 +93,25 @@ const onSubmit = async () => {
 };
 
 onMounted(async () => {
-  const [dataCurrencies, dataBranches, dataRoles, dataPositions] =
-    await Promise.all([
-      getCurrencies(),
-      getBranches(),
-      getRoles(),
-      getPositions(),
-    ]);
+  const [
+    dataCurrencies,
+    dataBranches,
+    dataRoles,
+    dataPositions,
+    dataCurriculums,
+  ] = await Promise.all([
+    getCurrencies(),
+    getBranches(),
+    getRoles(),
+    getPositions(),
+    getCurriculums(),
+  ]);
 
   roles.value = dataRoles;
   positions.value = dataPositions;
   branches.value = dataBranches;
   currencies.value = dataCurrencies;
+  curriculums.value = dataCurriculums || [];
   // users.value = dataUsers;
 });
 watch(
@@ -337,6 +349,20 @@ watch(
             <VListItem v-bind="props" :disabled="item.raw.id === 1 && auth().user.is_super == false" />
           </template>
         </AppAutocomplete>
+      </VCol>
+      <VCol cols="12" lg="3" md="4" sm="6">
+        <AppAutocomplete
+          v-model="formData.cur_id"
+          label="Curriculum"
+          :items="curriculums"
+          :item-title="curriculumTitle"
+          item-value="id"
+          clearable
+          :placeholder="$t('All curriculums')"
+          :hint="$t('Leave empty to manage all curriculums')"
+          persistent-hint
+          autocomplete="off"
+        />
       </VCol>
       <VCol cols="12" lg="3" md="4" sm="6">
         <AppAutocomplete
