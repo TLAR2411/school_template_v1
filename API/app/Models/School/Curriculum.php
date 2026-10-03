@@ -31,7 +31,7 @@ class Curriculum extends Model
             'deleted' => 'លុប',
             default => 'ធ្វើប្រតិបត្តិការលើ',
         };
-        $activity->description = "{$userName} បាន{$action} ឆ្នាំសិក្សា {$this->name}";
+        $activity->description = "{$userName} បាន{$action} កម្មវិធីសិក្សា {$this->name}";
     }
     protected $table = 'curriculums';
     protected $fillable = [
