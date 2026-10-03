@@ -209,7 +209,7 @@ Route::post('telegram-connection/webhook', [TelegramConnectionController::class,
 Route::get('telegram-connection/link', [TelegramConnectionController::class, 'getTelegramConnectLink']);
 Route::get('telegram-connection/status', [TelegramConnectionController::class, 'checkConnectTelegram']);
 Route::post('telegram-connection/send-message', [TelegramConnectionController::class, 'sendMessageToChat'])
-    ->middleware('permission:view-teachers');
+    ->middleware('permission:view-teachers|view-score-entry|approve-score-entry');
 Route::post('telegram-connection/disconnect', [TelegramConnectionController::class, 'disConnectBot']);
 Route::post('telegram-connection/unlink-group', [TelegramConnectionController::class, 'unlinkTelegramGroup']);
 Route::post('logout', [LoginAppController::class, 'logout']);

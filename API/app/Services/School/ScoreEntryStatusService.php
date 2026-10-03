@@ -6,6 +6,7 @@ use App\Models\School\Classes;
 use App\Models\School\ScoreEntry;
 use App\Models\School\StudentClass;
 use App\Models\School\Subject;
+use App\Models\School\Teacher;
 use App\Models\School\TeacherClass;
 use Illuminate\Support\Collection;
 
@@ -128,7 +129,39 @@ class ScoreEntryStatusService
             }
         }
 
+        $this->attachTelegramConnected($rows);
+
         return ['rows' => $rows, 'summary' => $summary];
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $rows
+     */
+    private function attachTelegramConnected(array &$rows): void
+    {
+        $teacherIds = collect($rows)
+            ->pluck('teacher_id')
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($teacherIds === []) {
+            return;
+        }
+
+        $connectedByTeacher = Teacher::query()
+            ->whereIn('id', $teacherIds)
+            ->withTelegramStatus()
+            ->pluck('telegram_connected', 'id');
+
+        foreach ($rows as &$row) {
+            $teacherId = $row['teacher_id'] ?? null;
+            $row['telegram_connected'] = $teacherId
+                ? (bool) ($connectedByTeacher[$teacherId] ?? false)
+                : false;
+        }
+        unset($row);
     }
 
     private function resolveStatus(int $scored, int $total): string
