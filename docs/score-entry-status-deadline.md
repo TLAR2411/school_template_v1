@@ -17,6 +17,7 @@ Score Entry Status (admin)
   → [Edit deadline] dialog → change day → Save
   → pick Month → see Missing / Partial / Done
   → Open → Score Entry (class + month prefilled)
+  → Send Telegram (one message per teacher, incomplete rows in current filter)
 
 Score Entry (teacher)
   → before close date → can save
@@ -133,3 +134,4 @@ Files:
 - Feb with cutoff `30` uses the last day of February.
 - Admin override permission: `approve-score-entry` (or admin/superadmin/developer role).
 - English term scores are not locked by this month cutoff (Khmer monthly entry only).
+- Telegram reminders: [score-entry-telegram-reminders.md](./score-entry-telegram-reminders.md)
