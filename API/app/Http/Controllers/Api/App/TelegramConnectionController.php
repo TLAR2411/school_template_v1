@@ -378,7 +378,7 @@ class TelegramConnectionController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Teacher has not connected Telegram or the message could not be sent',
-            ], 422);
+            ]);
         }
 
         return response()->json([
