@@ -10,8 +10,35 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\School\StudentClass;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Models\Activity;
+use Spatie\Activitylog\Traits\LogsActivity;
+
 class Student extends Model
 {
+    use LogsActivity;
+
+    protected static $recordEvents = ['created', 'updated', 'deleted'];
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logAll()
+            ->logOnlyDirty()          // only changed fields on update
+            ->useLogName('years')
+            ->dontSubmitEmptyLogs();
+    }
+    public function tapActivity(Activity $activity, string $eventName)
+    {
+        $userName = auth()->user()?->name_kh ?? 'System';
+        $action = match ($eventName) {
+            'created' => 'បង្កើត',
+            'updated' => 'កែប្រែ',
+            'deleted' => 'លុប',
+            default => 'ធ្វើប្រតិបត្តិការលើ',
+        };
+        $activity->description = "{$userName} បាន{$action} សិស្ស {$this->name}";
+    }
+
     use SoftDeletes;
     protected $fillable = [
         'name_en',

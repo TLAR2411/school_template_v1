@@ -173,6 +173,7 @@ Route::post("teachers-delete", [TeacherController::class, "delete"])->middleware
 Route::post("student-not-yet-enroll-class", [StudentClassController::class, "studentNotYetEnrollClass"])->middleware('permission:add-student-classes');
 Route::post("student-class-store", [StudentClassController::class, "store"])->middleware('permission:add-student-classes');
 Route::post("student-class-list", [StudentClassController::class, "list"])->middleware('permission:view-student-classes');
+Route::post("student-class-delete", [StudentClassController::class, "delete"])->middleware('permission:delete-student-classes');
 
 Route::post("grading-rules-list", [GradingRuleController::class, "list"])->middleware('permission:view-grading-rules');
 Route::post('grading-rules-store', [GradingRuleController::class, "store"])->middleware('permission:add-grading-rules');

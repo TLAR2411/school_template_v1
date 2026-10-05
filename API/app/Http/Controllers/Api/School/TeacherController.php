@@ -33,7 +33,7 @@ class TeacherController extends Controller
         $validate = $request->validate([
             'name_en' => 'required|string|max:255',
             'name_kh' => 'required|string|max:255',
-            'dob' => 'required|date',
+            'dob' => 'nullable|date',
             'gender' => 'required|string|max:255',
             'nation' => 'required|string|max:255',
             'photo_path' => 'nullable|string',

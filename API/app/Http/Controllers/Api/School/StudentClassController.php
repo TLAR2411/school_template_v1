@@ -126,5 +126,21 @@ class StudentClassController extends Controller
         }
     }
 
-    // public function 
+    public function delete(Request $request)
+    {
+        try {
+            $studentClass = StudentClass::findOrFail($request->id);
+            $studentClass->delete();
+            return response()->json([
+                'status'  => true,
+                'message' => 'Student removed from class successfully',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status'  => false,
+                'message' => $th->getMessage(),
+                'error'   => $th->getMessage(),
+            ], 500);
+        }
+    }
 }
