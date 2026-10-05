@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\App\AcademicController;
+use App\Http\Controllers\Api\App\AttendanceController;
 use App\Http\Controllers\Api\App\FcmController;
 use App\Http\Controllers\Api\App\GeneralInfoController;
 use App\Http\Controllers\Api\App\LoginAppController;
@@ -23,6 +24,8 @@ Route::post('notifications/attendance', [FcmController::class, 'sendNotiToAtt'])
 Route::post('telegram/webhook', [TelegramController::class, 'webhook']);
 Route::post('telegram-connection/webhook', [TelegramConnectionController::class, 'webhook']);
 Route::group(['middleware' => ['auth:api']], function () {
+    Route::get('months-list', [AttendanceController::class, 'getMonths']);
+    Route::post('attendance', [AttendanceController::class, 'getAttendance']);
     Route::get('telegram-connection/link', [TelegramConnectionController::class, 'getTelegramConnectLink']);
     Route::get('telegram-connection/status', [TelegramConnectionController::class, 'checkConnectTelegram']);
     Route::post('telegram-connection/send-message', [TelegramConnectionController::class, 'sendMessageToChat'])
