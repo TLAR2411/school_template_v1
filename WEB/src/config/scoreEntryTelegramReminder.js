@@ -3,30 +3,46 @@
  *
  * Customize message layout and send behavior here (one file).
  * Wording / translations: WEB/src/plugins/i18n/locales/en.json & km.json
- *   keys: "Score entry reminder", "Incomplete assignments", etc.
+ *   keys: "Score entry reminder", "Score entry greeting", "Month", "Deadline",
+ *         "Open score entry app", etc.
  */
 
 export const SCORE_ENTRY_TELEGRAM_CONFIG = {
   /** Delay between each teacher when bulk sending (Telegram rate limits). */
   sendDelayMs: 300,
 
-  /** Include lines in the message header (when data exists). */
+  /** Month is shown on the title line, e.g. "📌 Reminder ខែ: តុលា". */
   showMonth: true,
-  showCutoffDay: true,
+  showCutoffDay: false,
   showCloseDate: true,
 
-  /** Prefix for each class/subject line. */
-  assignmentBullet: "• ",
+  /** Prefix for each class line. */
+  classBullet: "▫️ ",
+
+  /** Prefix for each subject line under a class (em-spaces keep the indent in Telegram). */
+  subjectIndent: "\u2003\u2003",
+  subjectBullet: "– ",
 
   /**
-   * Format one incomplete row. Edit this function to change line shape only.
-   * @param {object} row — status list row (class/subject names, progress, status)
+   * Button shown under the message.
+   *  - type "url":     opens the link in the phone's browser (may open the installed PWA).
+   *  - type "web_app": opens inside Telegram as a Mini App (HTTPS required).
+   * Telegram only accepts public HTTPS URLs here.
+   */
+  button: {
+    enabled: true,
+    type: "url", // "url" | "web_app"
+    url: "https://dewey.disreportcard.com/school/ClassGrid", // TODO: replace with your PWA URL
+  },
+
+  /**
+   * Format one subject line (class name is printed once above it).
+   * @param {object} row — status list row
    * @param {object} helpers — { label, statusLabel }
    */
-  formatAssignmentLine(row, { label, statusLabel }) {
-    const cls = label(row.class_name_en, row.class_name_kh);
+  formatSubjectLine(row, { label, statusLabel }) {
     const sub = label(row.subject_name_en, row.subject_name_kh);
-    return `${cls} — ${sub}: ${row.scored_students}/${row.total_students} (${statusLabel(row.status)})`;
+    return `${sub}: ${row.scored_students}/${row.total_students} (${statusLabel(row.status)})`;
   },
 };
 
@@ -37,7 +53,7 @@ export const SCORE_ENTRY_TELEGRAM_CONFIG = {
  * @param {function} options.t — vue-i18n t()
  * @param {function} options.label — (en, kh) => display string
  * @param {function} options.statusLabel — (status) => translated status
- * @param {Array} options.incompleteRows — missing/partial rows for this teacher in current list
+ * @param {Array} options.incompleteRows — missing/partial rows for this teacher
  * @param {string} [options.monthName]
  * @param {number|null} [options.cutoffDay]
  * @param {string|null} [options.closeDate]
@@ -54,30 +70,72 @@ export function buildScoreEntryTelegramMessage({
   const cfg = SCORE_ENTRY_TELEGRAM_CONFIG;
   const lines = [];
 
-  lines.push(t("Score entry reminder"));
-
+  // Title (+ month on the same line)
+  let title = t("Score entry reminder");
   if (cfg.showMonth && monthName) {
-    lines.push(`${t("Month")}: ${monthName}`);
+    title += ` ${t("Month")}: ${monthName}`;
   }
+  lines.push(title);
+
+  // Greeting
+  lines.push("");
+  lines.push(t("Score entry greeting"));
+
+  // Group rows by class, keeping original order
+  const byClass = new Map();
+  for (const row of incompleteRows) {
+    const cls = label(row.class_name_en, row.class_name_kh);
+    if (!byClass.has(cls)) byClass.set(cls, []);
+    byClass.get(cls).push(row);
+  }
+
+  for (const [cls, rows] of byClass) {
+    lines.push(cfg.classBullet + cls);
+    for (const row of rows) {
+      lines.push(
+        cfg.subjectIndent +
+        cfg.subjectBullet +
+        cfg.formatSubjectLine(row, { label, statusLabel }),
+      );
+    }
+  }
+
+  // Cutoff / deadline
+  const footer = [];
   if (cfg.showCutoffDay && cutoffDay != null) {
-    lines.push(`${t("Current cutoff day")}: ${cutoffDay}`);
+    footer.push(`${t("Current cutoff day")}: ${cutoffDay}`);
   }
   if (cfg.showCloseDate && closeDate) {
-    lines.push(`${t("Deadline")}: ${closeDate}`);
+    footer.push(`${t("Deadline")}: ${closeDate}`);
+  }
+  if (footer.length) {
+    lines.push("");
+    lines.push(...footer);
   }
 
-  lines.push("");
-  lines.push(`${t("Incomplete assignments")}:`);
-
-  for (const row of incompleteRows) {
-    lines.push(
-      cfg.assignmentBullet +
-        cfg.formatAssignmentLine(row, { label, statusLabel }),
-    );
-  }
-
-  lines.push("");
+  // Closing
   lines.push(t("Please complete score entry for the items above."));
 
   return lines.join("\n");
+}
+
+/**
+ * Build the Telegram `reply_markup` (inline button) for the reminder.
+ * Send it together with the text, and have the backend forward it to
+ * Telegram's sendMessage as `reply_markup`.
+ *
+ * @param {object} options
+ * @param {function} options.t — vue-i18n t()
+ * @returns {object|null} reply_markup, or null when the button is disabled
+ */
+export function buildScoreEntryTelegramButton({ t }) {
+  const btn = SCORE_ENTRY_TELEGRAM_CONFIG.button;
+  if (!btn?.enabled || !btn.url) return null;
+
+  const button =
+    btn.type === "web_app"
+      ? { text: t("Open score entry app"), web_app: { url: btn.url } }
+      : { text: t("Open score entry app"), url: btn.url };
+
+  return { inline_keyboard: [[button]] };
 }

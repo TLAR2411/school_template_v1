@@ -491,7 +491,7 @@ async function saveAttendance() {
       is_late: r.is_late,
       is_permission: r.is_permission,
       is_approved: r.is_approved,
-      reason: r.reason,
+      reason: r.reason?.value ?? r.reason ?? null,
     })),
   };
 

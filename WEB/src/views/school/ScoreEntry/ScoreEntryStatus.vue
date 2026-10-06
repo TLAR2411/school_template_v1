@@ -1,11 +1,11 @@
 <script setup>
 /**
- * One page: set monthly cutoff day + track which teacher/subject still missing scores.
+ * Score entry status: one cutoff day per month + tracking of teachers who still miss scores.
+ * Rows are grouped by teacher; selection is per teacher (one Telegram message each).
  */
 import { computed, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
-import { useDisplay } from "vuetify";
 import AppCard from "@/components/AppCard.vue";
 import { api } from "@/utils/api";
 import { getClasses, getGrades, getMonths } from "@/services/dataService";
@@ -14,17 +14,27 @@ import hasPermission from "@/utils/hasPermission";
 import {
   SCORE_ENTRY_TELEGRAM_CONFIG,
   buildScoreEntryTelegramMessage,
+  buildScoreEntryTelegramButton,
 } from "@/config/scoreEntryTelegramReminder.js";
 
 const { t, locale } = useI18n();
 const router = useRouter();
-const { mdAndUp } = useDisplay();
 const settingStore = useSettingStore();
+
+// App logo (same pattern used by the login/layout components)
+const logos = import.meta.glob("@images/logo/*/logo.png", {
+  eager: true,
+  import: "default",
+});
+const company = import.meta.env.VITE_BASE_COMPANY;
+const MainLogo = logos[`/src/assets/images/logo/${company}/logo.png`];
+
+// Full-page loading overlay shown while the first load (setting + status) runs.
+const isInitializing = ref(true);
 
 const canEditDeadline = computed(() =>
   hasPermission(["approve-score-entry", "edit-score-entry"]),
 );
-
 const canSendTelegram = computed(() =>
   hasPermission(["approve-score-entry", "view-score-entry"]),
 );
@@ -43,9 +53,12 @@ const grades = ref([]);
 const allClasses = ref([]);
 const months = ref([]);
 const rows = ref([]);
-const selectedRowKeys = ref([]);
 const summary = ref({ missing: 0, partial: 0, done: 0, total: 0 });
 const windowInfo = ref({ locked: false, cutoff_day: null, close_date: null });
+
+// Selection is by teacher id, not by row
+const selectedTeacherIds = ref([]);
+const expanded = ref([]);
 
 const showSendDialog = ref(false);
 const sendCancelled = ref(false);
@@ -61,7 +74,7 @@ const filters = ref({
   month_id: null,
   grade_id: null,
   class_id: null,
-  status: "all",
+  status: "missing",
 });
 
 const hasYear = computed(() => {
@@ -76,73 +89,86 @@ const statusOptions = computed(() => [
   { title: t("Done"), value: "done" },
 ]);
 
-const filteredClasses = computed(() => {
-  if (!filters.value.grade_id) return allClasses.value;
-  return allClasses.value.filter((c) => c.grade_id == filters.value.grade_id);
-});
-
-const tableRows = computed(() =>
-  rows.value.map((r) => ({
-    ...r,
-    row_key: `${r.class_id}_${r.subject_id}`,
-  })),
+const filteredClasses = computed(() =>
+  filters.value.grade_id
+    ? allClasses.value.filter((c) => c.grade_id == filters.value.grade_id)
+    : allClasses.value,
 );
-
-const selectedTeacherCount = computed(() => {
-  const keys = new Set(selectedRowKeys.value);
-  const ids = new Set();
-  for (const r of tableRows.value) {
-    if (keys.has(r.row_key) && r.teacher_id) ids.add(r.teacher_id);
-  }
-  return ids.size;
-});
-
-const headers = computed(() => {
-  const base = [
-    { title: t("Class"), key: "class", sortable: true },
-    { title: t("Subject"), key: "subject", sortable: true },
-    { title: t("Teacher"), key: "teacher", sortable: true },
-    { title: t("Progress"), key: "progress", sortable: false },
-    { title: t("Status"), key: "status", sortable: true },
-    { title: t("Action"), key: "actions", sortable: false, align: "center" },
-  ];
-  return base;
-});
 
 function label(en, kh) {
   return locale.value === "km" ? kh || en || "—" : en || kh || "—";
 }
-
-function statusColor(status) {
-  if (status === "done") return "success";
-  if (status === "partial") return "warning";
-  return "error";
+function statusLabel(s) {
+  return s === "done"
+    ? t("Done")
+    : s === "partial"
+      ? t("Partial")
+      : t("Missing");
 }
-
-function statusLabel(status) {
-  if (status === "done") return t("Done");
-  if (status === "partial") return t("Partial");
-  return t("Missing");
+function statusColor(s) {
+  return s === "done" ? "success" : s === "partial" ? "warning" : "error";
 }
-
-function isIncompleteStatus(status) {
-  return status === "missing" || status === "partial";
+function isIncompleteStatus(s) {
+  return s === "missing" || s === "partial";
 }
-
-function isRowSelectable(item) {
-  return Boolean(item.teacher_id);
-}
-
 function teacherDisplayName(item) {
   return label(item?.teacher_name_en, item?.teacher_name_kh) || "—";
 }
-
 function monthDisplayName() {
   const m = months.value.find((x) => x.id === filters.value.month_id);
-  if (!m) return "";
-  return label(m.name_en, m.name_kh);
+  return m ? label(m.name_en, m.name_kh) : "";
 }
 
+/* ---------- Group rows by teacher ---------- */
+const teacherGroups = computed(() => {
+  const map = new Map();
+  for (const r of rows.value) {
+    const key = r.teacher_id || "none";
+    if (!map.has(key)) {
+      map.set(key, {
+        key,
+        teacherId: r.teacher_id || null,
+        name: r.teacher_id ? teacherDisplayName(r) : t("No teacher"),
+        connected: Boolean(r.telegram_connected),
+        items: [],
+      });
+    }
+    map.get(key).items.push({ ...r, row_key: `${r.class_id}_${r.subject_id}` });
+  }
+  return [...map.values()].map((g) => ({
+    ...g,
+    pending: g.items.filter((i) => isIncompleteStatus(i.status)).length,
+  }));
+});
+
+const selectableIds = computed(() =>
+  teacherGroups.value
+    .filter((g) => g.teacherId && g.pending)
+    .map((g) => g.teacherId),
+);
+const allSelected = computed(
+  () =>
+    selectableIds.value.length > 0 &&
+    selectableIds.value.every((id) => selectedTeacherIds.value.includes(id)),
+);
+const someSelected = computed(
+  () => selectedTeacherIds.value.length > 0 && !allSelected.value,
+);
+function toggleAll(v) {
+  selectedTeacherIds.value = v ? [...selectableIds.value] : [];
+}
+function toggleExpand(key) {
+  const i = expanded.value.indexOf(key);
+  if (i === -1) expanded.value.push(key);
+  else expanded.value.splice(i, 1);
+}
+function toggleExpandAll() {
+  expanded.value = expanded.value.length
+    ? []
+    : teacherGroups.value.map((g) => g.key);
+}
+
+/* ---------- Telegram ---------- */
 function incompleteRowsForTeacher(teacherId) {
   return rows.value.filter(
     (r) => r.teacher_id === teacherId && isIncompleteStatus(r.status),
@@ -155,7 +181,6 @@ function buildTelegramMessage(teacherId) {
     (windowInfo.value.cutoff_day != null
       ? Number(windowInfo.value.cutoff_day)
       : null);
-
   return buildScoreEntryTelegramMessage({
     t,
     label,
@@ -167,22 +192,13 @@ function buildTelegramMessage(teacherId) {
   });
 }
 
-function uniqueTeacherIdsFromRowKeys(keys) {
-  const keySet = new Set(keys);
-  const ordered = [];
-  const seen = new Set();
-  for (const r of tableRows.value) {
-    if (!keySet.has(r.row_key) || !r.teacher_id) continue;
-    if (seen.has(r.teacher_id)) continue;
-    seen.add(r.teacher_id);
-    ordered.push(r.teacher_id);
-  }
-  return ordered;
-}
+// const text = buildScoreEntryTelegramMessage({ t, label, statusLabel, incompleteRows, monthName, cutoffDay, closeDate });
+const reply_markup = buildScoreEntryTelegramButton({ t });
 
-function teacherNameById(teacherId) {
-  const row = rows.value.find((r) => r.teacher_id === teacherId);
-  return row ? teacherDisplayName(row) : String(teacherId);
+function teacherNameById(id) {
+  return (
+    teacherGroups.value.find((g) => g.teacherId === id)?.name || String(id)
+  );
 }
 
 function resetSendProgress() {
@@ -204,27 +220,20 @@ function openSendDialog(teacherIds) {
   void runSendQueue(ids);
 }
 
-function requestCancelSend() {
-  sendCancelled.value = true;
-}
-
-function delay(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+const requestCancelSend = () => (sendCancelled.value = true);
+const delay = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function runSendQueue(teacherIds) {
   isSendingTelegram.value = true;
   try {
     for (let i = 0; i < teacherIds.length; i++) {
       if (sendCancelled.value) break;
-
       const teacherId = teacherIds[i];
       const name = teacherNameById(teacherId);
       sendProgress.value.current = i + 1;
       sendProgress.value.currentTeacherName = name;
 
-      const incomplete = incompleteRowsForTeacher(teacherId);
-      if (!incomplete.length) {
+      if (!incompleteRowsForTeacher(teacherId).length) {
         sendProgress.value.steps.push({
           teacherId,
           name,
@@ -233,27 +242,22 @@ async function runSendQueue(teacherIds) {
         });
         continue;
       }
-
       try {
         const res = await api.post("telegram-connection/send-message", {
           teacher_id: teacherId,
           message: buildTelegramMessage(teacherId),
+          reply_markup: buildScoreEntryTelegramButton({ t }), // NEW
         });
-        if (res.data?.success) {
-          sendProgress.value.steps.push({
-            teacherId,
-            name,
-            outcome: "sent",
-            detail: res.data?.message || t("Message sent"),
-          });
-        } else {
-          sendProgress.value.steps.push({
-            teacherId,
-            name,
-            outcome: "failed",
-            detail: res.data?.message || t("Failed to send Telegram message"),
-          });
-        }
+        sendProgress.value.steps.push({
+          teacherId,
+          name,
+          outcome: res.data?.success ? "sent" : "failed",
+          detail:
+            res.data?.message ||
+            (res.data?.success
+              ? t("Message sent")
+              : t("Failed to send Telegram message")),
+        });
       } catch (e) {
         sendProgress.value.steps.push({
           teacherId,
@@ -265,7 +269,6 @@ async function runSendQueue(teacherIds) {
             t("Failed to send Telegram message"),
         });
       }
-
       if (i < teacherIds.length - 1 && !sendCancelled.value) {
         await delay(SCORE_ENTRY_TELEGRAM_CONFIG.sendDelayMs);
       }
@@ -276,49 +279,41 @@ async function runSendQueue(teacherIds) {
   }
 }
 
-function sendTelegramForRow(item) {
-  if (!canSendTelegram.value || !item?.teacher_id) return;
-  openSendDialog([item.teacher_id]);
-}
-
-function sendTelegramBulk() {
-  if (!canSendTelegram.value || !selectedRowKeys.value.length) return;
-  openSendDialog(uniqueTeacherIdsFromRowKeys(selectedRowKeys.value));
-}
+const sendTelegramForGroup = (g) =>
+  canSendTelegram.value && g.teacherId && openSendDialog([g.teacherId]);
+const sendTelegramBulk = () =>
+  canSendTelegram.value && openSendDialog(selectedTeacherIds.value);
 
 function closeSendDialog() {
-  if (isSendingTelegram.value) {
-    requestCancelSend();
-    return;
-  }
+  if (isSendingTelegram.value) return requestCancelSend();
   showSendDialog.value = false;
   resetSendProgress();
 }
 
-function sendStepIcon(outcome) {
-  if (outcome === "sent") return "tabler-circle-check";
-  if (outcome === "skipped") return "tabler-circle-minus";
-  return "tabler-circle-x";
-}
+const sendStepIcon = (o) =>
+  o === "sent"
+    ? "tabler-circle-check"
+    : o === "skipped"
+      ? "tabler-circle-minus"
+      : "tabler-circle-x";
+const sendStepColor = (o) =>
+  o === "sent" ? "success" : o === "skipped" ? "warning" : "error";
 
-function sendStepColor(outcome) {
-  if (outcome === "sent") return "success";
-  if (outcome === "skipped") return "warning";
-  return "error";
-}
-
+/* ---------- Data ---------- */
 async function loadLookups() {
   grades.value = (await getGrades()) || [];
   allClasses.value = (await getClasses()) || [];
   months.value = (await getMonths()) || [];
 }
 
+const isAbort = (e) =>
+  e?.code === "ERR_CANCELED" || e?.name === "CanceledError";
+
 async function loadSetting() {
   if (!hasYear.value) {
     cutoffDay.value = null;
     return;
   }
-
   isLoadingSetting.value = true;
   settingError.value = "";
   try {
@@ -330,8 +325,7 @@ async function loadSetting() {
     const day = res.data.data?.cutoff_day;
     cutoffDay.value = day != null ? Number(day) : null;
   } catch (e) {
-    // Ignore abort from duplicate requests
-    if (e?.code === "ERR_CANCELED" || e?.name === "CanceledError") return;
+    if (isAbort(e)) return;
     settingError.value =
       e?.response?.data?.message || e.message || t("Failed to load deadline");
   } finally {
@@ -344,7 +338,6 @@ function openDeadlineDialog() {
   dialogError.value = "";
   showDeadlineDialog.value = true;
 }
-
 function closeDeadlineDialog() {
   showDeadlineDialog.value = false;
   dialogError.value = "";
@@ -357,10 +350,8 @@ async function saveSetting() {
     dialogError.value = t("Cutoff day must be between 1 and 31");
     return;
   }
-
   isSavingSetting.value = true;
   dialogError.value = "";
-  settingError.value = "";
   try {
     const res = await api.post("score-entry-setting-store", {
       cutoff_day: day,
@@ -374,7 +365,7 @@ async function saveSetting() {
     showDeadlineDialog.value = false;
     if (filters.value.month_id) await loadStatus();
   } catch (e) {
-    if (e?.code === "ERR_CANCELED" || e?.name === "CanceledError") return;
+    if (isAbort(e)) return;
     dialogError.value =
       e?.response?.data?.message || e.message || t("Failed to save deadline");
   } finally {
@@ -388,7 +379,6 @@ async function loadStatus() {
     summary.value = { missing: 0, partial: 0, done: 0, total: 0 };
     return;
   }
-
   isLoadingStatus.value = true;
   statusError.value = "";
   try {
@@ -404,7 +394,8 @@ async function loadStatus() {
       return;
     }
     rows.value = res.data.data?.rows || [];
-    selectedRowKeys.value = [];
+    selectedTeacherIds.value = [];
+    expanded.value = [];
     summary.value = res.data.data?.summary || {
       missing: 0,
       partial: 0,
@@ -416,12 +407,11 @@ async function loadStatus() {
       cutoff_day: null,
       close_date: null,
     };
-    // Backup: keep textfield/chip in sync from status window too
     if (windowInfo.value.cutoff_day != null && cutoffDay.value == null) {
       cutoffDay.value = Number(windowInfo.value.cutoff_day);
     }
   } catch (e) {
-    if (e?.code === "ERR_CANCELED" || e?.name === "CanceledError") return;
+    if (isAbort(e)) return;
     statusError.value =
       e?.response?.data?.message || e.message || t("Failed to load status");
     rows.value = [];
@@ -433,10 +423,7 @@ async function loadStatus() {
 function openScoreEntry(item) {
   router.push({
     name: "school-score-entry",
-    query: {
-      class_id: item.class_id,
-      month_id: filters.value.month_id,
-    },
+    query: { class_id: item.class_id, month_id: filters.value.month_id },
   });
 }
 
@@ -454,12 +441,9 @@ watch(
     await loadStatus();
   },
 );
-
 watch(
   () => filters.value.grade_id,
-  () => {
-    filters.value.class_id = null;
-  },
+  () => (filters.value.class_id = null),
 );
 
 function gradeTitle(item) {
@@ -478,12 +462,11 @@ function gradeTitle(item) {
 }
 
 onMounted(async () => {
-  await loadLookups();
-  await loadSetting();
-  const nowMonth = new Date().getMonth() + 1;
-  const match = months.value.find((m) => {
-    const name = (m.name_en || "").toLowerCase();
-    const map = [
+  isInitializing.value = true;
+  try {
+    await loadLookups();
+    await loadSetting();
+    const names = [
       "january",
       "february",
       "march",
@@ -497,57 +480,68 @@ onMounted(async () => {
       "november",
       "december",
     ];
-    return map.indexOf(name) + 1 === nowMonth;
-  });
-  if (match) filters.value.month_id = match.id;
-  await loadStatus();
+    const nowMonth = new Date().getMonth() + 1;
+    const match = months.value.find(
+      (m) => names.indexOf((m.name_en || "").toLowerCase()) + 1 === nowMonth,
+    );
+    if (match) filters.value.month_id = match.id;
+    await loadStatus();
+  } finally {
+    isInitializing.value = false;
+  }
 });
 </script>
 
 <template>
   <div>
+    <!-- First-load overlay: shown until setting + status APIs finish -->
+    <div
+      v-if="isInitializing"
+      class="d-flex align-center justify-center"
+      style="min-height: 80vh"
+    >
+      <div class="d-flex flex-column align-center ga-4">
+        <img v-if="MainLogo" :src="MainLogo" alt="logo" class="loading-logo" />
+
+        <VProgressCircular indeterminate color="primary" size="40" width="4" />
+
+        <div class="text-body-2 text-medium-emphasis">
+          {{ t("Loading…") }}
+        </div>
+      </div>
+    </div>
+
     <AppCard
+      v-else
       :title="t('Score Entry Status')"
       title-icon="tabler-clipboard-list"
       :is-back="true"
-      :loading="isLoadingSetting || isLoadingStatus"
     >
-      <!-- Deadline summary + edit dialog -->
-      <div class="d-flex flex-wrap align-center ga-3 mb-4">
-        <VChip
-          :color="cutoffDay ? 'primary' : 'default'"
-          variant="tonal"
-          size="large"
-          prepend-icon="tabler-calendar-due"
-        >
-          <template v-if="cutoffDay">
-            {{ t("Current cutoff day") }}:
-            <strong class="ms-1">{{ cutoffDay }}</strong>
-          </template>
-          <template v-else>
-            {{ t("No deadline set") }}
-          </template>
+      <!-- Deadline: one quiet line -->
+      <div class="d-flex align-center ga-2 mb-4 text-body-1">
+        <VChip v-if="cutoffDay" color="primary" class="text-white">
+          <VIcon icon="tabler-calendar-due" size="20" />
+          <span>
+            {{ t("Current cutoff day") }}: <strong>{{ cutoffDay }}</strong>
+          </span>
+        </VChip>
+        <VChip v-else color="error">
+          <VIcon icon="tabler-calendar-due" size="20" />
+          <span class="">{{ t("No deadline set") }}</span>
         </VChip>
 
         <VBtn
           v-if="canEditDeadline"
-          color="primary"
           variant="tonal"
+          size="small"
           :loading="isLoadingSetting"
           @click="openDeadlineDialog"
+          color="warning"
         >
-          <VIcon start icon="tabler-edit" />
+          <VIcon> tabler-edit </VIcon>
           {{ cutoffDay ? t("Edit deadline") : t("Set deadline") }}
         </VBtn>
       </div>
-
-      <!-- <VAlert type="info" variant="tonal" class="mb-4" density="comfortable">
-        {{
-          t(
-            "Set one cutoff day for every month. After that day, teachers cannot insert scores for that month anymore (including later months).",
-          )
-        }}
-      </VAlert> -->
 
       <VAlert
         v-if="settingError"
@@ -559,11 +553,9 @@ onMounted(async () => {
         {{ settingError }}
       </VAlert>
 
-      <VDivider class="my-4" />
-
       <!-- Filters -->
-      <VRow dense class="mb-3">
-        <VCol cols="6" sm="6" md="3">
+      <VRow dense class="mb-4">
+        <VCol cols="6" md="3">
           <VSelect
             v-model="filters.month_id"
             :items="months"
@@ -574,7 +566,7 @@ onMounted(async () => {
             clearable
           />
         </VCol>
-        <VCol cols="6" sm="6" md="3">
+        <VCol cols="6" md="3">
           <VSelect
             v-model="filters.grade_id"
             :items="grades"
@@ -585,7 +577,7 @@ onMounted(async () => {
             clearable
           />
         </VCol>
-        <VCol cols="6" sm="6" md="3">
+        <VCol cols="6" md="3">
           <VSelect
             v-model="filters.class_id"
             :items="filteredClasses"
@@ -596,7 +588,7 @@ onMounted(async () => {
             clearable
           />
         </VCol>
-        <VCol cols="6" sm="6" md="2">
+        <VCol cols="6" md="2">
           <VSelect
             v-model="filters.status"
             :items="statusOptions"
@@ -606,10 +598,9 @@ onMounted(async () => {
             hide-details
           />
         </VCol>
-        <VCol cols="12" sm="6" md="1">
+        <VCol cols="12" md="1">
           <VBtn
             block
-            color="primary"
             variant="tonal"
             :disabled="!filters.month_id"
             :loading="isLoadingStatus"
@@ -620,147 +611,169 @@ onMounted(async () => {
         </VCol>
       </VRow>
 
-      <!-- <VAlert
-        v-if="windowInfo.close_date"
-        :type="windowInfo.locked ? 'warning' : 'success'"
-        variant="tonal"
-        density="comfortable"
-        class="mb-3"
-      >
-        <template v-if="windowInfo.locked">
-          {{ t("This month is locked") }}
-          ({{ t("closed after") }} {{ windowInfo.close_date }}).
-        </template>
-        <template v-else>
-          {{ t("This month is open until") }} {{ windowInfo.close_date }}.
-        </template>
-      </VAlert> -->
-
       <VAlert v-if="statusError" type="error" variant="tonal" class="mb-3">
         {{ statusError }}
       </VAlert>
 
+      <!-- Summary: plain text with small dots, no chips -->
+      <div class="d-flex justify-center flex-wrap ga-4 mb-4 text-body-2">
+        <VChip color="error">
+          <span class="summary-item"
+            >{{ t("Missing") }} {{ summary.missing }}</span
+          >
+        </VChip>
+        <VChip color="warning">
+          <span class="summary-item"
+            >{{ t("Partial") }} {{ summary.partial }}</span
+          >
+        </VChip>
+        <VChip color="success">
+          <span class="summary-item">{{ t("Done") }} {{ summary.done }}</span>
+        </VChip>
+        <VChip color="primary">
+          <span class="summary-item">{{ t("Total") }} {{ summary.total }}</span>
+        </VChip>
+      </div>
+
+      <!-- Toolbar: select all teachers / action bar -->
       <div
-        v-if="canSendTelegram && selectedRowKeys.length"
-        class="d-flex flex-wrap align-center ga-2 mb-3"
+        v-if="teacherGroups.length"
+        class="toolbar d-flex align-center ga-3 px-3 py-2 mb-3"
       >
-        <VBtn
-          color="info"
-          variant="tonal"
-          :disabled="!selectedTeacherCount || isSendingTelegram"
-          @click="sendTelegramBulk"
-        >
-          <VIcon start icon="tabler-brand-telegram" />
-          {{ t("Send Telegram") }}
-          <span v-if="selectedTeacherCount" class="ms-1">
-            ({{ selectedTeacherCount }})
-          </span>
+        <VCheckbox
+          v-if="canSendTelegram"
+          :model-value="allSelected"
+          :indeterminate="someSelected"
+          :label="
+            selectedTeacherIds.length
+              ? `${selectedTeacherIds.length} ${t('selected')}`
+              : t('Select all teachers')
+          "
+          hide-details
+          density="compact"
+          :disabled="!selectableIds.length"
+          @update:model-value="toggleAll"
+        />
+        <VSpacer />
+        <template v-if="selectedTeacherIds.length">
+          <VBtn variant="text" size="small" @click="selectedTeacherIds = []">{{
+            t("Clear")
+          }}</VBtn>
+          <VBtn
+            color="primary"
+            :disabled="isSendingTelegram"
+            @click="sendTelegramBulk"
+          >
+            <VIcon start icon="tabler-brand-telegram" />
+            {{ t("Send Telegram") }} ({{ selectedTeacherIds.length }})
+          </VBtn>
+        </template>
+        <VBtn v-else variant="text" size="small" @click="toggleExpandAll">
+          {{ expanded.length ? t("Collapse all") : t("Expand all") }}
         </VBtn>
       </div>
 
-      <!-- Summary -->
-      <div class="d-flex flex-wrap-4 ga-1 mb-4">
-        <VChip color="error" variant="tonal">
-          {{ t("Missing") }}: {{ summary.missing }}
-        </VChip>
-        <VChip color="warning" variant="tonal">
-          {{ t("Partial") }}: {{ summary.partial }}
-        </VChip>
-        <VChip color="success" variant="tonal">
-          {{ t("Done") }}: {{ summary.done }}
-        </VChip>
-        <VChip variant="outlined">
-          {{ t("Total") }}: {{ summary.total }}
-        </VChip>
-      </div>
+      <!-- Teacher groups -->
+      <div v-for="g in teacherGroups" :key="g.key" class="teacher-card mb-3">
+        <div
+          class="teacher-head d-flex align-center ga-3 px-3 py-2"
+          @click="toggleExpand(g.key)"
+        >
+          <VCheckbox
+            v-if="canSendTelegram && g.teacherId"
+            v-model="selectedTeacherIds"
+            :value="g.teacherId"
+            :disabled="!g.pending"
+            hide-details
+            density="compact"
+            class="flex-grow-0"
+            @click.stop
+          />
+          <VAvatar size="34" color="primary" variant="tonal">
+            {{ (g.name || "?").charAt(0) }}
+          </VAvatar>
+          <div class="flex-grow-1 min-w-0">
+            <div class="font-weight-medium text-truncate">{{ g.name }}</div>
+            <div class="text-caption text-medium-emphasis">
+              <template v-if="g.pending"
+                >{{ g.pending }} {{ t("subjects pending") }}</template
+              >
+              <template v-else>{{ t("All done") }}</template>
+              · {{ g.items.length }} {{ t("subjects") }}
+            </div>
+          </div>
+          <VTooltip
+            v-if="canSendTelegram && g.teacherId"
+            :text="
+              g.connected
+                ? t('Send Telegram reminder')
+                : t('Telegram not connected')
+            "
+          >
+            <template #activator="{ props: tip }">
+              <VBtn
+                v-bind="tip"
+                icon="tabler-brand-telegram"
+                variant="text"
+                size="small"
+                :color="g.connected ? 'primary' : undefined"
+                :disabled="isSendingTelegram || !g.pending"
+                @click.stop="sendTelegramForGroup(g)"
+              />
+            </template>
+          </VTooltip>
+          <VIcon
+            icon="tabler-chevron-down"
+            class="chev text-medium-emphasis"
+            :class="{ 'chev--open': expanded.includes(g.key) }"
+          />
+        </div>
 
-      <VDataTable
-        v-model="selectedRowKeys"
-        :headers="headers"
-        :items="tableRows"
-        item-value="row_key"
-        :show-select="canSendTelegram"
-        :item-selectable="isRowSelectable"
-        :loading="isLoadingStatus"
-        :items-per-page="mdAndUp ? 25 : 10"
-        class="text-no-wrap"
-        hover
-      >
-        <!-- <template #item.grade="{ item }">
-          {{
-            (label(item.grade_name_en, item.grade_name_kh), item.grade_level)
-          }}
-        </template> -->
-        <template #item.class="{ item }">
-          {{ label(item.class_name_en, item.class_name_kh) }}
-        </template>
-        <template #item.subject="{ item }">
-          {{ label(item.subject_name_en, item.subject_name_kh) }}
-        </template>
-        <template #item.teacher="{ item }">
-          <span v-if="item.teacher_id" class="d-inline-flex align-center ga-1">
-            {{ label(item.teacher_name_en, item.teacher_name_kh) }}
-            <VIcon
-              v-if="canSendTelegram"
-              icon="tabler-brand-telegram"
-              :color="item.telegram_connected ? 'info' : 'disabled'"
-              size="16"
-            />
-          </span>
-          <span v-else class="text-medium-emphasis">—</span>
-        </template>
-        <template #item.progress="{ item }">
-          {{ item.scored_students }}/{{ item.total_students }}
-        </template>
-        <template #item.status="{ item }">
-          <VChip size="small" :color="statusColor(item.status)" variant="tonal">
-            {{ statusLabel(item.status) }}
-          </VChip>
-        </template>
-        <template #item.actions="{ item }">
-          <div class="d-flex flex-wrap justify-center ga-1">
+        <div v-show="expanded.includes(g.key)" class="subject-list mx-5">
+          <div
+            v-for="item in g.items"
+            :key="item.row_key"
+            class="subject-row px-5 py-2"
+          >
+            <span class="text-medium-emphasis">{{
+              label(item.class_name_en, item.class_name_kh)
+            }}</span>
+            <span class="subject-name">{{
+              label(item.subject_name_en, item.subject_name_kh)
+            }}</span>
+            <span class="text-medium-emphasis"
+              >{{ item.scored_students }}/{{ item.total_students }}</span
+            >
+            <span class="summary-item text-no-wrap">
+              <i class="dot" :class="`bg-${statusColor(item.status)}`" />{{
+                statusLabel(item.status)
+              }}
+            </span>
             <VBtn
               size="small"
-              variant="tonal"
+              variant="text"
               color="primary"
               @click="openScoreEntry(item)"
             >
               {{ t("Open Score") }}
             </VBtn>
-            <VTooltip
-              v-if="canSendTelegram && item.teacher_id"
-              :text="
-                item.telegram_connected
-                  ? t('Send Telegram reminder')
-                  : t('Telegram not connected')
-              "
-            >
-              <template #activator="{ props: tipProps }">
-                <VBtn
-                  v-bind="tipProps"
-                  size="small"
-                  variant="tonal"
-                  color="info"
-                  icon="tabler-brand-telegram"
-                  :disabled="isSendingTelegram"
-                  @click="sendTelegramForRow(item)"
-                />
-              </template>
-            </VTooltip>
           </div>
-        </template>
-        <template #no-data>
-          <div class="text-center py-6 text-medium-emphasis">
-            {{
-              filters.month_id
-                ? t("No subjects match this filter")
-                : t("Select a month to track score entry")
-            }}
-          </div>
-        </template>
-      </VDataTable>
+        </div>
+      </div>
+
+      <div
+        v-if="!teacherGroups.length && !isLoadingStatus"
+        class="text-center py-8 text-medium-emphasis"
+      >
+        {{
+          filters.month_id
+            ? t("No subjects match this filter")
+            : t("Select a month to track score entry")
+        }}
+      </div>
     </AppCard>
 
+    <!-- Send progress dialog -->
     <VDialog
       v-model="showSendDialog"
       max-width="520"
@@ -789,20 +802,17 @@ onMounted(async () => {
               })
             }}
             <template v-if="sendProgress.currentTeacherName">
-              — {{ sendProgress.currentTeacherName }}
-            </template>
+              — {{ sendProgress.currentTeacherName }}</template
+            >
           </p>
           <VProgressLinear
             v-if="sendProgress.total"
             :model-value="(sendProgress.current / sendProgress.total) * 100"
-            color="info"
+            color="primary"
             class="mb-4"
             rounded
           />
-          <div
-            v-if="sendProgress.steps.length"
-            class="send-steps-list text-body-2"
-          >
+          <div v-if="sendProgress.steps.length" class="text-body-2">
             <div
               v-for="(step, idx) in sendProgress.steps"
               :key="`${step.teacherId}-${idx}`"
@@ -832,7 +842,6 @@ onMounted(async () => {
           <VSpacer />
           <VBtn
             v-if="isSendingTelegram"
-            color="warning"
             variant="tonal"
             @click="requestCancelSend"
           >
@@ -840,29 +849,26 @@ onMounted(async () => {
           </VBtn>
           <VBtn
             v-else
-            color="primary"
             variant="tonal"
+            color="primary"
             @click="closeSendDialog"
+            >{{ t("Close") }}</VBtn
           >
-            {{ t("Close") }}
-          </VBtn>
         </VCardActions>
       </VCard>
     </VDialog>
 
+    <!-- Deadline dialog -->
     <VDialog v-model="showDeadlineDialog" max-width="420" persistent>
       <VCard>
         <VCardTitle class="d-flex align-center justify-space-between">
           <span>{{ cutoffDay ? t("Edit deadline") : t("Set deadline") }}</span>
-          <VBtn icon variant="text" size="small" @click="closeDeadlineDialog">
-            <VIcon icon="tabler-x" />
-          </VBtn>
+          <VBtn icon variant="text" size="small" @click="closeDeadlineDialog"
+            ><VIcon icon="tabler-x"
+          /></VBtn>
         </VCardTitle>
         <VDivider />
         <VCardText>
-          <!-- <p class="text-body-2 text-medium-emphasis mb-4">
-            {{ t("Example: 26 means locked from day 27") }}
-          </p> -->
           <VTextField
             v-model.number="draftCutoffDay"
             type="number"
@@ -888,24 +894,74 @@ onMounted(async () => {
         <VCardActions class="pa-4">
           <VSpacer />
           <VBtn
-            color="error"
-            variant="tonal"
+            variant="text"
             :disabled="isSavingSetting"
             @click="closeDeadlineDialog"
+            >{{ t("Cancel") }}</VBtn
           >
-            {{ t("Cancel") }}
-          </VBtn>
           <VBtn
             variant="tonal"
             color="primary"
             :loading="isSavingSetting"
-            :disabled="isSavingSetting"
             @click="saveSetting"
+            >{{ t("Save") }}</VBtn
           >
-            {{ t("Save") }}
-          </VBtn>
         </VCardActions>
       </VCard>
     </VDialog>
   </div>
 </template>
+
+<style scoped>
+.loading-logo {
+  height: 64px;
+  width: auto;
+  object-fit: contain;
+}
+.toolbar,
+.teacher-card {
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 10px;
+}
+.teacher-card {
+  overflow: hidden;
+}
+.teacher-head {
+  cursor: pointer;
+}
+.teacher-head:hover {
+  background: rgba(var(--v-theme-on-surface), 0.04);
+}
+.chev {
+  transition: transform 0.2s;
+}
+.chev--open {
+  transform: rotate(180deg);
+}
+.subject-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 70px 110px auto;
+  align-items: center;
+  gap: 12px;
+  border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+.subject-name {
+  font-weight: 500;
+}
+.summary-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+@media (max-width: 600px) {
+  .subject-row {
+    grid-template-columns: 1fr auto;
+  }
+}
+</style>

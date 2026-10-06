@@ -5,6 +5,7 @@ definePage({
     layout: "default",
     subject: "Auth",
     requiresAuth: true,
+    permissions: "view-admin-dashboard",
   },
 });
 
@@ -159,3 +160,4 @@ onMounted(() => {
     </VRow>
   </div>
 </template>
+

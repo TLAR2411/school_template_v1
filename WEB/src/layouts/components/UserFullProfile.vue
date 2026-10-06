@@ -3,6 +3,9 @@ import { useLayoutConfigStore } from "@/@layouts/stores/config";
 import AppAvatar from "@/components/AppAvatar.vue";
 import {
   getDashboardRoute,
+  getDashboardPermission,
+  getFallbackRoute,
+  getFallbackPermission,
   getProfileRoute,
   getSystemPartsForMenu,
 } from "@/config/systemParts";
@@ -64,7 +67,26 @@ const checkSystemPart = (part) => {
     `Success Switch Part to ${convertName(part)}`,
   );
   isSnackbarVisibility.value = true;
-  router.push({ name: getDashboardRoute(part) });
+
+  // Only go to the part dashboard if the user can actually view it.
+  if (hasPermission(getDashboardPermission(part))) {
+    router.push({ name: getDashboardRoute(part) });
+    return;
+  }
+
+  // Otherwise fall back to another accessible page in that part (e.g. Students).
+  const fallbackRoute = getFallbackRoute(part);
+  const fallbackPermission = getFallbackPermission(part);
+
+  if (
+    fallbackRoute &&
+    (!fallbackPermission || hasPermission(fallbackPermission))
+  ) {
+    router.push({ name: fallbackRoute });
+    return;
+  }
+
+  router.push({ name: "not-authorized" });
 };
 
 const allUsers = computed(() => {
@@ -121,7 +143,7 @@ const allUsers = computed(() => {
       <Transition name="transition-slide-x">
         <div
           v-if="!hideTitleAndBadge"
-          class=" w-100 d-flex flex-column ml-2 text-no-wrap"
+          class="w-100 d-flex flex-column ml-2 text-no-wrap"
           key="user-info"
         >
           <span
@@ -132,14 +154,15 @@ const allUsers = computed(() => {
           </span>
           <div class="w-100 d-flex justify-space-between">
             <span
-            class="text-xs text-truncate"
-            style="font-size: 11px !important; opacity: 0.8"
-          >
-            {{ auth()?.user?.name_en ?? null }}
-          </span>
-          <VChip rounded="xl" color="error" size="x-small">{{ version }}</VChip>
+              class="text-xs text-truncate"
+              style="font-size: 11px !important; opacity: 0.8"
+            >
+              {{ auth()?.user?.name_en ?? null }}
+            </span>
+            <VChip rounded="xl" color="error" size="x-small">{{
+              version
+            }}</VChip>
           </div>
-
         </div>
       </Transition>
     </div>

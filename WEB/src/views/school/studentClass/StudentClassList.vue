@@ -58,7 +58,7 @@ const headers = ref([
 
 const onDelete = async (item) => {
   try {
-    const res = await api.post("students-classes-delete", { id: item.id });
+    const res = await api.post("student-class-delete", { id: item.id });
     if (res.data.status) {
       dataTableRef.value?.reload();
       await getStudentAvailable();

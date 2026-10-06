@@ -327,9 +327,8 @@
   "Send Telegram": "Send Telegram",
   "Send Telegram reminders": "Send Telegram reminders",
   "Send Telegram reminder": "Send Telegram reminder",
-  "Score entry reminder": "Score entry reminder",
-  "Incomplete assignments": "Incomplete assignments",
-  "Please complete score entry for the items above.": "Please complete score entry for the items above.",
+ 
+
   "Failed to send Telegram message": "Failed to send Telegram message",
   "Message sent": "Message sent",
   "No incomplete assignments in current list": "No incomplete assignments in current list",
@@ -337,7 +336,7 @@
   "Sending {current} of {total}": "Sending {current} of {total}",
   "No sends yet": "No sends yet",
   "Cancelling…": "Cancelling…",
-  "Deadline": "Deadline",
+
   "Set one cutoff day for every month. After that day, teachers cannot insert scores for that month anymore (including later months).": "Set one cutoff day for every month. After that day, teachers cannot insert scores for that month anymore (including later months).",
   "Missing": "Missing",
   "Partial": "Partial",
@@ -399,6 +398,14 @@
   "Linked group": "Linked group",
   "Unlink group": "Unlink group",
   "Disconnect": "Disconnect",
+
+  
+    "Score entry reminder": "📌 Score Entry Reminder",
+    "Score entry greeting": "Dear teacher, some scores have not been entered yet:",
+    "Deadline": "📅 Deadline",
+    "Incomplete assignments": "Classes and subjects not yet completed",
+    "Please complete score entry for the items above.": "Please complete the score entry on time. Thank you! 🙏",
+  
   "$vuetify": {
     "badge": "Badge",
     "noDataText": "No data available",

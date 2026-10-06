@@ -7,9 +7,7 @@ import { usePartStore } from "@/stores/partStore.js";
 import AppAvatar from "@/components/AppAvatar.vue";
 import {
   getDashboardRoute,
-  getProfileRoute,
-  getSystemPartsForMenu,
-} from "@/config/systemParts";
+
 
 const router = useRouter();
 
@@ -60,7 +58,23 @@ const checkSystemPart = (part) => {
     `Success Switch Part to ${convertName(part)}`,
   );
   isSnackbarVisibility.value = true;
-  router.push({ name: getDashboardRoute(part) });
+
+  // Only go to the part dashboard if the user can actually view it.
+  if (hasPermission(getDashboardPermission(part))) {
+    router.push({ name: getDashboardRoute(part) });
+    return;
+  }
+
+  // Otherwise fall back to another accessible page in that part (e.g. Students).
+  const fallbackRoute = getFallbackRoute(part);
+  const fallbackPermission = getFallbackPermission(part);
+
+  if (fallbackRoute && (!fallbackPermission || hasPermission(fallbackPermission))) {
+    router.push({ name: fallbackRoute });
+    return;
+  }
+
+  router.push({ name: "not-authorized" });
 };
 
 const allUsers = computed(() => {

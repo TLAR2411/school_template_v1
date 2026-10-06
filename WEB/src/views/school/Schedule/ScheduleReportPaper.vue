@@ -76,7 +76,9 @@ const logoSrc = computed(() => resolveReportAsset(config.value.header?.logo));
       }"
     >
       ថ្នាក់ទី {{ className }}
-      <template v-if="setting.year_name"> ឆ្នាំសិក្សា{{ setting.year_name }}</template>
+      <template v-if="setting.year_name">
+        ឆ្នាំសិក្សា{{ setting.year_name }}</template
+      >
     </p>
     <p
       v-else-if="setting.year_name"
@@ -112,11 +114,6 @@ const logoSrc = computed(() => resolveReportAsset(config.value.header?.logo));
       <p v-if="khmerDate.gregorian" class="mb-0">{{ khmerDate.gregorian }}</p>
     </div>
   </ReportDraggable>
-
-  <p v-if="isPrimary && classTeacher" class="schedule-report__homeroom">
-    {{ $t("Class teacher") }}:
-    {{ localized(classTeacher) }}
-  </p>
 
   <table
     style="margin-top: -35px"
@@ -162,12 +159,19 @@ const logoSrc = computed(() => resolveReportAsset(config.value.header?.logo));
 
   <ol
     v-if="!isPrimary && listedTeachers.length"
-    class="schedule-report__teachers"
+    class="schedule-report__teachers ml-5"
   >
     <li v-for="teacher in listedTeachers" :key="teacher.teacher_id">
       {{ teacherLine(teacher) }}
     </li>
   </ol>
+  <p
+    v-if="isPrimary && classTeacher"
+    class="schedule-report__homeroom ml-5 mt-1"
+  >
+    {{ $t("Class teacher") }}:
+    {{ localized(classTeacher) }}
+  </p>
 
   <ReportDraggable
     v-for="signature in config.signatures"
@@ -183,7 +187,7 @@ const logoSrc = computed(() => resolveReportAsset(config.value.header?.logo));
     <ReportImage
       v-if="signature.showImage && signature.image"
       v-model:width="signature.imageWidth"
-        :src="resolveReportAsset(signature.image)"
+      :src="resolveReportAsset(signature.image)"
       :min-width="SIGNATURE_SIZE_RANGE.min"
       :max-width="SIGNATURE_SIZE_RANGE.max"
       class="mb-1"

@@ -3,12 +3,7 @@ export default [
         title: "Dashboards",
         to: { name: "admin-dashboards" },
         icon: { icon: "tabler-dashboard" },
-    },
-    {
-        title: "List Users",
-        to: { name: "admin-users" },
-        icon: { icon: "tabler-users" },
-        permission: "view-users"
+        permission: "view-admin-dashboard"
     },
     {
         title: "Students",
@@ -28,6 +23,13 @@ export default [
         icon: { icon: "tabler-calendar" },
         permission: "view-years",
     },
+    {
+        title: "List Users",
+        to: { name: "admin-users" },
+        icon: { icon: "tabler-users" },
+        permission: "view-users"
+    },
+
     {
         title: "Activity Log",
         to: { name: "admin-activity-log" },
@@ -67,13 +69,13 @@ export default [
                 },
                 permission: "view-permissions",
             },
-            {
-                title: "Positions",
-                to: {
-                    name: "admin-positions",
-                },
-                permission: "view-positions",
-            },
+            // {
+            //     title: "Positions",
+            //     to: {
+            //         name: "admin-positions",
+            //     },
+            //     permission: "view-positions",
+            // },
         ],
     },
     {

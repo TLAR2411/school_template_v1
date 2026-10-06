@@ -49,6 +49,9 @@ export const SYSTEM_PARTS = [
     permission: "admin-allow-part",
     path: "/admin",
     dashboardRoute: "admin-dashboards",
+    dashboardPermission: "view-admin-dashboard",
+    fallbackRoute: "admin-students",
+    fallbackPermission: "view-students",
     profileRoute: "admin-user-profile-tab",
     navItems: AdminNavItems,
   },
@@ -59,6 +62,9 @@ export const SYSTEM_PARTS = [
     permission: "school-allow-part",
     path: "/school",
     dashboardRoute: "school-dashboards",
+    dashboardPermission: "view-school-dashboard",
+    fallbackRoute: "school-class-grid",
+    fallbackPermission: "view-classes",
     profileRoute: "school-user-profile-tab",
     navItems: SchoolNavItems,
   },
@@ -79,6 +85,19 @@ export const getSystemPartsForMenu = (activePart) =>
 
 export const getDashboardRoute = (part) => getPartConfig(part).dashboardRoute;
 
+export const getDashboardPermission = (part) =>
+  getPartConfig(part).dashboardPermission;
+
+export const getFallbackRoute = (part) => {
+  const config = getPartConfig(part);
+  return config?.fallbackRoute ?? null;
+};
+
+export const getFallbackPermission = (part) => {
+  const config = getPartConfig(part);
+  return config?.fallbackPermission ?? null;
+};
+
 export const getProfileRoute = (part) => getPartConfig(part).profileRoute;
 
 export const getPartPath = (part) => getPartConfig(part)?.path ?? "/";
@@ -94,3 +113,5 @@ export const getNavItemsByPart = (part, loanNavItems) => {
 export const segmentMap = Object.fromEntries(
   SYSTEM_PARTS.map((p) => [p.key, p.key]),
 );
+
+

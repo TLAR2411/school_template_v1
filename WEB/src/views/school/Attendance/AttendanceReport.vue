@@ -797,7 +797,15 @@ defineExpose({
                   </button>
                 </div>
 
-                <VRow dense class="dashboard-attendance d-flex justify-end">
+                <VRow dense class="dashboard_attendance">
+                  <VCol cols="12" md="3" class="d-flex justify-center">
+                    <VueApexCharts
+                      type="donut"
+                      height="280"
+                      :options="dashboardChartOptions"
+                      :series="dashboardChartSeries"
+                    />
+                  </VCol>
                   <VCol
                     v-for="panel in visibleDashboardPanels"
                     :key="panel.key"
@@ -844,15 +852,6 @@ defineExpose({
                     </div>
                   </VCol>
                 </VRow>
-              </VCol>
-
-              <VCol cols="12" md="3" class="d-flex justify-center">
-                <VueApexCharts
-                  type="donut"
-                  height="280"
-                  :options="dashboardChartOptions"
-                  :series="dashboardChartSeries"
-                />
               </VCol>
 
               <!-- <VCol cols="12" md="7">
