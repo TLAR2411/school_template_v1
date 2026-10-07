@@ -64,14 +64,14 @@ class ScoreEntryStatusController extends Controller
             ], 422);
         }
 
+        // One cutoff for the whole school year: ignore curriculum so the row is
+        // shared by every curriculum/teacher. Prefer an existing row that matches
+        // the requested curriculum, then a null one, then any for this year.
         $settingQuery = ScoreEntrySetting::query()
             ->where('year_id', $yearId)
-            ->when(
-                $curId,
-                fn ($q) => $q->where(function ($q) use ($curId) {
-                    $q->where('cur_id', $curId)->orWhereNull('cur_id');
-                })->orderByRaw('CASE WHEN cur_id IS NULL THEN 1 ELSE 0 END'),
-                fn ($q) => $q->whereNull('cur_id')
+            ->orderByRaw(
+                'CASE WHEN cur_id = ? THEN 0 WHEN cur_id IS NULL THEN 1 ELSE 2 END',
+                [$curId]
             );
 
         if ($branchId) {
@@ -87,7 +87,7 @@ class ScoreEntryStatusController extends Controller
 
         $payload = [
             'year_id'    => $yearId,
-            'cur_id'     => $curId,
+            'cur_id'     => null,
             'branch_id'  => $branchId,
             'cutoff_day' => (int) $data['cutoff_day'],
             'is_active'  => array_key_exists('is_active', $data)

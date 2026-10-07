@@ -19,20 +19,18 @@ class ScoreEntryDeadlineService
             return null;
         }
 
-        // Match year + curriculum flexibly (branch optional).
-        // After login headers can differ slightly from save time; still find the saved cutoff.
+        // The cutoff applies to every curriculum, so never filter by cur_id.
+        // Otherwise teachers assigned to a different curriculum than the one the
+        // deadline was saved under would never be locked.
+        // Prefer the exact curriculum when several rows exist, then a null one,
+        // then any other row for this year.
         $query = ScoreEntrySetting::query()
             ->where('year_id', $yearId)
-            ->where('is_active', true);
-
-        if ($curId) {
-            $query->where(function ($q) use ($curId) {
-                $q->where('cur_id', $curId)->orWhereNull('cur_id');
-            })->orderByRaw('CASE WHEN cur_id IS NULL THEN 1 ELSE 0 END');
-        } else {
-            // No curriculum selected: prefer null cur, else any for this year
-            $query->orderByRaw('CASE WHEN cur_id IS NULL THEN 0 ELSE 1 END');
-        }
+            ->where('is_active', true)
+            ->orderByRaw(
+                'CASE WHEN cur_id = ? THEN 0 WHEN cur_id IS NULL THEN 1 ELSE 2 END',
+                [$curId]
+            );
 
         if ($branchId) {
             $query->orderByRaw(

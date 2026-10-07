@@ -2,7 +2,7 @@
 
 One admin page to:
 
-1. Set a **single cutoff day** (e.g. `26`) for the school year + curriculum  
+1. Set a **single cutoff day** (e.g. `26`) for the school year (applies to all curricula)  
 2. Track which **class / subject / teacher** still need monthly scores  
 
 Teachers cannot save scores for a month after that month’s cutoff day — even later (Option A).
@@ -55,7 +55,7 @@ Table: `score_entry_settings`
 | Column | Meaning |
 |--------|---------|
 | `year_id` | School year |
-| `cur_id` | Curriculum (Khmer, …) |
+| `cur_id` | Curriculum scope; stored as `NULL` = all curricula |
 | `branch_id` | Optional branch |
 | `cutoff_day` | Day of month `1–31` (one value for all months) |
 | `is_active` | Soft on/off |
