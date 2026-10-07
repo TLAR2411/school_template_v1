@@ -25,6 +25,7 @@ Route::post('notifications/attendance', [FcmController::class, 'sendNotiToAtt'])
 Route::post('telegram/webhook', [TelegramController::class, 'webhook']);
 Route::post('telegram-connection/webhook', [TelegramConnectionController::class, 'webhook']);
 Route::group(['middleware' => ['auth:api']], function () {
+    Route::post('attendance-history', [AttendanceController::class, 'studentHistory']);
     Route::post('schedules', [ScheduleController::class, 'list']);
     Route::get('months-list', [AttendanceController::class, 'getMonths']);
     Route::post('attendance', [AttendanceController::class, 'getAttendance']);

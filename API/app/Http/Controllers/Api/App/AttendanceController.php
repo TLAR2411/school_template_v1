@@ -10,6 +10,98 @@ use Illuminate\Support\Facades\DB;
 
 class AttendanceController extends Controller
 {
+    public function studentHistory(Request $request)
+    {
+        $validated = $request->validate([
+            'student_id' => ['required', 'integer', 'exists:students,id'],
+            'class_id' => ['nullable', 'integer', 'exists:classes,id'],
+            'date_from' => ['nullable', 'date', 'required_with:date_to'],
+            'date_to' => ['nullable', 'date', 'required_with:date_from', 'after_or_equal:date_from'],
+        ]);
+
+        $userId = $request->user()->getAuthIdentifier();
+        $studentId = (int) $validated['student_id'];
+
+        $familyIds = DB::table('family_members')
+            ->where('user_id', $userId)
+            ->where('is_active', true)
+            ->whereNull('deleted_at')
+            ->pluck('family_id');
+
+        $canViewStudent = DB::table('family_students')
+            ->whereIn('family_id', $familyIds)
+            ->where('student_id', $studentId)
+            ->where('is_active', true)
+            ->whereNull('deleted_at')
+            ->exists();
+
+        if (! $canViewStudent) {
+            return response()->json([
+                'status' => 1,
+                'message' => 'You do not have access to this student attendance',
+            ], 403);
+        }
+
+        $rows = DB::table('attendances')
+            ->selectRaw('MIN(id) AS id, student_id, class_id, date, session,
+                MAX(CASE WHEN is_permission = 1 THEN 1 ELSE 0 END) AS is_permission,
+                MAX(CASE WHEN is_late = 1 THEN 1 ELSE 0 END) AS is_late,
+                MIN(CASE WHEN is_present = 1 THEN 1 ELSE 0 END) AS is_present,
+                MAX(CASE WHEN is_approved = 1 THEN 1 ELSE 0 END) AS is_approved,
+                MAX(reason) AS reason')
+            ->where('student_id', $studentId)
+            ->when(
+                ! empty($validated['class_id']),
+                fn ($query) => $query->where('class_id', $validated['class_id'])
+            )
+            ->when(
+                ! empty($validated['date_from']),
+                fn ($query) => $query->whereDate('date', '>=', $validated['date_from'])
+            )
+            ->when(
+                ! empty($validated['date_to']),
+                fn ($query) => $query->whereDate('date', '<=', $validated['date_to'])
+            )
+            ->groupBy('student_id', 'class_id', 'date', 'session')
+            ->orderByDesc('date')
+            ->get()
+            ->map(function ($row) {
+                $status = match (true) {
+                    (bool) $row->is_permission => 'permission',
+                    (bool) $row->is_late => 'late',
+                    ! (bool) $row->is_present => 'absent',
+                    default => 'present',
+                };
+
+                return [
+                    'id' => (int) $row->id,
+                    'student_id' => (int) $row->student_id,
+                    'class_id' => (int) $row->class_id,
+                    'date' => $row->date,
+                    'session' => $row->session,
+                    'status' => $status,
+                    'is_present' => (bool) $row->is_present,
+                    'is_late' => (bool) $row->is_late,
+                    'is_permission' => (bool) $row->is_permission,
+                    'is_approved' => (bool) $row->is_approved,
+                    'reason' => $row->reason,
+                ];
+            });
+
+        return response()->json([
+            'status' => 0,
+            'student_id' => $studentId,
+            'summary' => [
+                'present' => $rows->where('status', 'present')->count(),
+                'late' => $rows->where('status', 'late')->count(),
+                'permission' => $rows->where('status', 'permission')->count(),
+                'absent' => $rows->where('status', 'absent')->count(),
+                'total' => $rows->count(),
+            ],
+            'attendance' => $rows->values(),
+        ]);
+    }
+
     public function getMonths()
     {
         $months = Month::query()
