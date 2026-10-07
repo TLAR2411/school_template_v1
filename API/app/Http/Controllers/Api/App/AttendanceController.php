@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\App;
 
 use App\Http\Controllers\Controller;
 use App\Models\School\Month;
+use App\Models\School\Student;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -13,14 +14,15 @@ class AttendanceController extends Controller
     public function studentHistory(Request $request)
     {
         $validated = $request->validate([
-            'student_id' => ['required', 'integer', 'exists:students,id'],
             'class_id' => ['nullable', 'integer', 'exists:classes,id'],
             'date_from' => ['nullable', 'date', 'required_with:date_to'],
             'date_to' => ['nullable', 'date', 'required_with:date_from', 'after_or_equal:date_from'],
+            'page' => ['nullable', 'integer', 'min:1'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
         $userId = $request->user()->getAuthIdentifier();
-        $studentId = (int) $validated['student_id'];
+        $perPage = (int) ($validated['per_page'] ?? 20);
 
         $familyIds = DB::table('family_members')
             ->where('user_id', $userId)
@@ -28,28 +30,36 @@ class AttendanceController extends Controller
             ->whereNull('deleted_at')
             ->pluck('family_id');
 
-        $canViewStudent = DB::table('family_students')
+        $studentIds = DB::table('family_students')
             ->whereIn('family_id', $familyIds)
-            ->where('student_id', $studentId)
             ->where('is_active', true)
             ->whereNull('deleted_at')
-            ->exists();
+            ->distinct()
+            ->pluck('student_id');
 
-        if (! $canViewStudent) {
+        if ($studentIds->isEmpty()) {
             return response()->json([
-                'status' => 1,
-                'message' => 'You do not have access to this student attendance',
-            ], 403);
+                'status' => 0,
+                'data' => [],
+                'pagination' => [
+                    'current_page' => 1,
+                    'last_page' => 1,
+                    'per_page' => $perPage,
+                    'total' => 0,
+                    'from' => null,
+                    'to' => null,
+                ],
+            ]);
         }
 
-        $rows = DB::table('attendances')
+        $paginator = DB::table('attendances')
             ->selectRaw('MIN(id) AS id, student_id, class_id, date, session,
                 MAX(CASE WHEN is_permission = 1 THEN 1 ELSE 0 END) AS is_permission,
                 MAX(CASE WHEN is_late = 1 THEN 1 ELSE 0 END) AS is_late,
                 MIN(CASE WHEN is_present = 1 THEN 1 ELSE 0 END) AS is_present,
                 MAX(CASE WHEN is_approved = 1 THEN 1 ELSE 0 END) AS is_approved,
                 MAX(reason) AS reason')
-            ->where('student_id', $studentId)
+            ->whereIn('student_id', $studentIds)
             ->when(
                 ! empty($validated['class_id']),
                 fn ($query) => $query->where('class_id', $validated['class_id'])
@@ -64,8 +74,17 @@ class AttendanceController extends Controller
             )
             ->groupBy('student_id', 'class_id', 'date', 'session')
             ->orderByDesc('date')
-            ->get()
-            ->map(function ($row) {
+            ->orderByDesc('id')
+            ->paginate($perPage);
+
+        $students = Student::query()
+            ->whereIn('id', $paginator->getCollection()->pluck('student_id')->unique())
+            ->get(['id', 'name_en', 'name_kh', 'photo_path'])
+            ->keyBy('id');
+
+        $paginator->setCollection(
+            $paginator->getCollection()->map(function ($row) use ($students) {
+                $student = $students->get($row->student_id);
                 $status = match (true) {
                     (bool) $row->is_permission => 'permission',
                     (bool) $row->is_late => 'late',
@@ -76,6 +95,11 @@ class AttendanceController extends Controller
                 return [
                     'id' => (int) $row->id,
                     'student_id' => (int) $row->student_id,
+                    'student' => $student ? [
+                        'name_en' => $student->name_en,
+                        'name_kh' => $student->name_kh,
+                        'photo_path' => $student->photo_path,
+                    ] : null,
                     'class_id' => (int) $row->class_id,
                     'date' => $row->date,
                     'session' => $row->session,
@@ -86,19 +110,20 @@ class AttendanceController extends Controller
                     'is_approved' => (bool) $row->is_approved,
                     'reason' => $row->reason,
                 ];
-            });
+            })
+        );
 
         return response()->json([
             'status' => 0,
-            'student_id' => $studentId,
-            'summary' => [
-                'present' => $rows->where('status', 'present')->count(),
-                'late' => $rows->where('status', 'late')->count(),
-                'permission' => $rows->where('status', 'permission')->count(),
-                'absent' => $rows->where('status', 'absent')->count(),
-                'total' => $rows->count(),
+            'data' => $paginator->items(),
+            'pagination' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'from' => $paginator->firstItem(),
+                'to' => $paginator->lastItem(),
             ],
-            'attendance' => $rows->values(),
         ]);
     }
 
