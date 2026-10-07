@@ -87,6 +87,23 @@ class ScoreEntryDeadlineService
         }
 
         $monthNum = Carbon::parse($month->name_en)->month;
+
+        $mapped = $this->mappedCloseDate($monthNum, $yearId, $cutoffDay);
+        $thisYear = $this->closeDateInYear($monthNum, (int) Carbon::today()->year, $cutoffDay);
+
+        // Lock by the real calendar date: if the selected school year maps the
+        // month to a future year, the current-year cutoff still locks it once
+        // that date has passed. Otherwise fall back to the mapped date.
+        if ($mapped) {
+            return $mapped->lessThanOrEqualTo($thisYear) ? $mapped : $thisYear;
+        }
+
+        // Month outside the selected year -> fall back to the current year.
+        return $thisYear;
+    }
+
+    private function mappedCloseDate(int $monthNum, ?int $yearId, int $cutoffDay): ?Carbon
+    {
         $year = $yearId ? Year::query()->find($yearId) : null;
         $start = $year?->start_date
             ? Carbon::parse($year->start_date)
@@ -105,9 +122,15 @@ class ScoreEntryDeadlineService
             return null;
         }
 
-        $day = min($cutoffDay, $cursor->daysInMonth);
+        return $this->closeDateInYear($monthNum, (int) $cursor->year, $cutoffDay);
+    }
 
-        return $cursor->copy()->day($day)->startOfDay();
+    private function closeDateInYear(int $monthNum, int $year, int $cutoffDay): Carbon
+    {
+        $date = Carbon::create($year, $monthNum, 1)->startOfMonth();
+        $day = min($cutoffDay, $date->daysInMonth);
+
+        return $date->day($day)->startOfDay();
     }
 
     public function userCanOverride($user): bool
