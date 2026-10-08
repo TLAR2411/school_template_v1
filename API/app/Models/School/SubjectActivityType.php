@@ -12,13 +12,14 @@ class SubjectActivityType extends Model
         "name_en",
         "name_kh",
         "symbol",
-        "is_activity"
+        "is_activity",
+        'created_by',
+        'created_at',
     ];
 
     protected $hidden = [
-        'created_by',
+
         'updated_by',
-        'created_at',
         'updated_at',
         'deleted_by',
         'deleted_at'
@@ -26,7 +27,8 @@ class SubjectActivityType extends Model
 
 
     // subject activity type has many grading rules
-    public function gradingRules(){
-        return $this->hasMany(GradingRule::class,'subject_activity_type_id');
+    public function gradingRules()
+    {
+        return $this->hasMany(GradingRule::class, 'subject_activity_type_id');
     }
 }
